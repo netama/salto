@@ -28,6 +28,7 @@ export const CUSTOM_OBJECT_ID_FIELD = 'Id'
 export const INTERNAL_ID_FIELD = 'internalId'
 export const XML_ATTRIBUTE_PREFIX = 'attr_'
 
+
 export enum FIELD_TYPE_NAMES {
   AUTONUMBER = 'AutoNumber',
   TEXT = 'Text',
