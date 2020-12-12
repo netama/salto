@@ -17,6 +17,7 @@ Currently, Salto supports the following services:
 - [Salesforce](https://github.com/salto-io/salto/tree/master/packages/salesforce-adapter)
 - [NetSuite](https://github.com/salto-io/salto/tree/master/packages/netsuite-adapter)
 - [HubSpot](https://github.com/salto-io/salto/tree/master/packages/hubspot-adapter)
+- [Workday](https://github.com/salto-io/salto/tree/master/packages/workday-adapter)
 
 Support for other services is in the works.
 
