@@ -49,6 +49,7 @@ Each configuration file holds information that is relevant to the specific adapt
 [NetSuite](../packages/netsuite-adapter/config_doc.md)
 [Workato](../packages/workato-adapter/config_doc.md)
 [Zendesk](../packages/zendesk-adapter/config_doc.md)
+[Zuora](../packages/zuora-adapter/config_doc.md)
 
 ## Global Salto configuration
 

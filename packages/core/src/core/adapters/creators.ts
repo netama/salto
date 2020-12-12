@@ -21,6 +21,7 @@ import { adapter as marketoAdapter } from '@salto-io/marketo-adapter'
 import { adapter as dummyAdapter } from '@salto-io/dummy-adapter'
 import { adapter as workatoAdapter } from '@salto-io/workato-adapter'
 import { adapter as zendeskAdapter } from '@salto-io/zendesk-adapter'
+import { adapter as zuoraAdapter } from '@salto-io/zuora-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
   salesforce: salesforceAdapter,
@@ -30,6 +31,7 @@ const adapterCreators: Record<string, Adapter> = {
   dummy: dummyAdapter,
   workato: workatoAdapter,
   zendesk: zendeskAdapter,
+  zuora: zuoraAdapter,
 }
 
 export default adapterCreators

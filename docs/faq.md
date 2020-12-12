@@ -19,6 +19,7 @@ Currently, Salto supports the following services:
 - [HubSpot](https://github.com/salto-io/salto/tree/master/packages/hubspot-adapter)
 - [Workato](https://github.com/salto-io/salto/tree/master/packages/workato-adapter)
 - [Zendesk](https://github.com/salto-io/salto/tree/master/packages/zendesk-adapter)
+- [Zuora](https://github.com/salto-io/salto/tree/master/packages/zuora-adapter)
 
 Support for other services is in the works.
 

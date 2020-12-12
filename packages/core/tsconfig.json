@@ -35,6 +35,7 @@
         { "path": "../marketo-adapter" },
         { "path": "../workato-adapter" },
         { "path": "../zendesk-adapter" },
+        { "path": "../zuora-adapter" },
         { "path": "../dummy-adapter" }
     ]
 }
