@@ -13,14 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { BuiltinTypes, ObjectType, MapType, Values, TypeElement, isObjectType, isEqualElements } from '@salto-io/adapter-api'
-
-export type ReferenceIDType ={
-  $value: string
-  attributes: {
-    'wd:type': string
-  }
-}
+import {
+  BuiltinTypes, ObjectType, Values, TypeElement, isEqualElements, ElemID, ListType,
+} from '@salto-io/adapter-api'
+import { WORKDAY, TYPES_PATH, SUBTYPES_PATH } from '../constants'
 
 export type TypeMapper = {
   types: Values
@@ -35,12 +31,53 @@ type OperationMessageTypes = {
 // cli name -> operation -> input/output message type names
 export type ClientOperationMessageTypes = Record<string, Record<string, OperationMessageTypes> >
 
-export const IDReferenceTypeFields = {
-  IDs: { type: new MapType(BuiltinTypes.SERVICE_ID) },
+export type APIReferenceIDType = {
+  $value: string
+  attributes: {
+    'wd:type': string
+    'wd:parent_type'?: string
+    'wd:parent_id'?: string
+  }
 }
 
-export const isIDReferenceType = (type: TypeElement): type is ObjectType => (
-  isObjectType(type)
-  && Object.keys(type.fields).length === 1
-  && isEqualElements(type.fields.IDs.type, IDReferenceTypeFields.IDs.type)
+export type SaltoReferenceIDType = {
+  value: string
+  attributes: {
+    type: string
+    parentType?: string
+    parentID?: string
+  }
+}
+
+export const ReferenceIDInnerIDType = new ObjectType({
+  elemID: new ElemID(WORKDAY, 'Reference_ID_ID'),
+  fields: {
+    value: { type: BuiltinTypes.SERVICE_ID },
+    attributes: {
+      type: new ObjectType({
+        elemID: new ElemID(WORKDAY, 'Reference_ID_ID_Attributes'),
+        fields: {
+          type: { type: BuiltinTypes.STRING },
+          parentType: { type: BuiltinTypes.STRING },
+          parentID: { type: BuiltinTypes.STRING },
+        },
+        path: [WORKDAY, TYPES_PATH, SUBTYPES_PATH, 'ID_Reference'],
+      }),
+    },
+  },
+  path: [WORKDAY, TYPES_PATH, SUBTYPES_PATH, 'ID_Reference'],
+})
+
+export const IDReferenceTypeFields = {
+  ID: { type: new ListType(ReferenceIDInnerIDType) },
+}
+
+export const ReferenceIDFieldType = new ObjectType({
+  elemID: new ElemID(WORKDAY, 'Reference_ID'),
+  fields: IDReferenceTypeFields,
+  path: [WORKDAY, TYPES_PATH, SUBTYPES_PATH, 'ID_Reference'],
+})
+
+export const isReferenceIDFieldType = (type: TypeElement): type is ListType => (
+  isEqualElements(type, ReferenceIDFieldType)
 )

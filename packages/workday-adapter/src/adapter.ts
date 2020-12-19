@@ -15,23 +15,29 @@
 */
 import {
   FetchResult, AdapterOperations, ChangeGroup, DeployResult, TypeElement,
-  ObjectType, InstanceElement, getChangeElement, isInstanceElement, isObjectType,
+  ObjectType, InstanceElement, getChangeElement, isInstanceElement, isObjectType, Change,
+  isAdditionOrModificationChange,
+  isAdditionChange,
 } from '@salto-io/adapter-api'
 import { resolveValues } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { logger } from '@salto-io/logging'
-import { decorators } from '@salto-io/lowerdash'
+import { collections, decorators } from '@salto-io/lowerdash'
 import WorkdayClient from './client/client'
 import { WorkdayConfig, API_MODULES_CONFIG, DISABLE_FILTERS, WorkdayApiModuleConfig } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import {
   GET_API_PREFIX, PUT_REQUEST_SCHEMA_ANNOTATION, REQUEST_FOR_PUT_ENDPOINT_ANNOTATION,
+  WORKDAY_ID_FIELDNAME,
+  ALL_IDS_FIELDNAME,
 } from './constants'
-import { findResponseType, getLookUpName, toPutRequest, findFields } from './transformers/transformer'
+import { findResponseType, getLookUpName, toPutRequest, findFields, fromIDRefDef } from './transformers/transformer'
 import widReferencesFilter from './filters/wid_references'
 import { generateTypes } from './transformers/type_elements'
-import { generateInstancesForType } from './transformers/instance_elements'
+import { generateInstancesForType, getWID } from './transformers/instance_elements'
 import { ClientOperationMessageTypes } from './client/types'
+
+const { makeArray } = collections.array
 
 const log = logger(module)
 
@@ -170,8 +176,11 @@ export default class WorkdayAdapter implements AdapterOperations {
   @logDuration('deploying account configuration')
   async deploy(changeGroup: ChangeGroup): Promise<DeployResult> {
     // TODON add change validators
+    // TODON move to a deploy file
 
-    const changedInstances = changeGroup.changes.map(getChangeElement).filter(isInstanceElement)
+    const instanceChanges = changeGroup.changes.filter(c =>
+      isInstanceElement(getChangeElement(c))) as Change<InstanceElement>[]
+    const changedInstances = instanceChanges.map(getChangeElement)
 
     const referencedTypes = _.keyBy(
       changedInstances.map(inst => inst.type),
@@ -182,10 +191,10 @@ export default class WorkdayAdapter implements AdapterOperations {
       t => t.annotations[PUT_REQUEST_SCHEMA_ANNOTATION]?.value
     ), isObjectType)
 
-    const resolvedInstances = changedInstances
-      .map(instance => resolveValues(instance, getLookUpName))
-
-    const results = await Promise.all(resolvedInstances.map(async inst => {
+    // TODON add support for remove too
+    const nonRemoveInstanceChanges = instanceChanges.filter(isAdditionOrModificationChange)
+    const results = await Promise.all(nonRemoveInstanceChanges.map(async change => {
+      const inst = resolveValues(getChangeElement(change), getLookUpName)
       const schemaType = requestSchemas[inst.type.elemID.getFullName()]
       const [cliName, apiName] = schemaType.annotations[REQUEST_FOR_PUT_ENDPOINT_ANNOTATION].split('.')
 
@@ -194,29 +203,53 @@ export default class WorkdayAdapter implements AdapterOperations {
         if (!isEndpointAllowed(apiName, this.userConfig[API_MODULES_CONFIG][cliName])) {
           throw new Error(`Endpoint ${cliName}.${apiName} blocked by configuration - cannot deploy`)
         }
-        // TODON use the other ids too (persist reference on fetch)
-        await this.client.put(
+        const res = await this.client.put(
+          // TODON be more explicit when not including reference?
           cliName, apiName, toPutRequest(inst, dataFieldName, referenceFieldName)
         )
-        // TODON check if can ever have errors without throwing
+
+        // TODON improve (pick referenceFieldName if available)
+        const idsFields = (Object.entries(res.result)
+          .filter(([key, value]) => key.endsWith('_Reference') && makeArray(value.ID).length > 0)
+          .map(([_key, value]) => value))
+        if (idsFields.length > 1) {
+          // the change was still applied - just log the error
+          log.error('found %d id fields in put response %s - using %s',
+            idsFields.length, JSON.stringify(res.result), JSON.stringify(idsFields[0]))
+        }
+        if (isAdditionChange(change)) {
+          const wid = getWID(idsFields[0])
+          if (wid !== undefined) {
+            const newAfterInstance = change.data.after.clone()
+            newAfterInstance.value[WORKDAY_ID_FIELDNAME] = wid
+            newAfterInstance.value[ALL_IDS_FIELDNAME] = fromIDRefDef(idsFields[0])
+            const updatedChange = {
+              ...change,
+              data: {
+                after: newAfterInstance,
+              },
+            }
+            return {
+              appliedChanges: [updatedChange],
+              errors: [],
+            }
+          }
+        }
         return {
-          successIDs: inst.elemID,
+          appliedChanges: [change],
           errors: [],
         }
       } catch (e) {
         log.error('error deploying change group: %s, stack: %o', e, e.stack)
         return {
-          successIDs: [],
+          appliedChanges: [],
           errors: [e],
         }
       }
     }))
-    const successIDs = new Set(results.flatMap(res => res.successIDs).map(id => id.getFullName()))
     return {
       errors: results.flatMap(res => res.errors),
-      appliedChanges: changeGroup.changes.filter(
-        c => successIDs.has(getChangeElement(c).elemID.getFullName())
-      ),
+      appliedChanges: results.flatMap(res => res.appliedChanges),
     }
   }
 }

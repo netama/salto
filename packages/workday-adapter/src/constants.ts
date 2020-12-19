@@ -23,6 +23,7 @@ export const REQUEST_FOR_PUT_ENDPOINT_ANNOTATION = 'RequestForPutEndpoint'
 export const PUT_REQUEST_SCHEMA_ANNOTATION = 'PutRequest'
 
 export const WORKDAY_ID_FIELDNAME = 'WID'
+export const ALL_IDS_FIELDNAME = 'All_IDs'
 
 // NACL files path
 export const RECORDS_PATH = 'Records'

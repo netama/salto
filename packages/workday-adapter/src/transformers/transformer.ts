@@ -21,8 +21,8 @@ import {
 import { values as lowerDashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import { GetLookupNameFunc, transformElement } from '@salto-io/adapter-utils'
-import { WORKDAY_ID_FIELDNAME } from '../constants'
-import { ReferenceIDType, isIDReferenceType } from '../client/types'
+import { WORKDAY_ID_FIELDNAME, ALL_IDS_FIELDNAME } from '../constants'
+import { APIReferenceIDType, SaltoReferenceIDType, isReferenceIDFieldType } from '../client/types'
 
 const { isDefined } = lowerDashValues
 const log = logger(module)
@@ -44,8 +44,11 @@ export const toPrimitiveType = (val: string): PrimitiveType => {
     RichText: BuiltinTypes.STRING,
     'xsd:base64Binary': BuiltinTypes.STRING,
   }
-  // TODON check if should use the other parts for restrictions
-  const type = val.split('|').map(typeName => xsdTypeMap[typeName]).find(isDefined)
+  // TODON check if should use the other parts for restrictions, restrict enums
+  const type = (val.split('|')
+    .map(typeName => (typeName.endsWith('Enumeration') ? 'xsd:string' : typeName))
+    .map(typeName => xsdTypeMap[typeName])
+    .find(isDefined))
   if (type !== undefined) {
     return type
   }
@@ -59,18 +62,38 @@ export const isIDRefDef = (field: Values): boolean => (
   _.isEqual(new Set(Object.keys(field)), REF_TYPE_FIELDS)
 )
 
-export const fromIDRefDef = (value: { ID: ReferenceIDType[] }): Record<string, string> => (
-  Object.fromEntries(
-    // TODON can this break?
-    (value.ID as ReferenceIDType[]).map(id => [id.attributes['wd:type'], id.$value])
-  )
+export const fromIDRefDef = (
+  value: { ID?: APIReferenceIDType[] }
+): SaltoReferenceIDType[] | undefined => (
+  value.ID?.map(id => ({
+    value: id.$value,
+    attributes: (id.attributes['wd:parent_id'] !== undefined
+      ? {
+        type: id.attributes['wd:type'],
+        parentID: id.attributes['wd:parent_id'],
+        parentType: id.attributes['wd:parent_type'],
+      }
+      : { type: id.attributes['wd:type'] }),
+  }))
 )
 
-export const toIDRefDef = (value: Record<string, string>): { ID: ReferenceIDType[] } => ({
-  ID: Object.entries(value).map(
-    ([name, val]) => ({ $value: val, attributes: { 'wd:type': name } })
-  ),
-})
+export const toIDRefDef = (ids?: SaltoReferenceIDType[]):
+    { ID: APIReferenceIDType[] } | undefined => (
+  ids !== undefined
+    ? {
+      ID: ids.map(id => ({
+        $value: id.value,
+        attributes: (id.attributes.parentID !== undefined
+          ? {
+            'wd:type': id.attributes.type,
+            'wd:parent_id': id.attributes.parentID,
+            'wd:parent_type': id.attributes.parentType,
+          }
+          : { 'wd:type': id.attributes.type }),
+      })),
+    }
+    : undefined
+)
 
 export const normalizeFieldName = (fieldName: string): { name: string; isList: boolean} => ({
   name: _.trimEnd(fieldName, '[]'),
@@ -115,7 +138,7 @@ export const findResponseType = (apiName: string, outputSchema: ObjectType): {
 export const findFields = (objType: ObjectType, dataType?: ObjectType): {
   dataFieldName: string
   dataFieldType: ObjectType
-  referenceFieldName: string
+  referenceFieldName?: string
 } => {
   const findFieldWithSuffix = (inType: ObjectType, suffix: string): string | undefined => (
     Object.keys(inType.fields).find(name => name.endsWith(suffix))
@@ -138,13 +161,9 @@ export const findFields = (objType: ObjectType, dataType?: ObjectType): {
     : dataField.type) as ObjectType
 
   const referenceFieldName = (Object.values(objType.fields)
-    // .filter(f => isIDReferenceType(f.type)) // TODON re-enable
+    .filter(f => isReferenceIDFieldType(f.type))
     .find(f => f.name.endsWith('_Reference'))
     ?.name)
-
-  if (referenceFieldName === undefined) {
-    throw new Error(`Could not find reference field in type ${objType.elemID.getFullName()}`)
-  }
 
   return {
     dataFieldName,
@@ -166,22 +185,30 @@ export const getLookUpName: GetLookupNameFunc = ({ ref }) => {
 }
 
 export const toPutRequest = (
-  instance: InstanceElement, dataFieldName: string, referenceFieldName: string,
+  instance: InstanceElement, dataFieldName: string, referenceFieldName?: string,
 ): Values => {
   const deployableInstance = transformElement({
     element: instance,
     transformFunc: ({ value, field }) => {
-      if (field && isIDReferenceType(field.type)) {
-        return toIDRefDef(value.IDs)
+      if (field && isReferenceIDFieldType(field.type)) {
+        return toIDRefDef(value.ID)
       }
       return value
     },
     strict: false,
   })
-  const deployableValue = _.omit(deployableInstance.value, [WORKDAY_ID_FIELDNAME])
-  const ref = toIDRefDef({ WID: deployableInstance.value[WORKDAY_ID_FIELDNAME] })
+  const deployableValue = _.omit(
+    deployableInstance.value,
+    [WORKDAY_ID_FIELDNAME, ALL_IDS_FIELDNAME]
+  )
+  // TODON decide when to include the WID
+  const ref = toIDRefDef(instance.value[ALL_IDS_FIELDNAME])
+  log.info('PUT request for %s: dataFieldName=%s, referenceFieldName=%s, ref=%o',
+    instance.elemID.getFullName(), dataFieldName, referenceFieldName, ref)
   return {
     [dataFieldName]: deployableValue,
-    [referenceFieldName]: ref,
+    ...(referenceFieldName !== undefined && ref !== undefined
+      ? { [referenceFieldName]: ref }
+      : {}),
   }
 }

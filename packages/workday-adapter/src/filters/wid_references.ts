@@ -32,10 +32,9 @@ const convertWIDReferences = (
   const convertWIDsToReferences: TransformFunc = ({ value, field, path }) => {
     if (
       field
-      && field.name === WORKDAY_ID_FIELDNAME // TODON may not work inside types?
+      && field.name === 'value'
+      && path?.getFullNameParts().slice(-3)[0] === 'ID'
       && _.isString(value)
-      // TODON find better location (unless WID can be shared between environments)
-      && (value !== inst.value[WORKDAY_ID_FIELDNAME] || path?.createParentID().name === 'IDs')
     ) {
       if (instanceIDsByWID[value] !== undefined) {
         if (referenceExpressionCache[value] === undefined) {

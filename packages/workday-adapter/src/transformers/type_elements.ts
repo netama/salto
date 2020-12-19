@@ -20,13 +20,17 @@ import {
   PrimitiveType, ObjectType, ElemID, Field, ListType, BuiltinTypes, TypeElement,
   ReferenceExpression,
   isListType,
+  isPrimitiveType,
 } from '@salto-io/adapter-api'
 import { naclCase, pathNaclCase } from '@salto-io/adapter-utils'
 import { isIDRefDef, normalizeFieldName, toPrimitiveType } from './transformer'
-import { TypeMapper, ClientOperationMessageTypes, isIDReferenceType, IDReferenceTypeFields } from '../client/types'
+import {
+  TypeMapper, ClientOperationMessageTypes, IDReferenceTypeFields, isReferenceIDFieldType,
+  ReferenceIDInnerIDType, ReferenceIDFieldType,
+} from '../client/types'
 import {
   TYPES_PATH, WORKDAY, SUBTYPES_PATH, ENDPOINTS_PATH, WORKDAY_ID_FIELDNAME, PUT_API_PREFIX,
-  REQUEST_FOR_PUT_ENDPOINT_ANNOTATION, PUT_REQUEST_SCHEMA_ANNOTATION,
+  REQUEST_FOR_PUT_ENDPOINT_ANNOTATION, PUT_REQUEST_SCHEMA_ANNOTATION, ALL_IDS_FIELDNAME,
 } from '../constants'
 
 const { isDefined } = lowerDashValues
@@ -35,7 +39,7 @@ const log = logger(module)
 const findDataField = (type: ObjectType): Field | undefined => {
   // TODON handle edge cases
   const dataFields = Object.values(type.fields).filter(field =>
-    !isIDReferenceType(field.type))
+    !isReferenceIDFieldType(field.type) && !isPrimitiveType(field.type))
 
   if (dataFields.length > 1) {
     log.error('Found too many fields in PUT request schema %s: %s',
@@ -50,7 +54,12 @@ export const generateTypes = (
   { types, fieldLookup }: TypeMapper,
   typesByClientAndEndpoint: ClientOperationMessageTypes,
 ): Record<string, TypeElement> => {
-  const definedTypes: Record<string, ObjectType> = {}
+  const definedTypes: Record<string, ObjectType> = {
+    ReferenceIDInnerID: ReferenceIDInnerIDType,
+    ReferenceIDAttributes: ReferenceIDInnerIDType.fields.attributes.type as ObjectType,
+    ReferenceID: ReferenceIDFieldType,
+
+  }
 
   const toType = (
     typeName: string,
@@ -65,70 +74,69 @@ export const generateTypes = (
         const typeDef = types[objName] ?? {}
         const naclObjName = naclCase(objName)
         if (isIDRefDef(typeDef)) {
-          definedTypes[objName] = new ObjectType({
-            elemID: new ElemID(WORKDAY, naclObjName),
-            fields: IDReferenceTypeFields,
-            path: [WORKDAY, ...pathRoot, SUBTYPES_PATH, 'WID_Reference'],
-            annotationTypes: {
-              [REQUEST_FOR_PUT_ENDPOINT_ANNOTATION]: BuiltinTypes.STRING,
-            },
-          })
-        } else {
-          // first add an empty type, to avoid endless recursion in cyclic references from fields
-          definedTypes[objName] = new ObjectType({
-            elemID: new ElemID(WORKDAY, naclObjName),
-            // TODON organize better in folders
-            path: isEndpointRootObj
-              ? [WORKDAY, ...pathRoot,
-                pathNaclCase(naclObjName)]
-              // TODON move '_' to constant (in naclCase impl)
-              : [WORKDAY, ...pathRoot, SUBTYPES_PATH,
-                pathNaclCase(naclObjName).split('_')[0], pathNaclCase(naclObjName)],
-            annotationTypes: {
-              [PUT_REQUEST_SCHEMA_ANNOTATION]: BuiltinTypes.STRING,
-            },
-          })
-          const fieldMap = fieldLookup[objName]
-          const listFields = new Set(Object.keys(typeDef)
-            .map(fieldName => normalizeFieldName(fieldName))
-            .filter(f => f.isList)
-            .map(f => f.name))
-
-          Object.assign(
-            definedTypes[objName].fields,
-            _.pickBy(
-              Object.fromEntries(Object.entries(fieldMap).map(([fieldName, fieldTypeName]) => {
-                // The rest goes to Types - objects referenced directly from endpoints
-                // will be at the root
-                const fieldType = toType(fieldTypeName, pathRoot[0] === ENDPOINTS_PATH)
-                if (fieldType === undefined) {
-                  // shouldn't happen
-                  // TODON verify
-                  log.error(`Could not determine field type for ${objName}.${fieldName}. Omitting the field`)
-                  return [fieldName, undefined]
-                }
-                return [fieldName, new Field(
-                  definedTypes[objName],
-                  fieldName,
-                  listFields.has(fieldName) ? new ListType(fieldType) : fieldType,
-                )]
-              })),
-              isDefined,
-            ),
-            pathRoot[0] === ENDPOINTS_PATH
-              ? {}
-              // TODON don't add for endpoint objects
-              : {
-                // Everything has a globally-unique WID (may be inconsistent between tenants)
-                [WORKDAY_ID_FIELDNAME]: new Field(
-                  definedTypes[objName],
-                  WORKDAY_ID_FIELDNAME,
-                  BuiltinTypes.SERVICE_ID,
-                  // TODON decide if should be hidden / visible with some handling for multienv
-                ),
-              },
-          )
+          return definedTypes.ReferenceID
         }
+        // first add an empty type, to avoid endless recursion in cyclic references from fields
+        definedTypes[objName] = new ObjectType({
+          elemID: new ElemID(WORKDAY, naclObjName),
+          // TODON organize better in folders
+          path: isEndpointRootObj
+            ? [WORKDAY, ...pathRoot,
+              pathNaclCase(naclObjName)]
+            // TODON move '_' to constant (in naclCase impl)
+            : [WORKDAY, ...pathRoot, SUBTYPES_PATH,
+              pathNaclCase(naclObjName).split('_')[0], pathNaclCase(naclObjName)],
+          annotationTypes: {
+            [PUT_REQUEST_SCHEMA_ANNOTATION]: BuiltinTypes.STRING,
+          },
+        })
+        const fieldMap = fieldLookup[objName]
+        const listFields = new Set(Object.keys(typeDef)
+          .map(fieldName => normalizeFieldName(fieldName))
+          .filter(f => f.isList)
+          .map(f => f.name))
+
+        Object.assign(
+          definedTypes[objName].fields,
+          _.pickBy(
+            Object.fromEntries(Object.entries(fieldMap).map(([fieldName, fieldTypeName]) => {
+              // The rest goes to Types - objects referenced directly from endpoints
+              // will be at the root
+              const fieldType = toType(fieldTypeName, pathRoot[0] === ENDPOINTS_PATH)
+              if (fieldType === undefined) {
+                // shouldn't happen
+                // TODON verify
+                log.error(`Could not determine field type for ${objName}.${fieldName}. Omitting the field`)
+                return [fieldName, undefined]
+              }
+              return [fieldName, new Field(
+                definedTypes[objName],
+                fieldName,
+                listFields.has(fieldName) ? new ListType(fieldType) : fieldType,
+              )]
+            })),
+            isDefined,
+          ),
+          pathRoot[0] === ENDPOINTS_PATH
+            ? {}
+            // TODON don't add for endpoint objects
+            : {
+              // Everything has a globally-unique WID (may be inconsistent between tenants)
+              [WORKDAY_ID_FIELDNAME]: new Field(
+                definedTypes[objName],
+                WORKDAY_ID_FIELDNAME,
+                BuiltinTypes.SERVICE_ID,
+                // TODON hide for multienv (and then also omit from ALL_IDS_FIELDNAME
+                //   + populate when needed)
+              ),
+              [ALL_IDS_FIELDNAME]: new Field(
+                definedTypes[objName],
+                ALL_IDS_FIELDNAME,
+                IDReferenceTypeFields.ID.type,
+                // TODON exclude WID so don't need to hide
+              ),
+            },
+        )
       }
       return definedTypes[objName]
     }

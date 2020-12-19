@@ -340,13 +340,13 @@ export default class WorkdayClient {
             Page: page,
           },
         })
-        responseData.push(...makeArray(res.Response_Data))
+        responseData.push(...makeArray(res.Response_Data).flatMap(entry => entry[dataFieldName]))
         // TODON add schema for the important parts
         if (res.Response_Results.Page === res.Response_Results.Total_Pages
           || res.Response_Data === undefined
           || (this.config?.maxPagesToGetForEachType !== undefined
             && res.Response_Results.Page >= this.config?.maxPagesToGetForEachType)) {
-          totalResults = res.Response_Results.Total_Results
+          totalResults = makeArray(res.Response_Results)[0].Total_Results
           break
         }
         page += 1
@@ -357,9 +357,7 @@ export default class WorkdayClient {
     }
 
     // TODON check if need to support requests that get a request obj
-    const responseData = await getAllResponseData()
-    const result = responseData.flatMap(res => res[dataFieldName])
-    log.info('Received %d results for endpoint %s', result.length, endpointName)
+    const result = await getAllResponseData()
     return {
       result,
       errors: [],
@@ -379,16 +377,12 @@ export default class WorkdayClient {
     req: Values,
   ): Promise<{ result: Values; errors: string[]}> {
     // TODON differentiate between create, update, delete
-
     const syncEndpoint = this.apiClients?.[cli][endpointName]
     if (syncEndpoint === undefined) {
       throw new Error(`Unknown endpoint ${endpointName}`)
     }
     const endpoint = promisify(syncEndpoint)
-
-    // TODON verify always throws on errors
     const result = await endpoint(req)
-
     return {
       result,
       errors: [],
