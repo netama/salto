@@ -15,5 +15,6 @@
 */
 
 export const endpointToTypeName = (endpoint: string): string => (
-  endpoint.replace('/', '').trim().replace(' ', '_')
+  // TODON ok for now - might need to be more specific for other cases
+  endpoint.split('/').slice(-1)[0]
 )

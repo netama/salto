@@ -15,25 +15,30 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, ChangeGroup, DeployResult, Element,
+  FetchResult, AdapterOperations, ChangeGroup, DeployResult, Element, isInstanceElement, Values,
 } from '@salto-io/adapter-api'
 import { naclCase } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { decorators } from '@salto-io/lowerdash'
-import WorkatoClient from './client/client'
+import WorkatoClient, { ClientGetParams } from './client/client'
 import { WorkatoConfig, API_CONFIG, DISABLE_FILTERS, EndpointConfig } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import extractFieldsFilter from './filters/extract_fields'
-import referencesFilter from './filters/references'
+import fieldReferencesFilter from './filters/field_references'
 import { generateType } from './transformers/type_elements'
 import { toInstance } from './transformers/instance_elements'
 import { endpointToTypeName } from './transformers/transformer'
 
 const log = logger(module)
 
+const ARG_PLACEHOLDER_MATCHER = /\$\{([\w._]+)\}/g
+// const EXACT_ARG_PLACEHODER_MATCHER = /^\{([\w._]+)\}$/
+// TODON only supporting what we need for now - '${.<fieldName>}'
+const EXACT_ARG_PLACEHODER_MATCHER = /^\$\{\.([\w_]+)\}$/
+
 export const DEFAULT_FILTERS = [
   extractFieldsFilter,
-  referencesFilter,
+  fieldReferencesFilter,
 ]
 
 export interface WorkatoAdapterParams {
@@ -72,17 +77,68 @@ export default class WorkatoAdapter implements AdapterOperations {
 
   @logDuration('generating instances and types from service')
   private async getElements(): Promise<Element[]> {
-    const getTypeAndInstances = async ({
-      endpoint,
-      queryParams,
-      fieldsToOmit,
-      hasDynamicFields,
-    }: EndpointConfig): Promise<Element[]> => {
-      const entries = (await this.client.get(endpoint, queryParams)).result.map(entry =>
-        (fieldsToOmit !== undefined
-          ? _.omit(entry, fieldsToOmit)
-          : entry
-        ))
+    const getTypeAndInstances = async (
+      {
+        endpoint,
+        queryParams,
+        paginationField,
+        fieldsToOmit,
+        hasDynamicFields,
+      }: EndpointConfig,
+      contextElements?: Record<string, Element[]>,
+    ): Promise<Element[]> => {
+      const computeGetArgs = (): ClientGetParams[] => {
+        const queryArgs = _.omitBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val))
+        const recursiveQueryArgs = _.mapValues(
+          _.pickBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val)),
+          // TODON for now only variables inside the entry are supported - extend
+          val => ((entry: Values): string => entry[val.slice(3, -1)])
+        )
+        // TODON split queryParams into fixed, recursive, and depending on other element types
+        // TODON determine fetch order based on that (or just run in configuration order?)
+        if (contextElements !== undefined) {
+          if (endpoint.includes('$')) {
+            // TODON just one for now - check if need to extend
+            const urlParams = endpoint.match(ARG_PLACEHOLDER_MATCHER)
+            if (urlParams === null) {
+              // TODON catch earlier in the validation
+              throw new Error(`invalid endpoint definition ${endpoint}`)
+            }
+            if (urlParams.length > 1) {
+              // TODON add handling
+              throw new Error(`too many variables in endpoint ${endpoint}`)
+            }
+            // TODON improve
+            const [referenceEndpoint, field] = urlParams[0].slice(2, -1).split('.')
+            const contextInstances = (contextElements[`/${referenceEndpoint}`] ?? []).filter(
+              isInstanceElement
+            )
+            if (!contextInstances) {
+              throw new Error(`no instances found for ${referenceEndpoint}, cannot call endpoint ${endpoint}`)
+            }
+            const potentialParams = contextInstances.map(e => e.value[field])
+            return potentialParams.map(p => ({
+              endpointName: endpoint.replace(ARG_PLACEHOLDER_MATCHER, p),
+              queryArgs,
+              recursiveQueryArgs,
+              paginationField,
+            }))
+          }
+        }
+        return [{ endpointName: endpoint, queryArgs, recursiveQueryArgs, paginationField }]
+      }
+      const getEntries = async (): Promise<Values[]> => {
+        const getArgs = computeGetArgs()
+        return (await Promise.all(
+          getArgs.map(args => this.client.get(args))
+        )).flatMap(r => r.result.map(entry =>
+          (fieldsToOmit !== undefined
+            ? _.omit(entry, fieldsToOmit)
+            : entry
+          )))
+      }
+
+      const entries = await getEntries()
 
       // escape "field" names with '.'
       // TODON instead handle in filter? (not sure if "." is consistent enough for actual nesting)
@@ -107,9 +163,24 @@ export default class WorkatoAdapter implements AdapterOperations {
       return [type, ...instances]
     }
 
-    return (await Promise.all(
-      this.userConfig[API_CONFIG].getEndpoints.map(getTypeAndInstances)
-    )).flat()
+    // for now assuming simple dependencies for simplicity
+    // TODO use a real DAG instead (without interfering with parallelizing the requests)
+    // (ended up not being needed for workato - will remove if there's no other use case,
+    //  keeping for demonstration purposes)
+    const [independentEndpoints, dependentEndpoints] = _.partition(
+      this.userConfig[API_CONFIG].getEndpoints,
+      e => _.isEmpty(e.dependsOn)
+    )
+    const contextElements: Record<string, Element[]> = Object.fromEntries(await Promise.all(
+      independentEndpoints.map(async e => [e.endpoint, await getTypeAndInstances(e)])
+    ))
+    const dependentElements = await Promise.all(
+      dependentEndpoints.map(e => getTypeAndInstances(e, contextElements))
+    )
+    return [
+      ...Object.values(contextElements).flat(),
+      ...dependentElements.flat(),
+    ]
   }
 
   /**

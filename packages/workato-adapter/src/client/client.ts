@@ -16,7 +16,7 @@
 import _ from 'lodash'
 import { RequestRetryOptions, RetryStrategies } from 'requestretry'
 import Bottleneck from 'bottleneck'
-import { decorators, collections } from '@salto-io/lowerdash'
+import { decorators, collections, values as lowerfashValues } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { DEFAULT_MAX_CONCURRENT_API_REQUESTS } from '../constants'
@@ -26,6 +26,7 @@ import {
 } from '../types'
 import Connection, { WorkatoAPI, realConnection } from './connection'
 
+const { isDefined } = lowerfashValues
 const { makeArray } = collections.array
 const log = logger(module)
 
@@ -35,6 +36,9 @@ const DEFAULT_RETRY_OPTS: Required<ClientRetryConfig> = {
   retryStrategy: 'NetworkError', // retry on network errors
 }
 
+// TODON make configurable?
+const WORKATO_DEFAULT_PAGE_SIZE = 100
+
 type RateLimitBucketName = keyof ClientRateLimitConfig
 
 type ClientOpts = {
@@ -42,6 +46,13 @@ type ClientOpts = {
   connection?: Connection
   config?: WorkatoClientConfig
   api: WorkatoApiConfig
+}
+
+export type ClientGetParams = {
+  endpointName: string
+  queryArgs: Record<string, string> | undefined
+  recursiveQueryArgs: Record<string, (entry: Values) => string> | undefined
+  paginationField?: string
 }
 
 export class ApiLimitsTooLowError extends Error {}
@@ -190,28 +201,70 @@ export default class WorkatoClient {
   @WorkatoClient.throttle('get')
   @WorkatoClient.logDecorator()
   @WorkatoClient.requiresLogin
-  public async get(
-    endpointName: string,
-    queryParams?: Record<string, string>,
-  ): Promise<{ result: Values[]; errors: string[]}> {
+  public async get({
+    endpointName,
+    queryArgs,
+    recursiveQueryArgs,
+    paginationField,
+  }: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
     if (this.apiClient === undefined) {
       throw new Error('uninitialized api client')
     }
-    // TODON support pagination if can be an issue in the workato api (not clear from doc)
-    const response = await this.apiClient.get(
-      endpointName,
-      queryParams ? { params: queryParams } : undefined
-    )
 
-    log.info(`Full HTTP response for ${endpointName} ${queryParams}: ${JSON.stringify(response.data)}`)
+    const requestQueryArgs: Record<string, string>[] = [{}]
 
-    // TODON check if there are other variants
-    const results = ((_.isObjectLike(response.data) && Array.isArray(response.data.items))
-      ? response.data.items
-      : makeArray(response.data))
+    const allResults = []
+
+    const usedParams = new Set<string>()
+
+    while (requestQueryArgs.length > 0) {
+      const additionalArgs = requestQueryArgs.pop() as Record<string, string>
+      const serializedArgs = JSON.stringify(additionalArgs)
+      if (usedParams.has(serializedArgs)) {
+        // eslint-disable-next-line no-continue
+        continue
+      }
+      usedParams.add(serializedArgs)
+      const params = { ...queryArgs, ...additionalArgs }
+      // eslint-disable-next-line no-await-in-loop
+      const response = await this.apiClient.get(
+        endpointName,
+        Object.keys(params).length > 0 ? { params } : undefined
+      )
+      log.info(`Full HTTP response for ${endpointName} ${params}: ${JSON.stringify(response.data)}`)
+
+      const results: Values[] = (
+        (_.isObjectLike(response.data) && Array.isArray(response.data.items))
+          ? response.data.items
+          : makeArray(response.data)
+      )
+
+      allResults.push(...results)
+
+      if (paginationField !== undefined && results.length >= WORKATO_DEFAULT_PAGE_SIZE) {
+        requestQueryArgs.unshift({
+          ...additionalArgs,
+          [paginationField]: (additionalArgs[paginationField] ?? 1) + 1,
+        })
+      }
+
+      if (recursiveQueryArgs !== undefined && Object.keys(recursiveQueryArgs).length > 0) {
+        const newArgs = (results
+          .map(res => _.pickBy(
+            _.mapValues(
+              recursiveQueryArgs,
+              mapper => mapper(res),
+            ),
+            isDefined,
+          ))
+          .filter(args => Object.keys(args).length > 0)
+        )
+        requestQueryArgs.unshift(...newArgs)
+      }
+    }
 
     return {
-      result: results,
+      result: allResults,
       errors: [],
     }
   }

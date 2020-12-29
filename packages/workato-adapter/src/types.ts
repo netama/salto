@@ -57,6 +57,8 @@ export type WorkatoClientConfig = Partial<{
 export type EndpointConfig = {
   endpoint: string
   queryParams?: Record<string, string>
+  paginationField?: string
+  dependsOn?: string[]
   fieldsToOmit?: string[]
   // fields to convert into their own type and instances.
   // if the field value is a string, first parse it into json
@@ -169,6 +171,8 @@ const endpointConfigType = new ObjectType({
     },
     // TODON needs more adjustments
     queryParams: { type: new MapType(BuiltinTypes.STRING) },
+    dependsOn: { type: new ListType(BuiltinTypes.STRING) },
+    paginationField: { type: BuiltinTypes.STRING },
     fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
     fieldsToExtract: { type: new ListType(BuiltinTypes.STRING) },
     hasDynamicFields: { type: BuiltinTypes.BOOLEAN },
@@ -208,6 +212,11 @@ export const configType = new ObjectType({
             {
               // TODON needs recursion, pagination
               endpoint: '/folders',
+              queryParams: {
+                // eslint-disable-next-line @typescript-eslint/camelcase,no-template-curly-in-string
+                parent_id: '${.id}',
+              },
+              paginationField: 'page',
             },
             {
               endpoint: '/api_collections',
@@ -218,7 +227,9 @@ export const configType = new ObjectType({
             {
               endpoint: '/api_clients',
             },
-            // TODON support /api_clients/:api_client_id/api_access_profiles
+            {
+              endpoint: '/api_access_profiles',
+            },
             {
               endpoint: '/roles',
             },
