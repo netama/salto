@@ -163,8 +163,8 @@ export default class WorkatoAdapter implements AdapterOperations {
       return [type, ...instances]
     }
 
-    // for now assuming simple dependencies for simplicity
-    // TODO use a real DAG instead (without interfering with parallelizing the requests)
+    // for now assuming flat dependencies for simplicity
+    // TODO use a real DAG instead (without interfering with parallelizing the requests),
     // (ended up not being needed for workato - will remove if there's no other use case,
     //  keeping for demonstration purposes)
     const [independentEndpoints, dependentEndpoints] = _.partition(

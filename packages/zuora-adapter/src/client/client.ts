@@ -14,65 +14,60 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { RequestRetryOptions, RetryStrategies } from 'requestretry'
 import Bottleneck from 'bottleneck'
-import { decorators, collections, values as lowerfashValues } from '@salto-io/lowerdash'
+import { collections, decorators } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { DEFAULT_MAX_CONCURRENT_API_REQUESTS } from '../constants'
 import {
-  Credentials, WorkatoClientConfig, ClientRateLimitConfig, ClientRetryConfig,
-  WorkatoApiConfig,
+  Credentials, ZuoraClientConfig, ClientRateLimitConfig, ClientRetryConfig,
 } from '../types'
-import Connection, { WorkatoAPI, realConnection } from './connection'
+import Connection, { ZuoraAPI, realConnection, RetryOptions } from './connection'
 
-const { isDefined } = lowerfashValues
 const { makeArray } = collections.array
 const log = logger(module)
 
 const DEFAULT_RETRY_OPTS: Required<ClientRetryConfig> = {
   maxAttempts: 5, // try 5 times
   retryDelay: 5000, // wait for 5s before trying again
-  retryStrategy: 'NetworkError', // retry on network errors
+  // retryStrategy: 'NetworkError', // retry on network errors
 }
-
-// TODON make configurable?
-const WORKATO_DEFAULT_PAGE_SIZE = 100
 
 type RateLimitBucketName = keyof ClientRateLimitConfig
 
 type ClientOpts = {
   credentials: Credentials
   connection?: Connection
-  config?: WorkatoClientConfig
-  api: WorkatoApiConfig
+  config?: ZuoraClientConfig
 }
 
 export type ClientGetParams = {
   endpointName: string
-  queryArgs: Record<string, string> | undefined
-  recursiveQueryArgs: Record<string, (entry: Values) => string> | undefined
-  paginationField?: string
+  dataFieldName?: string
+  extractValues?: boolean
+  queryArgs?: Record<string, string>
 }
 
 export class ApiLimitsTooLowError extends Error {}
 
-const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): RequestRetryOptions => ({
-  maxAttempts: retryOptions.maxAttempts,
-  retryStrategy: RetryStrategies[retryOptions.retryStrategy],
-  delayStrategy: (err, response) => {
-    log.error('Failed to run Workato call for reason: %s. Retrying in %ds (attempt %d).',
-      err.message, retryOptions.retryDelay / 1000,
-      _.get(response, 'attempts') || _.get(err, 'attempts'))
-    return retryOptions.retryDelay
+const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): RetryOptions => ({
+  retries: retryOptions.maxAttempts,
+  retryDelay: (retryCount, err) => {
+    log.error('Failed to run Zuora call to %s for reason: %s (%s). Retrying in %ds (attempt %d).',
+      err.config.url,
+      err.code,
+      err.message,
+      retryOptions.retryDelay / 1000,
+      retryCount)
+    // retryDelay is in milliseconds
+    return retryOptions.retryDelay * 1000
   },
 })
 
-const createConnection = (
-  config: WorkatoApiConfig,
-  _options: RequestRetryOptions,
+const createConnectionForModules = (
+  retryOptions: RetryOptions,
 ): Connection => (
-  realConnection(config)
+  realConnection(retryOptions)
 )
 
 const createRateLimitersFromConfig = (
@@ -83,7 +78,7 @@ const createRateLimitersFromConfig = (
   // 0 is an invalid value (blocked in configuration)
   ): number | undefined => (num && num < 0 ? undefined : num)
   const rateLimitConfig = _.mapValues(rateLimit, toLimit)
-  log.debug('Workato rate limit config: %o', rateLimitConfig)
+  log.debug('Zuora rate limit config: %o', rateLimitConfig)
   return {
     total: new Bottleneck({ maxConcurrent: rateLimitConfig.total }),
     get: new Bottleneck({ maxConcurrent: rateLimitConfig.get }),
@@ -92,7 +87,7 @@ const createRateLimitersFromConfig = (
 }
 
 export const loginFromCredentials = async (conn: Connection, creds: Credentials):
-    Promise<WorkatoAPI> => (
+    Promise<ZuoraAPI> => (
   conn.login(creds)
 )
 
@@ -112,24 +107,21 @@ const logDecorator = (keys?: string[]): LogDescFunc => ((
   return `client.${name}(${printableArgs})`
 })
 
-export default class WorkatoClient {
+export default class ZuoraClient {
   private readonly conn: Connection
   private isLoggedIn = false
   private readonly credentials: Credentials
-  private readonly config?: WorkatoClientConfig
-  private readonly apiConfig: WorkatoApiConfig
+  private readonly config?: ZuoraClientConfig
   private readonly rateLimiters: Record<RateLimitBucketName, Bottleneck>
-  private apiClient?: WorkatoAPI
-  private loginPromise?: Promise<WorkatoAPI>
+  private apiClient?: ZuoraAPI
+  private loginPromise?: Promise<ZuoraAPI>
 
   constructor(
-    { credentials, connection, config, api }: ClientOpts
+    { credentials, connection, config }: ClientOpts
   ) {
     this.credentials = credentials
     this.config = config
-    this.apiConfig = api
-    this.conn = connection ?? createConnection(
-      this.apiConfig,
+    this.conn = connection ?? createConnectionForModules(
       createRetryOptions(_.defaults({}, this.config?.retry, DEFAULT_RETRY_OPTS)),
     )
     this.rateLimiters = createRateLimitersFromConfig(
@@ -152,7 +144,7 @@ export default class WorkatoClient {
 
   protected static requiresLogin = decorators.wrapMethodWith(
     async function withLogin(
-      this: WorkatoClient,
+      this: ZuoraClient,
       originalMethod: decorators.OriginalCall
     ): Promise<unknown> {
       await this.ensureLoggedIn()
@@ -166,7 +158,7 @@ export default class WorkatoClient {
   ): decorators.InstanceMethodDecorator =>
     decorators.wrapMethodWith(
       async function withRateLimit(
-        this: WorkatoClient,
+        this: ZuoraClient,
         originalMethod: decorators.OriginalCall,
       ): Promise<unknown> {
         log.debug('%s enqueued', logDecorator(keys)(originalMethod))
@@ -182,14 +174,14 @@ export default class WorkatoClient {
     decorators.wrapMethodWith(
       // eslint-disable-next-line prefer-arrow-callback
       async function logFailure(
-        this: WorkatoClient,
+        this: ZuoraClient,
         originalMethod: decorators.OriginalCall,
       ): Promise<unknown> {
         const desc = logDecorator(keys)(originalMethod)
         try {
           return await log.time(originalMethod.call, desc)
         } catch (e) {
-          log.error('failed to run Workato client call %s: %s', desc, e.message)
+          log.error('failed to run Zuora client call %s: %s', desc, e.message)
           throw e
         }
       }
@@ -198,73 +190,63 @@ export default class WorkatoClient {
   /**
    * Fetch instances of a specific type
    */
-  @WorkatoClient.throttle('get', ['endpointName', 'queryArgs', 'recursiveQueryArgs'])
-  @WorkatoClient.logDecorator(['endpointName', 'queryArgs', 'recursiveQueryArgs'])
-  @WorkatoClient.requiresLogin
+  @ZuoraClient.throttle('get', ['endpointName', 'queryArgs'])
+  @ZuoraClient.logDecorator(['endpointName', 'queryArgs'])
+  @ZuoraClient.requiresLogin
   public async get({
     endpointName,
     queryArgs,
-    recursiveQueryArgs,
-    paginationField,
+    dataFieldName,
+    extractValues,
   }: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
     if (this.apiClient === undefined) {
-      throw new Error('uninitialized api client')
+      throw new Error('unitialized client')
     }
+    const client = this.apiClient
 
-    const requestQueryArgs: Record<string, string>[] = [{}]
-
-    const allResults = []
-
-    const usedParams = new Set<string>()
-
-    while (requestQueryArgs.length > 0) {
-      const additionalArgs = requestQueryArgs.pop() as Record<string, string>
-      const serializedArgs = JSON.stringify(additionalArgs)
-      if (usedParams.has(serializedArgs)) {
-        // eslint-disable-next-line no-continue
-        continue
-      }
-      usedParams.add(serializedArgs)
-      const params = { ...queryArgs, ...additionalArgs }
-      // eslint-disable-next-line no-await-in-loop
-      const response = await this.apiClient.get(
-        endpointName,
-        Object.keys(params).length > 0 ? { params } : undefined
-      )
-      log.info(`Full HTTP response for ${endpointName} ${params}: ${JSON.stringify(response.data)}`)
-
-      const results: Values[] = (
-        (_.isObjectLike(response.data) && Array.isArray(response.data.items))
-          ? response.data.items
-          : makeArray(response.data)
-      )
-
-      allResults.push(...results)
-
-      if (paginationField !== undefined && results.length >= WORKATO_DEFAULT_PAGE_SIZE) {
-        requestQueryArgs.unshift({
-          ...additionalArgs,
-          [paginationField]: (additionalArgs[paginationField] ?? 1) + 1,
-        })
-      }
-
-      if (recursiveQueryArgs !== undefined && Object.keys(recursiveQueryArgs).length > 0) {
-        const newArgs = (results
-          .map(res => _.pickBy(
-            _.mapValues(
-              recursiveQueryArgs,
-              mapper => mapper(res),
-            ),
-            isDefined,
-          ))
-          .filter(args => Object.keys(args).length > 0)
+    // TODON convert to generator?
+    const getAllResponseData = async (): Promise<Values[]> => {
+      const entries = []
+      let nextPageArgs: Values = {}
+      while (true) {
+        // eslint-disable-next-line no-await-in-loop
+        const response = await client.get(
+          endpointName,
+          {
+            params: {
+              ...queryArgs,
+              ...nextPageArgs,
+            },
+          },
         )
-        requestQueryArgs.unshift(...newArgs)
+        // TODON check if need the 2nd condition. the success field doesn't always exist
+        if (response.status !== 200 || response.data.success === false) {
+          // TODON check if can get actual error
+          log.error(`error getting result for ${endpointName}`)
+          break
+        }
+        const responseData = (dataFieldName !== undefined
+          ? response.data[dataFieldName]
+          : response.data)
+        entries.push(...(
+          extractValues ? Object.values(responseData) : makeArray(responseData)
+        ).flat())
+        // TODON support other types of pagination too
+        if (response.data.nextPage === undefined) {
+          break
+        }
+        const nextPage = new URL(response.data.nextPage, 'http://localhost')
+        // TODON verify pathname is the same
+        nextPageArgs = Object.fromEntries(nextPage.searchParams.entries())
       }
+      log.info('Received %d results for endpoint %s',
+        entries.length, endpointName)
+      return entries
     }
 
+    const result = await getAllResponseData()
     return {
-      result: allResults,
+      result,
       errors: [],
     }
   }
