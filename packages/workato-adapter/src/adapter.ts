@@ -15,7 +15,7 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, ChangeGroup, DeployResult, Element, isInstanceElement, Values,
+  FetchResult, AdapterOperations, DeployResult, Element, isInstanceElement, Values, DeployOptions,
 } from '@salto-io/adapter-api'
 import { naclCase } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
@@ -206,7 +206,7 @@ export default class WorkatoAdapter implements AdapterOperations {
    * Deploy configuration elements to the given account.
    */
   @logDuration('deploying account configuration')
-  async deploy(changeGroup: ChangeGroup): Promise<DeployResult> {
+  async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
     // TODON add preDeploy step for re-escaping fields parsed as JSON (if needed)
     throw new Error(`Not implemented. ${this.client !== undefined} ${changeGroup.changes.length}`)
   }

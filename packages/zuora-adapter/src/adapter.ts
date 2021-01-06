@@ -15,13 +15,8 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, ChangeGroup, DeployResult, TypeElement,
-  InstanceElement,
-  ObjectType,
-  isListType,
-  isObjectType,
-  isMapType,
-  Values,
+  FetchResult, AdapterOperations, DeployResult, TypeElement, DeployOptions, InstanceElement,
+  ObjectType, isListType, isObjectType, isMapType, Values,
 } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { decorators, values as lowerdashValues } from '@salto-io/lowerdash'
@@ -353,7 +348,7 @@ export default class ZuoraAdapter implements AdapterOperations {
    * Deploy configuration elements to the given zuora account.
    */
   @logDuration('deploying account configuration')
-  async deploy(changeGroup: ChangeGroup): Promise<DeployResult> {
+  async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
     // TODON add change validators
     // TODON move to a deploy file
     throw new Error(`Not implemented. ${this.client !== undefined} ${changeGroup.changes.length}`)
