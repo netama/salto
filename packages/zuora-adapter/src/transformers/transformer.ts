@@ -14,11 +14,10 @@
 * limitations under the License.
 */
 import {
-  PrimitiveType, BuiltinTypes, isObjectType, isInstanceElement,
+  PrimitiveType, BuiltinTypes,
 } from '@salto-io/adapter-api'
 import { values as lowerDashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import { GetLookupNameFunc } from '@salto-io/adapter-utils'
 import { ZuoraApiModuleConfig } from '../types'
 
 const { isDefined } = lowerDashValues
@@ -54,18 +53,6 @@ export const toPrimitiveType = (val: string[]): PrimitiveType => {
   }
   log.error(`Could not find primitive type ${val}, falling back to unknown`)
   return BuiltinTypes.UNKNOWN
-}
-
-export const getLookUpName: GetLookupNameFunc = ({ ref }) => {
-  const { value } = ref
-  if (isInstanceElement(value)) {
-    return value.value.WID
-  }
-  if (isObjectType(value)) {
-    // TODON needed for the back-references - should replace with an API_NAME annotation
-    return value.elemID.name
-  }
-  return value
 }
 
 export const getNameField = ({

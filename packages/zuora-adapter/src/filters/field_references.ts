@@ -15,7 +15,7 @@
 */
 import {
   Element, isInstanceElement, Value, Values,
-  ReferenceExpression, InstanceElement, ElemID, isIndexPathPart,
+  ReferenceExpression, InstanceElement, Field,
 } from '@salto-io/adapter-api'
 import { TransformFunc, transformValues } from '@salto-io/adapter-utils'
 import _ from 'lodash'
@@ -26,8 +26,6 @@ import {
   ReferenceSerializationStrategy, ExtendedReferenceTargetDefinition, ReferenceResolverFinder,
   generateReferenceResolverFinder, FieldReferenceDefinition,
 } from '../transformers/reference_mapping'
-
-// TODON not adjusted for Zuora yet
 
 const log = logger(module)
 const { isDefined } = lowerDashValues
@@ -57,7 +55,7 @@ const replaceReferenceValues = (
     )
   }
 
-  const replacePrimitive = (val: string | number, fieldName: string, path?: ElemID): Value => {
+  const replacePrimitive = (val: string | number, field: Field): Value => {
     const toValidatedReference = (
       serializer: ReferenceSerializationStrategy,
       elem: Element | undefined,
@@ -67,16 +65,15 @@ const replaceReferenceValues = (
       }
       const res = (serializer.serialize({
         ref: new ReferenceExpression(elem.elemID, elem),
-        // field,
+        field,
       }) === val) ? new ReferenceExpression(elem.elemID) : undefined
-      if (res !== undefined && path !== undefined) {
-        // TODON get field instead of path when have real types
-        fieldsWithResolvedReferences.add(path.getFullName())
+      if (res !== undefined) {
+        fieldsWithResolvedReferences.add(field.elemID.getFullName())
       }
       return res
     }
 
-    const reference = resolverFinder(fieldName)
+    const reference = resolverFinder(field)
       .filter(refResolver => refResolver.target !== undefined)
       .map(refResolver => toValidatedReference(
         refResolver.serializationStrategy,
@@ -88,14 +85,12 @@ const replaceReferenceValues = (
     return reference ?? val
   }
 
-  const transformPrimitive: TransformFunc = ({ value, path }) => (
-    // (!_.isUndefined(field) &&
-    ((_.isString(value) || _.isNumber(value)) && path !== undefined)
-      ? replacePrimitive(
-        value,
-        path.getFullNameParts().filter(p => !isIndexPathPart(p)).slice(-1)[0],
-        path,
-      )
+  const transformPrimitive: TransformFunc = ({ value, field }) => (
+    (
+      !_.isUndefined(field)
+      && (_.isString(value) || _.isNumber(value))
+    )
+      ? replacePrimitive(value, field)
       : value
   )
 

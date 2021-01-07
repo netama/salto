@@ -20,8 +20,6 @@ import { logger } from '@salto-io/logging'
 
 const log = logger(module)
 
-// TODON not adjusted for Zuora yet
-
 type LookupFunc = (val: Value, context?: string) => string
 
 export type ReferenceSerializationStrategy = {
@@ -90,6 +88,22 @@ export type FieldReferenceDefinition = {
  * 2. Resolving the resulting reference expression back returns the original value.
  */
 export const fieldNameToTypeMappingDefs: FieldReferenceDefinition[] = [
+  {
+    src: { field: 'source_workflow_id', parentTypes: ['billing_Linkage'] },
+    serializationStrategy: 'id',
+    target: { type: 'billing_Workflow' },
+  },
+  {
+    src: { field: 'target_task_id', parentTypes: ['billing_Linkage'] },
+    serializationStrategy: 'id',
+    target: { type: 'billing_Task' },
+  },
+  {
+    src: { field: 'source_task_id', parentTypes: ['billing_Linkage'] },
+    serializationStrategy: 'id',
+    target: { type: 'billing_Task' },
+  },
+  // TODON turn schema.properties into instances and add references
 ]
 
 const matchName = (fieldName: string, matcher: string | RegExp): boolean => (
@@ -130,7 +144,7 @@ export class FieldReferenceResolver {
   }
 }
 
-export type ReferenceResolverFinder = (fieldName: string) => FieldReferenceResolver[]
+export type ReferenceResolverFinder = (field: Field) => FieldReferenceResolver[]
 
 /**
  * Generates a function that filters the relevant resolvers for a given field.
@@ -146,12 +160,19 @@ export const generateReferenceResolverFinder = (
     .filter(def => _.isString(def.src.field))
     .groupBy(def => def.src.field)
     .value()
+  const regexFieldMatchersByParent = _(referenceDefinitions)
+    .filter(def => _.isRegExp(def.src.field))
+    .flatMap(def => def.src.parentTypes.map(parentType => ({ parentType, def })))
+    .groupBy(({ parentType }) => parentType)
+    .mapValues(items => items.map(item => item.def))
+    .value()
 
-  // TODON filter by parent too when we have real types
-  return (fieldName => (
+  return (field => (
     [
-      ...(matchersByFieldName[fieldName] ?? []),
-    ]
+      ...(matchersByFieldName[field.name] ?? []),
+      // TODON don't rely on elem id
+      ...(regexFieldMatchersByParent[field.parent.elemID.name] || []),
+    ].filter(resolver => resolver.match(field))
   ))
 }
 
@@ -164,7 +185,7 @@ const getLookUpNameImpl = (defs = fieldNameToTypeMappingDefs): GetLookupNameFunc
       log.debug('could not determine field for path %s', args.path?.getFullName())
       return undefined
     }
-    const strategies = resolverFinder(args.field.name)
+    const strategies = resolverFinder(args.field)
       .map(def => def.serializationStrategy)
 
     if (strategies.length === 0) {
