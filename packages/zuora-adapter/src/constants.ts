@@ -17,7 +17,10 @@
 export const ZUORA = 'zuora'
 
 // type annotations
+// all the GET endpoints that use this as their response schema
 export const GET_ENDPOINT_SCHEMA_ANNOTATION = 'getEndpoint'
+// the field containing the relevant instance data, when not the entire response
+// schema is relevant (such as in list endpoints)
 export const GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION = 'dataField'
 
 export const ADDITIONAL_PROPERTIES_FIELD = 'additionalProperties'

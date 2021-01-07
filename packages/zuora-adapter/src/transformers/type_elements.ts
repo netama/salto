@@ -25,9 +25,8 @@ import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPI, OpenAPIV2, IJsonSchema } from 'openapi-types'
 import { ZuoraApiModuleConfig } from '../types'
 import {
-  TYPES_PATH, ZUORA, SUBTYPES_PATH, GET_ENDPOINT_SCHEMA_ANNOTATION,
+  TYPES_PATH, ZUORA, SUBTYPES_PATH, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
   GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, PAGINATION_FIELDS, ADDITIONAL_PROPERTIES_FIELD,
-  TOP_LEVEL_FIELDS,
 } from '../constants'
 import { toPrimitiveType } from './transformer'
 
@@ -72,9 +71,14 @@ const findDataField = (type: ObjectType): string | undefined => {
     )
   )
   if (!_.isEmpty(potentialDataFields)) {
-    return Object.keys(potentialDataFields)[0]
+    const potentialFieldNames = Object.keys(potentialDataFields)
+    if (potentialFieldNames.length === 1) {
+      return Object.keys(potentialDataFields)[0]
+    }
+    log.warn(`found too many data fields for ${type.elemID.getFullName()} (${potentialFieldNames}) - returning full element`)
+  } else {
+    log.error(`could not find data field for ${type.elemID.getFullName()}`)
   }
-  log.error(`could not find data field for ${type.elemID.getFullName()}`)
   return undefined
 }
 

@@ -19,7 +19,7 @@ import {
   ObjectType, isListType, isObjectType, isMapType, Values,
 } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
-import { decorators, values as lowerdashValues } from '@salto-io/lowerdash'
+import { collections, decorators, values as lowerdashValues } from '@salto-io/lowerdash'
 import ZuoraClient, { ClientGetParams } from './client/client'
 import { ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, ZuoraApiModuleConfig, DependsOnConfig } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
@@ -29,6 +29,7 @@ import { GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATI
 import { generateInstancesForType } from './transformers/instance_elements'
 import { getNameField } from './transformers/transformer'
 
+const { makeArray } = collections.array
 const { isDefined } = lowerdashValues
 const log = logger(module)
 
@@ -104,17 +105,13 @@ const filterEndpointsWithDetails = (
 
 const computeGetArgs = ({
   endpointName,
-  dataFieldName,
-  extractValues,
   contextElements,
   dependsOn,
 }: {
   endpointName: string
-  dataFieldName?: string
-  extractValues?: boolean
   contextElements?: Record<string, InstanceElement[]>
   dependsOn: Record<string, DependsOnConfig>
-}): ClientGetParams[] => {
+}): { getArgs: ClientGetParams; calculatedParams?: Values }[] => {
   if (endpointName.includes('{')) {
     if (contextElements === undefined || _.isEmpty(dependsOn)) {
       throw new Error(`cannot resolve endpoint ${endpointName} - missing context`)
@@ -129,20 +126,21 @@ const computeGetArgs = ({
       // TODON add handling (need to decide how to combine - all n^k combos or something simpler)
       throw new Error(`too many variables in endpoint ${endpointName}`)
     }
-    // TODON improve
-    const referenceDetails = dependsOn[urlParams[0].slice(1, -1)]
+    const argName = urlParams[0].slice(1, -1)
+    const referenceDetails = dependsOn[argName]
     const contextInstances = (contextElements[referenceDetails.endpoint] ?? [])
     if (!contextInstances) {
       throw new Error(`no instances found for ${referenceDetails.endpoint}, cannot call endpoint ${endpointName}`)
     }
     const potentialParams = contextInstances.map(e => e.value[referenceDetails.field])
     return potentialParams.map(p => ({
-      endpointName: endpointName.replace(ARG_PLACEHOLDER_MATCHER, p),
-      dataFieldName,
-      extractValues,
+      getArgs: {
+        endpointName: endpointName.replace(ARG_PLACEHOLDER_MATCHER, p),
+      },
+      calculatedParams: { [argName]: p },
     }))
   }
-  return [{ endpointName, dataFieldName, extractValues }]
+  return [{ getArgs: { endpointName } }]
 }
 
 export default class ZuoraAdapter implements AdapterOperations {
@@ -221,17 +219,29 @@ export default class ZuoraAdapter implements AdapterOperations {
         const { objType, extractValues } = getType()
 
         const getEntries = async (): Promise<Values[]> => {
-          const getArgs = computeGetArgs({
+          const args = computeGetArgs({
             endpointName,
-            dataFieldName,
             contextElements,
             dependsOn,
-            extractValues,
           })
 
-          return (await Promise.all(
-            getArgs.map(args => this.client.get(args))
-          )).flatMap(r => r.result)
+          const results = (await Promise.all(
+            args.map(async ({ getArgs, calculatedParams }) => ({
+              ...(await this.client.get(getArgs)),
+              // TODON ended up not needing - keeping for now, but can remove if not used
+              calculatedParams,
+            }))
+          )).flatMap(({ result }) => makeArray(result))
+
+          // TODON support extracting multiple data fields?
+          const entries = (results
+            .flatMap(result => (dataFieldName !== undefined
+              ? makeArray(result[dataFieldName] ?? []) as Values[]
+              : makeArray(result)))
+            .flatMap(result => (extractValues
+              ? Object.values(result)
+              : makeArray(result ?? []))))
+          return entries
         }
 
         const entries = await getEntries()

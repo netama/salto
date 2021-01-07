@@ -43,8 +43,6 @@ type ClientOpts = {
 
 export type ClientGetParams = {
   endpointName: string
-  dataFieldName?: string
-  extractValues?: boolean
   queryArgs?: Record<string, string>
 }
 
@@ -59,8 +57,7 @@ const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): RetryOpt
       err.message,
       retryOptions.retryDelay / 1000,
       retryCount)
-    // retryDelay is in milliseconds
-    return retryOptions.retryDelay * 1000
+    return retryOptions.retryDelay
   },
 })
 
@@ -196,8 +193,6 @@ export default class ZuoraClient {
   public async get({
     endpointName,
     queryArgs,
-    dataFieldName,
-    extractValues,
   }: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
     if (this.apiClient === undefined) {
       throw new Error('unitialized client')
@@ -209,28 +204,27 @@ export default class ZuoraClient {
       const entries = []
       let nextPageArgs: Values = {}
       while (true) {
+        const params = {
+          ...queryArgs,
+          ...nextPageArgs,
+        }
         // eslint-disable-next-line no-await-in-loop
         const response = await client.get(
           endpointName,
           {
-            params: {
-              ...queryArgs,
-              ...nextPageArgs,
-            },
+            params,
           },
         )
+        // TODO remove
+        log.info(`Full HTTP response for ${endpointName} ${params}: ${JSON.stringify(response.data)}`)
+
         // TODON check if need the 2nd condition. the success field doesn't always exist
         if (response.status !== 200 || response.data.success === false) {
           // TODON check if can get actual error
           log.error(`error getting result for ${endpointName}`)
           break
         }
-        const responseData = (dataFieldName !== undefined
-          ? response.data[dataFieldName]
-          : response.data)
-        entries.push(...(
-          extractValues ? Object.values(responseData) : makeArray(responseData)
-        ).flat())
+        entries.push(...makeArray(response.data))
         // TODON support other types of pagination too
         if (response.data.nextPage === undefined) {
           break
@@ -239,7 +233,7 @@ export default class ZuoraClient {
         // TODON verify pathname is the same
         nextPageArgs = Object.fromEntries(nextPage.searchParams.entries())
       }
-      log.info('Received %d results for endpoint %s',
+      log.info('Received %d results for endpoint %s', // TODON inaccurate when not extracting nested field
         entries.length, endpointName)
       return entries
     }

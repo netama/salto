@@ -27,7 +27,10 @@ const normalizeAdditionalProps = (entry: Values, type: ObjectType): Values => {
     return entry
   }
   const additionalProps = _.pickBy(entry, (_val, key) => (
-    !Object.keys(type.fields).includes(key)
+    !(
+      Object.keys(type.fields).includes(key)
+      || Object.keys(type.annotationTypes).includes(key)
+    )
   ))
   return {
     ..._.omit(entry, Object.keys(additionalProps)),
@@ -41,7 +44,7 @@ const toInstance = ({ entry, type, nameField }: {
   nameField: string
 }): InstanceElement => {
   // TODON improve, don't use type except in specific cases. also put as annotation?
-  const name = entry[nameField]
+  const name = _.get(entry, nameField)
   if (name === undefined) {
     throw new Error(`could not find name for entry - expected name field ${nameField}, available fields ${Object.keys(entry)}`)
   }

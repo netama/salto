@@ -321,11 +321,14 @@ export const configType = new ObjectType({
                 doNotPersist: true,
               },
               {
+                // TODON handle variable names even if they're not the same as the swagger?
+                // may need to be more careful if using regexes (or just disallow regexes for this)
                 endpointRegex: '^/workflows/{workflow_id}/export$',
                 dependsOn: {
                   // eslint-disable-next-line @typescript-eslint/camelcase
                   workflow_id: { endpoint: '/workflows', field: 'id' },
                 },
+                nameField: 'workflow.name',
               },
             ],
             excludeRegex: [],
