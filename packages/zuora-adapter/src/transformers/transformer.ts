@@ -19,7 +19,7 @@ import {
 import { values as lowerDashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import { GetLookupNameFunc } from '@salto-io/adapter-utils'
-import { ZuoraConfig, API_MODULES_CONFIG, DEFAULT_NAME_FIELD } from '../types'
+import { ZuoraApiModuleConfig } from '../types'
 
 const { isDefined } = lowerDashValues
 const log = logger(module)
@@ -68,12 +68,16 @@ export const getLookUpName: GetLookupNameFunc = ({ ref }) => {
   return value
 }
 
-export const getNameField = (
-  config: ZuoraConfig,
-  moduleName: string,
-  endpointFieldName?: string,
-): string => (
-  endpointFieldName
-  ?? config[API_MODULES_CONFIG][moduleName].defaultNameField
-  ?? config[DEFAULT_NAME_FIELD]
+export const getNameField = ({
+  endpointNameField,
+  moduleConfig,
+  defaultNameField,
+}: {
+  endpointNameField?: string
+  moduleConfig: ZuoraApiModuleConfig
+  defaultNameField: string
+}): string => (
+  endpointNameField
+  ?? moduleConfig.defaultNameField
+  ?? defaultNameField
 )

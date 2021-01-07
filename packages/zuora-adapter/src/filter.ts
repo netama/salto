@@ -16,6 +16,7 @@
 import { Element } from '@salto-io/adapter-api'
 import { types, promises } from '@salto-io/lowerdash'
 import ZuoraClient from './client/client'
+import { FilterContext } from './types'
 
 export type Filter = Partial<{
   onFetch(elements: Element[]): Promise<void>
@@ -24,14 +25,15 @@ export type Filter = Partial<{
 export type FilterWith<M extends keyof Filter> = types.HasMember<Filter, M>
 
 export type FilterCreator = (
-  opts: { client: ZuoraClient }
+  opts: { client: ZuoraClient; config: FilterContext }
 ) => Filter
 
 export const filtersRunner = (
   client: ZuoraClient,
+  config: FilterContext,
   filterCreators: ReadonlyArray<FilterCreator>,
 ): Required<Filter> => {
-  const allFilters = filterCreators.map(f => f({ client }))
+  const allFilters = filterCreators.map(f => f({ client, config }))
 
   const filtersWith = <M extends keyof Filter>(m: M): FilterWith<M>[] =>
     types.filterHasMember<Filter, M>(m, allFilters)

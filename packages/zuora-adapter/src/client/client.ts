@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import axios from 'axios'
 import Bottleneck from 'bottleneck'
 import { collections, decorators } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
@@ -26,6 +27,8 @@ import Connection, { ZuoraAPI, realConnection, RetryOptions } from './connection
 
 const { makeArray } = collections.array
 const log = logger(module)
+
+export class UnauthorizedError extends Error {}
 
 const DEFAULT_RETRY_OPTS: Required<ClientRetryConfig> = {
   maxAttempts: 5, // try 5 times
@@ -179,6 +182,9 @@ export default class ZuoraClient {
           return await log.time(originalMethod.call, desc)
         } catch (e) {
           log.error('failed to run Zuora client call %s: %s', desc, e.message)
+          if (axios.isAxiosError(e) && e.response?.status === 401) {
+            throw new UnauthorizedError('Unauthorized - update credentials and fetch again')
+          }
           throw e
         }
       }

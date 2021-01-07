@@ -266,14 +266,23 @@ const generateTypesForModule = async (
     ): ObjectType | ListType | PrimitiveType => {
       if (
         !isReferenceObject(schemaDef)
-        && schemaDef.type === 'array' && schemaDef.items !== undefined
       ) {
-        return new ListType(addType(
-          schemaDef.items,
-          refs,
-          nestedName,
-          pathRoot,
-        ))
+        if (schemaDef.type === 'array' && schemaDef.items !== undefined) {
+          return new ListType(addType(
+            schemaDef.items,
+            refs,
+            nestedName,
+            pathRoot,
+          ))
+        }
+        if (
+          schemaDef.type === 'object'
+          && schemaDef.properties === undefined
+          && schemaDef.additionalProperties === undefined
+        ) {
+          // TODON can also just be unknown
+          return new MapType(BuiltinTypes.UNKNOWN)
+        }
       }
       return addType(
         schemaDef,

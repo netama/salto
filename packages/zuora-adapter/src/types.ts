@@ -62,13 +62,17 @@ export type DependsOnConfig = {
   field: string
 }
 
+export type FieldToExtractConfig = {
+  nameField?: string
+  nestName?: boolean
+}
+
 export type EndpointConfig = {
   endpointRegex: string
   // queryParams?: Record<string, string>
   dependsOn?: Record<string, DependsOnConfig>
-  // fields to convert into their own type and instances.
-  // if the field value is a string, first parse it into json
-  fieldsToExtract?: string[]
+  // fields to convert into their own type and instances
+  fieldsToExtract?: Record<string, FieldToExtractConfig>
   nameField?: string
   doNotPersist?: boolean
 }
@@ -234,6 +238,14 @@ const dependsOnConfigType = new ObjectType({
   } as Record<keyof DependsOnConfig, FieldDefinition>,
 })
 
+const fieldToExtractConfigType = new ObjectType({
+  elemID: new ElemID(constants.ZUORA, 'fieldToExtractConfig'),
+  fields: {
+    nameField: { type: BuiltinTypes.STRING },
+    nestName: { type: BuiltinTypes.BOOLEAN },
+  } as Record<keyof FieldToExtractConfig, FieldDefinition>,
+})
+
 const endpointConfigType = new ObjectType({
   elemID: new ElemID(constants.ZUORA, 'endpointConfig'),
   fields: {
@@ -245,7 +257,7 @@ const endpointConfigType = new ObjectType({
     },
     // queryParams: { type: new MapType(BuiltinTypes.STRING) },
     dependsOn: { type: new MapType(dependsOnConfigType) },
-    fieldsToExtract: { type: new ListType(BuiltinTypes.STRING) },
+    fieldsToExtract: { type: new MapType(fieldToExtractConfigType) },
     nameField: { type: BuiltinTypes.STRING },
     doNotPersist: { type: BuiltinTypes.BOOLEAN },
   },
@@ -329,6 +341,13 @@ export const configType = new ObjectType({
                   workflow_id: { endpoint: '/workflows', field: 'id' },
                 },
                 nameField: 'workflow.name',
+                fieldsToExtract: {
+                  workflow: {},
+                  tasks: {
+                    nestName: true,
+                  },
+                  // not extracting linkages because they don't have a good unique id
+                },
               },
             ],
             excludeRegex: [],
@@ -360,3 +379,8 @@ export const configType = new ObjectType({
     },
   },
 })
+
+export type FilterContext = {
+  [API_MODULES_CONFIG]: Record<string, ZuoraApiModuleConfig>
+  [DEFAULT_NAME_FIELD]: string
+}

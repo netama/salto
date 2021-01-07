@@ -15,10 +15,17 @@
 */
 import _ from 'lodash'
 import {
-  InstanceElement, Values, ObjectType,
+  InstanceElement, Values, ObjectType, ReferenceExpression, isObjectType, isListType,
+  isReferenceExpression,
 } from '@salto-io/adapter-api'
-import { pathNaclCase, naclCase, transformElement } from '@salto-io/adapter-utils'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
+import { pathNaclCase, naclCase, transformElement, TransformFunc } from '@salto-io/adapter-utils'
+import { logger } from '@salto-io/logging'
 import { ZUORA, RECORDS_PATH, ADDITIONAL_PROPERTIES_FIELD } from '../constants'
+import { FieldToExtractConfig } from '../types'
+
+const { isDefined } = lowerdashValues
+const log = logger(module)
 
 // TODON also need the reverse pre-deploy
 const normalizeAdditionalProps = (entry: Values, type: ObjectType): Values => {
@@ -38,17 +45,18 @@ const normalizeAdditionalProps = (entry: Values, type: ObjectType): Values => {
   }
 }
 
-const toInstance = ({ entry, type, nameField }: {
+const toInstance = ({ entry, type, nameField, namePrefix }: {
   entry: Values
   type: ObjectType
   nameField: string
+  namePrefix?: string
 }): InstanceElement => {
   // TODON improve, don't use type except in specific cases. also put as annotation?
   const name = _.get(entry, nameField)
   if (name === undefined) {
     throw new Error(`could not find name for entry - expected name field ${nameField}, available fields ${Object.keys(entry)}`)
   }
-  const naclName = naclCase(name.slice(0, 100))
+  const naclName = naclCase((namePrefix ? `${namePrefix}__${name}` : name).slice(0, 100))
 
   const inst = new InstanceElement(
     naclName,
@@ -60,17 +68,84 @@ const toInstance = ({ entry, type, nameField }: {
   return inst
 }
 
-export const generateInstancesForType = (
-  entries: Values[],
-  objType: ObjectType,
-  nameField: string,
-  fieldsToOmit?: string[],
-): InstanceElement[] => (
+const extractNestedFields = ({ inst, fieldsToExtract, fieldsToOmit }: {
+  inst: InstanceElement
+  fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
+  fieldsToOmit?: string[]
+}): InstanceElement[] => {
+  if (_.isEmpty(fieldsToExtract)) {
+    return [inst]
+  }
+  const additionalInstances: InstanceElement[] = []
+
+  const fieldsToExtractByID = _.pickBy(_.mapKeys(
+    fieldsToExtract,
+    (_val, key) => inst.type.fields[key].elemID.getFullName(),
+  ), isDefined)
+
+  const replaceWithReference = (
+    value: Values,
+    objType: ObjectType,
+    { nameField, nestName }: Required<FieldToExtractConfig>,
+  ): ReferenceExpression => {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const [refInst] = generateInstancesForType({
+      entries: [value],
+      objType,
+      nameField,
+      namePrefix: nestName ? inst.elemID.name : undefined,
+      fieldsToOmit,
+    })
+    additionalInstances.push(refInst)
+    return new ReferenceExpression(refInst.elemID)
+  }
+
+  const extractFields: TransformFunc = ({ value, field, path }) => {
+    // TODON also support maps if needed
+    const fieldExtractionDef = field && fieldsToExtractByID[field.elemID.getFullName()]
+    if (field !== undefined && fieldExtractionDef !== undefined && !isReferenceExpression(value)) {
+      const refType = isListType(field.type) ? field.type.innerType : field.type
+      if (!isObjectType(refType)) {
+        log.error(`unexpected type encountered when extracting nested fields - skipping path ${path} for instance ${inst.elemID.getFullName()}`)
+        return value
+      }
+      if (Array.isArray(value)) {
+        return value.map(val => replaceWithReference(val, refType, fieldExtractionDef))
+      }
+      return replaceWithReference(value, refType, fieldExtractionDef)
+    }
+    return value
+  }
+
+  const updatedInst = transformElement({
+    element: inst,
+    transformFunc: extractFields,
+    strict: false,
+  })
+  return [updatedInst, ...additionalInstances]
+}
+
+export const generateInstancesForType = ({
+  entries,
+  objType,
+  nameField,
+  namePrefix,
+  fieldsToOmit,
+  fieldsToExtract,
+}: {
+  entries: Values[]
+  objType: ObjectType
+  nameField: string
+  namePrefix?: string
+  fieldsToOmit?: string[]
+  fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
+}): InstanceElement[] => (
   entries
     .map(entry => toInstance({
       entry,
       type: objType,
       nameField,
+      namePrefix,
     }))
     .map(inst => (fieldsToOmit === undefined
       ? inst
@@ -83,4 +158,5 @@ export const generateInstancesForType = (
         ),
         strict: false,
       })))
+    .flatMap(inst => extractNestedFields({ inst, fieldsToExtract, fieldsToOmit }))
 )

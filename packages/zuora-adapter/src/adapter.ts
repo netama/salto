@@ -19,18 +19,20 @@ import {
   ObjectType, isListType, isObjectType, isMapType, Values,
 } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
-import { collections, decorators, values as lowerdashValues } from '@salto-io/lowerdash'
-import ZuoraClient, { ClientGetParams } from './client/client'
-import { ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, ZuoraApiModuleConfig, DependsOnConfig } from './types'
+import { collections, decorators } from '@salto-io/lowerdash'
+import ZuoraClient, { ClientGetParams, UnauthorizedError } from './client/client'
+import {
+  ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, DependsOnConfig,
+  FieldToExtractConfig, DEFAULT_NAME_FIELD,
+} from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import fieldReferencesFilter from './filters/field_references'
 import { generateTypes, ModuleTypeDefs } from './transformers/type_elements'
 import { GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, ADDITIONAL_PROPERTIES_FIELD } from './constants'
 import { generateInstancesForType } from './transformers/instance_elements'
-import { getNameField } from './transformers/transformer'
+import { filterEndpointsWithDetails } from './transformers/endpoints'
 
 const { makeArray } = collections.array
-const { isDefined } = lowerdashValues
 const log = logger(module)
 
 export const DEFAULT_FILTERS = [
@@ -45,63 +47,13 @@ export interface ZuoraAdapterParams {
   config: ZuoraConfig
 }
 
-const logDuration = (message: string): decorators.InstanceMethodDecorator =>
+const logDuration = (message: string): decorators.InstanceMethodDecorator => (
   decorators.wrapMethodWith(
     async (original: decorators.OriginalCall): Promise<unknown> => (
       log.time(original.call, message)
     )
   )
-
-const isEndpointAllowed = (apiName: string, config: ZuoraApiModuleConfig): boolean => (
-  (config.include ?? []).some(r => new RegExp(r.endpointRegex).test(apiName))
-  && (config.excludeRegex ?? []).every(r => !(new RegExp(r).test(apiName)))
 )
-
-const filterEndpointsWithDetails = (
-  modulesConfig: Record<string, ZuoraApiModuleConfig>,
-  typesByModuleAndEndpoint: Record<string, ModuleTypeDefs>,
-): Record<string, {
-  endpoint: string
-  dependsOn: Record<string, DependsOnConfig>
-  nameField?: string
-  doNotPersist?: boolean
-}[]> => {
-  const allGetEndpoints = _.mapValues(
-    modulesConfig,
-    (_c, name) => Object.keys(typesByModuleAndEndpoint[name] ?? {})
-  )
-
-  const allowedEndpoints = _.mapValues(
-    modulesConfig,
-    (conf, name) => allGetEndpoints[name].filter(apiName => isEndpointAllowed(apiName, conf))
-  )
-  const endpointsWithDeps = _.mapValues(
-    allowedEndpoints,
-    (endpoints, moduleName) => endpoints
-      .map(endpoint => ({
-        endpoint,
-        dependsOn: Object.assign(
-          {},
-          ...((modulesConfig[moduleName].include ?? [])
-            .filter(include => new RegExp(include.endpointRegex).test(endpoint))
-            .filter(include => include.dependsOn !== undefined)
-            .map(include => include.dependsOn)),
-        ) as Record<string, DependsOnConfig>,
-        nameField: (modulesConfig[moduleName].include ?? [])
-          .filter(include => new RegExp(include.endpointRegex).test(endpoint))
-          .map(include => include.nameField)
-          .find(isDefined),
-        doNotPersist: (modulesConfig[moduleName].include ?? [])
-          .filter(include => new RegExp(include.endpointRegex).test(endpoint))
-          .some(include => include.doNotPersist),
-      }))
-  )
-  // TODO to make sure we still parallelize as many of the requests as possible,
-  // need to use DAG and run on leaves, starting each one as all its dependencies are complete
-  log.info('Based on the configuration, going to use the following endpoints: %s', JSON.stringify(endpointsWithDeps))
-  log.debug('For reference, these are all the endpoints: %s', JSON.stringify(allGetEndpoints))
-  return endpointsWithDeps
-}
 
 const computeGetArgs = ({
   endpointName,
@@ -157,6 +109,7 @@ export default class ZuoraAdapter implements AdapterOperations {
     this.client = client
     this.filtersRunner = filtersRunner(
       this.client,
+      config,
       filterCreators
     )
   }
@@ -175,6 +128,7 @@ export default class ZuoraAdapter implements AdapterOperations {
       responseSchema,
       contextElements,
       fieldsToOmit,
+      fieldsToExtract,
       nameField,
     }: {
       endpointName: string
@@ -183,6 +137,7 @@ export default class ZuoraAdapter implements AdapterOperations {
       responseSchema: ObjectType
       contextElements?: Record<string, InstanceElement[]>
       fieldsToOmit?: string[]
+      fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
     }): Promise<InstanceElement[]> => {
       try {
         const dataFieldName: string | undefined = responseSchema.annotations[
@@ -245,14 +200,18 @@ export default class ZuoraAdapter implements AdapterOperations {
         }
 
         const entries = await getEntries()
-        return generateInstancesForType(
+        return generateInstancesForType({
           entries,
           objType,
           nameField,
           fieldsToOmit,
-        )
+          fieldsToExtract,
+        })
       } catch (e) {
         log.error(`Could not fetch ${endpointName}: ${e}. %s`, e.stack)
+        if (e instanceof UnauthorizedError) {
+          throw e
+        }
         return []
       }
     }
@@ -270,10 +229,12 @@ export default class ZuoraAdapter implements AdapterOperations {
     const fetchEndpoints = filterEndpointsWithDetails(
       this.userConfig[API_MODULES_CONFIG],
       typesByModuleAndEndpoint,
+      this.userConfig[DEFAULT_NAME_FIELD],
     )
 
     // for now assuming flat dependencies for simplicity
-    // TODO use a real DAG instead (without interfering with parallelizing the requests)
+    // TODO use a real DAG instead, without interfering with parallelizing the requests -
+    // run on leaves, starting each one as all its dependencies are complete
     return (await Promise.all(
       Object.entries(fetchEndpoints).map(async ([
         moduleName,
@@ -290,16 +251,19 @@ export default class ZuoraAdapter implements AdapterOperations {
           doNotPersist?: boolean
         }> = Object.fromEntries(
           await Promise.all(
-            independentEndpoints.map(async ({ endpoint, dependsOn, nameField, doNotPersist }) =>
+            independentEndpoints.map(async ({
+              endpoint, dependsOn, nameField, doNotPersist, fieldsToExtract,
+            }) =>
               [
                 endpoint,
                 {
                   instances: await getInstancesForType({
                     endpointName: endpoint,
-                    nameField: getNameField(this.userConfig, moduleName, nameField),
+                    nameField,
                     dependsOn,
                     responseSchema: typesByModuleAndEndpoint[moduleName][endpoint] as ObjectType,
                     fieldsToOmit: this.userConfig[API_MODULES_CONFIG][moduleName].fieldsToOmit,
+                    fieldsToExtract,
                   }),
                   doNotPersist,
                 },
@@ -307,20 +271,25 @@ export default class ZuoraAdapter implements AdapterOperations {
           )
         )
         const dependentElements = await Promise.all(
-          dependentEndpoints.map(({ endpoint, dependsOn, nameField }) => getInstancesForType({
-            endpointName: endpoint,
-            nameField: getNameField(this.userConfig, moduleName, nameField),
-            dependsOn,
-            responseSchema: typesByModuleAndEndpoint[moduleName][endpoint] as ObjectType,
-            contextElements: _.mapValues(contextElements, val => val.instances),
-            fieldsToOmit: this.userConfig[API_MODULES_CONFIG][moduleName].fieldsToOmit,
-          }))
+          dependentEndpoints.map(async ({
+            endpoint, dependsOn, nameField, doNotPersist, fieldsToExtract,
+          }): Promise<InstanceElement[]> => (doNotPersist
+            ? []
+            : getInstancesForType({
+              endpointName: endpoint,
+              nameField,
+              dependsOn,
+              responseSchema: typesByModuleAndEndpoint[moduleName][endpoint] as ObjectType,
+              contextElements: _.mapValues(contextElements, val => val.instances),
+              fieldsToOmit: this.userConfig[API_MODULES_CONFIG][moduleName].fieldsToOmit,
+              fieldsToExtract,
+            })))
         )
         return [
           // instances can be marked as doNotPersist in order to avoid conflicts if a more-complete
           // version of them is fetched using a dependent endpoint
           ...Object.values(contextElements)
-            .flatMap(items => (items.doNotPersist ? [] : items.instances)),
+            .flatMap(({ doNotPersist, instances }) => (doNotPersist ? [] : instances)),
           ...dependentElements.flat(),
         ]
       }).flat()
