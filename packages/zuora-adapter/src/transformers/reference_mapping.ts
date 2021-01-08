@@ -103,7 +103,16 @@ export const fieldNameToTypeMappingDefs: FieldReferenceDefinition[] = [
     serializationStrategy: 'id',
     target: { type: 'billing_Task' },
   },
-  // TODON turn schema.properties into instances and add references
+  // TODON add reference from
+  // zuora.billing_CustomObjectDefinition.instance.CO1.schema.relationships.0.object
+  // to objects (custom or standard)
+  // and from
+  // zuora.billing_CustomObjectDefinition.instance.CO1.schema.relationships.0.fields.rel_account__c
+  // to the relevant nested field (under the object)
+  // workflow: (need to check the field defs - might be missing)
+  //   field_name = "Gateway"
+  //   object_name = "Payment"
+
 ]
 
 const matchName = (fieldName: string, matcher: string | RegExp): boolean => (

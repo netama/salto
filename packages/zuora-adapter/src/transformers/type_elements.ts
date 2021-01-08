@@ -16,10 +16,10 @@
 import _ from 'lodash'
 import {
   ObjectType, TypeElement, PrimitiveType, ElemID, BuiltinTypes, Field, MapType, ListType,
-  isListType, isObjectType,
+  isListType, isObjectType, TypeMap, Values,
 } from '@salto-io/adapter-api'
 import { naclCase, pathNaclCase } from '@salto-io/adapter-utils'
-import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPI, OpenAPIV2, IJsonSchema } from 'openapi-types'
@@ -27,10 +27,10 @@ import { ZuoraApiModuleConfig } from '../types'
 import {
   TYPES_PATH, ZUORA, SUBTYPES_PATH, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
   GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, PAGINATION_FIELDS, ADDITIONAL_PROPERTIES_FIELD,
+  API_NAME, METADATA_TYPE, INSTANCE_ID,
 } from '../constants'
 import { toPrimitiveType } from './transformer'
 
-const { makeArray } = collections.array
 const { isDefined } = lowerdashValues
 const log = logger(module)
 
@@ -39,6 +39,12 @@ type ReferenceObject = OpenAPIV2.ReferenceObject
 type SchemaObject = OpenAPIV2.SchemaObject
 
 export type ModuleTypeDefs = Record<string, TypeElement>
+
+export const TYPE_ANNOTATIONS: TypeMap = {
+  [API_NAME]: BuiltinTypes.STRING,
+  [METADATA_TYPE]: BuiltinTypes.STRING,
+  [INSTANCE_ID]: BuiltinTypes.HIDDEN_STRING,
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isReferenceObject = (value: any): value is ReferenceObject => (
@@ -51,7 +57,9 @@ const toTypeName = (endpointName: string): string => (
 )
 
 const toNormalizedTypeName = (moduleName: string, refName: string): string => (
-  naclCase(`${moduleName}_${_.last(refName.split('/'))}`)
+  // conflicts can only happen if the swagger ref definitions have names that only differ
+  // in non-alnum characters - hopefully that's unlikely
+  pathNaclCase(naclCase(`${moduleName}_${_.last(refName.split('/'))}`))
 )
 
 const findDataField = (type: ObjectType): string | undefined => {
@@ -169,17 +177,16 @@ const generateTypesForModule = async (
       if (definedTypes[objName] === undefined) {
         const naclObjName = naclCase(objName)
 
-        const annotationProperties = (apiEndpointName !== undefined
-          ? {
-            annotationTypes: {
-              [GET_ENDPOINT_SCHEMA_ANNOTATION]: new ListType(BuiltinTypes.STRING),
-              [GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION]: BuiltinTypes.STRING,
-            },
-            annotations: {
-              [GET_ENDPOINT_SCHEMA_ANNOTATION]: [apiEndpointName],
-            },
-          }
-          : {})
+        const annotationTypes = _.clone(TYPE_ANNOTATIONS)
+        const annotations: Values = {
+          [METADATA_TYPE]: naclObjName,
+        }
+
+        if (apiEndpointName !== undefined) {
+          annotationTypes[GET_ENDPOINT_SCHEMA_ANNOTATION] = new ListType(BuiltinTypes.STRING)
+          annotationTypes[GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION] = BuiltinTypes.STRING
+          annotations[GET_ENDPOINT_SCHEMA_ANNOTATION] = [apiEndpointName]
+        }
 
         // first add an empty type, to avoid endless recursion in cyclic references from fields
         definedTypes[objName] = new ObjectType({
@@ -190,7 +197,8 @@ const generateTypesForModule = async (
               pathNaclCase(naclObjName)]
             : [ZUORA, ...pathRoot, SUBTYPES_PATH,
               pathNaclCase(naclObjName), pathNaclCase(naclObjName)],
-          ...annotationProperties,
+          annotationTypes,
+          annotations,
         })
 
         const allProperties = flattenAllOfProps(schemaDef)
@@ -309,7 +317,7 @@ const generateTypesForModule = async (
     if (schema.type === 'object' || schema.properties !== undefined || schema.allOf !== undefined) {
       return createObjectType(schema, typeName, endpointName ?? endpointRootSchemaRefs[typeName])
     }
-    return toPrimitiveType(makeArray(schema.type))
+    return toPrimitiveType(schema.type)
   }
 
   const { schemas: getResponseSchemas, refs } = await getParsedDefs(module.swagger)

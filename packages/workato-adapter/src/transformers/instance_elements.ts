@@ -38,7 +38,7 @@ export const toInstance = ({
   nameSuffix?: string
 }): InstanceElement => {
   const name = entry[nameField] ?? defaultName
-  const naclName = naclCase(name.slice(0, 100))
+  const naclName = naclCase(String(name).slice(0, 100))
   const entryData = fieldsToOmit !== undefined
     ? _.omit(entry, fieldsToOmit)
     : entry

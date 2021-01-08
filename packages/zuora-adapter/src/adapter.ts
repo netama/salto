@@ -23,10 +23,11 @@ import { collections, decorators } from '@salto-io/lowerdash'
 import ZuoraClient, { ClientGetParams, UnauthorizedError } from './client/client'
 import {
   ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, DependsOnConfig,
-  FieldToExtractConfig, DEFAULT_NAME_FIELD,
 } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import fieldReferencesFilter from './filters/field_references'
+import customObjectsFilter from './filters/custom_objects'
+import customObjectSplitFilter from './filters/custom_object_split'
 import { generateTypes, ModuleTypeDefs } from './transformers/type_elements'
 import { GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, ADDITIONAL_PROPERTIES_FIELD } from './constants'
 import { generateInstancesForType } from './transformers/instance_elements'
@@ -36,7 +37,12 @@ const { makeArray } = collections.array
 const log = logger(module)
 
 export const DEFAULT_FILTERS = [
+  // should run before everything else
+  customObjectsFilter,
+  // references should be computed after all elements were created
   fieldReferencesFilter,
+  // should run at the end - splits elements into multiple files (and therefore elements)
+  customObjectSplitFilter,
 ]
 
 const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
@@ -127,17 +133,11 @@ export default class ZuoraAdapter implements AdapterOperations {
       dependsOn,
       responseSchema,
       contextElements,
-      fieldsToOmit,
-      fieldsToExtract,
-      nameField,
     }: {
       endpointName: string
-      nameField: string
       dependsOn: Record<string, DependsOnConfig>
       responseSchema: ObjectType
       contextElements?: Record<string, InstanceElement[]>
-      fieldsToOmit?: string[]
-      fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
     }): Promise<InstanceElement[]> => {
       try {
         const dataFieldName: string | undefined = responseSchema.annotations[
@@ -203,9 +203,6 @@ export default class ZuoraAdapter implements AdapterOperations {
         return generateInstancesForType({
           entries,
           objType,
-          nameField,
-          fieldsToOmit,
-          fieldsToExtract,
         })
       } catch (e) {
         log.error(`Could not fetch ${endpointName}: ${e}. %s`, e.stack)
@@ -229,7 +226,6 @@ export default class ZuoraAdapter implements AdapterOperations {
     const fetchEndpoints = filterEndpointsWithDetails(
       this.userConfig[API_MODULES_CONFIG],
       typesByModuleAndEndpoint,
-      this.userConfig[DEFAULT_NAME_FIELD],
     )
 
     // for now assuming flat dependencies for simplicity
@@ -252,18 +248,15 @@ export default class ZuoraAdapter implements AdapterOperations {
         }> = Object.fromEntries(
           await Promise.all(
             independentEndpoints.map(async ({
-              endpoint, dependsOn, nameField, doNotPersist, fieldsToExtract,
+              endpoint, dependsOn, doNotPersist,
             }) =>
               [
                 endpoint,
                 {
                   instances: await getInstancesForType({
                     endpointName: endpoint,
-                    nameField,
                     dependsOn,
                     responseSchema: typesByModuleAndEndpoint[moduleName][endpoint] as ObjectType,
-                    fieldsToOmit: this.userConfig[API_MODULES_CONFIG][moduleName].fieldsToOmit,
-                    fieldsToExtract,
                   }),
                   doNotPersist,
                 },
@@ -272,17 +265,14 @@ export default class ZuoraAdapter implements AdapterOperations {
         )
         const dependentElements = await Promise.all(
           dependentEndpoints.map(async ({
-            endpoint, dependsOn, nameField, doNotPersist, fieldsToExtract,
+            endpoint, dependsOn, doNotPersist,
           }): Promise<InstanceElement[]> => (doNotPersist
             ? []
             : getInstancesForType({
               endpointName: endpoint,
-              nameField,
               dependsOn,
               responseSchema: typesByModuleAndEndpoint[moduleName][endpoint] as ObjectType,
               contextElements: _.mapValues(contextElements, val => val.instances),
-              fieldsToOmit: this.userConfig[API_MODULES_CONFIG][moduleName].fieldsToOmit,
-              fieldsToExtract,
             })))
         )
         return [

@@ -14,16 +14,21 @@
 * limitations under the License.
 */
 import {
-  PrimitiveType, BuiltinTypes,
+  PrimitiveType, BuiltinTypes, isInstanceElement, Element, InstanceElement,
+  isObjectType, isField, ObjectType, Field,
 } from '@salto-io/adapter-api'
-import { values as lowerDashValues } from '@salto-io/lowerdash'
+import { collections, values as lowerDashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import { ZuoraApiModuleConfig } from '../types'
+import { CUSTOMIZATIONS } from './customizations'
+import {
+  API_NAME, METADATA_TYPE, CUSTOM_FIELD, CUSTOM_OBJECT, CUSTOM_OBJECT_DEFINITION_TYPE, INSTANCE_ID,
+} from '../constants'
 
+const { makeArray } = collections.array
 const { isDefined } = lowerDashValues
 const log = logger(module)
 
-export const toPrimitiveType = (val: string[]): PrimitiveType => {
+export const toPrimitiveType = (val: string | string[] | undefined): PrimitiveType => {
   const swaggerTypeMap: Record<string, PrimitiveType> = {
     // TODON also support restrictions?
     // openapi3
@@ -42,7 +47,7 @@ export const toPrimitiveType = (val: string[]): PrimitiveType => {
     date: BuiltinTypes.STRING,
     dateTime: BuiltinTypes.STRING,
   }
-  const types = (val
+  const types = (makeArray(val)
     .map(typeName => swaggerTypeMap[typeName])
     .filter(isDefined))
   if (types.length > 1) {
@@ -55,16 +60,47 @@ export const toPrimitiveType = (val: string[]): PrimitiveType => {
   return BuiltinTypes.UNKNOWN
 }
 
-export const getNameField = ({
-  endpointNameField,
-  moduleConfig,
-  defaultNameField,
-}: {
-  endpointNameField?: string
-  moduleConfig: ZuoraApiModuleConfig
-  defaultNameField: string
-}): string => (
-  endpointNameField
-  ?? moduleConfig.defaultNameField
-  ?? defaultNameField
+export const getNameField = (typeName: string): string => (
+  CUSTOMIZATIONS.nameFieldOverrides[typeName] ?? CUSTOMIZATIONS.defaultNameField
+)
+
+export const apiName = (elem: Element): string => {
+  if (isInstanceElement(elem)) {
+    // TODON is fallback needed?
+    return elem.annotations[INSTANCE_ID] ?? elem.value[INSTANCE_ID]
+  }
+  return elem.annotations[API_NAME] ?? elem.annotations[METADATA_TYPE]
+}
+
+export const metadataType = (element: Element): string => {
+  if (isInstanceElement(element)) {
+    return metadataType(element.type)
+  }
+  if (isField(element)) {
+    // We expect to reach to this place only with fields of CustomObject
+    return CUSTOM_FIELD
+  }
+  return element.annotations[METADATA_TYPE] || 'unknown'
+}
+
+export const isCustomObject = (element: Element): element is ObjectType => (
+  isObjectType(element)
+  && metadataType(element) === CUSTOM_OBJECT
+)
+
+export const isInstanceOfType = (type: string) => (
+  (elem: Element): elem is InstanceElement => (
+    isInstanceElement(elem) && apiName(elem.type) === type
+  )
+)
+
+// This function checks whether an element is an instance of any custom object type.
+// It is only relevant before the custom_object filter is run.
+export const isInstanceOfCustomObjectDef = (element: Element): element is InstanceElement => (
+  isInstanceElement(element) && metadataType(element) === CUSTOM_OBJECT_DEFINITION_TYPE
+)
+
+export const isCustomField = (field: Field): boolean => (
+  // TODON make sure reliable
+  field.annotations.origin === 'custom'
 )

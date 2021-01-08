@@ -85,7 +85,6 @@ const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined):
     client: config?.value?.client,
     apiModules: config?.value?.apiModules,
     disableFilters: config?.value?.disableFilters,
-    defaultNameField: config?.value?.defaultNameField,
   }
   Object.keys(config?.value ?? {})
     .filter(k => !Object.keys(adapterConfig).includes(k))

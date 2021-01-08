@@ -15,6 +15,9 @@
 */
 
 export const ZUORA = 'zuora'
+export const CUSTOM_OBJECT = 'CustomObject'
+export const CUSTOM_FIELD = 'CustomField'
+export const ZUORA_CUSTOM_SUFFIX = '__c'
 
 // type annotations
 // all the GET endpoints that use this as their response schema
@@ -39,11 +42,18 @@ export const TOP_LEVEL_FIELDS = new Set([
   'additionalProperties',
 ])
 
+// Salto annotations
+export const API_NAME = 'apiName'
+export const METADATA_TYPE = 'metadataType'
+export const INSTANCE_ID = 'instanceId'
+
 // NACL files path
 export const RECORDS_PATH = 'Records'
 export const OBJECTS_PATH = 'Objects'
 export const TYPES_PATH = 'Types'
 export const SUBTYPES_PATH = 'Subtypes'
+
+export const CUSTOM_OBJECT_DEFINITION_TYPE = 'billing_CustomObjectDefinition'
 
 // Limits
 export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1

@@ -24,7 +24,6 @@ import * as constants from './constants'
 export const CLIENT_CONFIG = 'client'
 export const API_MODULES_CONFIG = 'apiModules'
 export const DISABLE_FILTERS = 'disableFilters'
-export const DEFAULT_NAME_FIELD = 'defaultNameField'
 
 export type ClientRateLimitConfig = Partial<{
   total: number
@@ -62,18 +61,12 @@ export type DependsOnConfig = {
   field: string
 }
 
-export type FieldToExtractConfig = {
-  nameField?: string
-  nestName?: boolean
-}
-
 export type EndpointConfig = {
   endpointRegex: string
   // queryParams?: Record<string, string>
   dependsOn?: Record<string, DependsOnConfig>
-  // fields to convert into their own type and instances
-  fieldsToExtract?: Record<string, FieldToExtractConfig>
-  nameField?: string
+  // TODON move to per-type config too, including the relevant endpoints?
+  // (may need to point from the nested type to the endpoint)
   doNotPersist?: boolean
 }
 
@@ -83,17 +76,13 @@ export type ZuoraApiModuleConfig = {
   //  2. match at least one include.endpointRegex, and do not match any excludeRegex
   include?: EndpointConfig[]
   excludeRegex?: string[]
-  // fields whose values will be omitted, at all nesting levels
-  fieldsToOmit?: string[]
   swagger: string
-  defaultNameField?: string
 }
 
 export type ZuoraConfig = {
   [CLIENT_CONFIG]?: ZuoraClientConfig
   [API_MODULES_CONFIG]: Record<string, ZuoraApiModuleConfig>
   [DISABLE_FILTERS]: boolean
-  [DEFAULT_NAME_FIELD]: string
 }
 
 export type ConfigChangeSuggestion = {
@@ -238,14 +227,6 @@ const dependsOnConfigType = new ObjectType({
   } as Record<keyof DependsOnConfig, FieldDefinition>,
 })
 
-const fieldToExtractConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'fieldToExtractConfig'),
-  fields: {
-    nameField: { type: BuiltinTypes.STRING },
-    nestName: { type: BuiltinTypes.BOOLEAN },
-  } as Record<keyof FieldToExtractConfig, FieldDefinition>,
-})
-
 const endpointConfigType = new ObjectType({
   elemID: new ElemID(constants.ZUORA, 'endpointConfig'),
   fields: {
@@ -257,8 +238,6 @@ const endpointConfigType = new ObjectType({
     },
     // queryParams: { type: new MapType(BuiltinTypes.STRING) },
     dependsOn: { type: new MapType(dependsOnConfigType) },
-    fieldsToExtract: { type: new MapType(fieldToExtractConfigType) },
-    nameField: { type: BuiltinTypes.STRING },
     doNotPersist: { type: BuiltinTypes.BOOLEAN },
   },
 })
@@ -268,8 +247,6 @@ const apiModuleConfigType = new ObjectType({
   fields: {
     include: { type: new ListType(endpointConfigType) },
     excludeRegex: { type: new ListType(BuiltinTypes.STRING) },
-    fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
-    defaultNameField: { type: BuiltinTypes.STRING },
     swagger: {
       type: BuiltinTypes.STRING,
       annotations: {
@@ -299,7 +276,6 @@ export const configType = new ObjectType({
               },
               {
                 endpointRegex: '^/objects/definitions/default$',
-                nameField: 'type',
               },
               {
                 endpointRegex: '^/v1/accounting-codes$',
@@ -310,7 +286,6 @@ export const configType = new ObjectType({
               },
               {
                 endpointRegex: '^/v1/hostedpages$',
-                nameField: 'pageName',
               },
               {
                 endpointRegex: '^/notifications/notification-definitions$',
@@ -326,7 +301,6 @@ export const configType = new ObjectType({
               },
               {
                 endpointRegex: '^/settings/listing$',
-                nameField: 'key',
               },
               {
                 endpointRegex: '^/workflows$',
@@ -340,23 +314,9 @@ export const configType = new ObjectType({
                   // eslint-disable-next-line @typescript-eslint/camelcase
                   workflow_id: { endpoint: '/workflows', field: 'id' },
                 },
-                nameField: 'workflow.name',
-                fieldsToExtract: {
-                  workflow: {},
-                  tasks: {
-                    nestName: true,
-                  },
-                  // not extracting linkages because they don't have a good unique id
-                },
               },
             ],
             excludeRegex: [],
-            fieldsToOmit: [
-              'createdBy',
-              'createdOn',
-              'updatedBy',
-              'updatedOn',
-            ],
           },
           revenue: {
             // supports both uri and local file
@@ -364,23 +324,14 @@ export const configType = new ObjectType({
             include: [
             ],
             excludeRegex: [],
-            defaultNameField: 'name', // TODON just as an example - find out what should be here
           },
         },
       },
     },
     [DISABLE_FILTERS]: { type: BuiltinTypes.BOOLEAN },
-    [DEFAULT_NAME_FIELD]: {
-      type: BuiltinTypes.STRING,
-      annotations: {
-        [CORE_ANNOTATIONS.REQUIRED]: true,
-        [CORE_ANNOTATIONS.DEFAULT]: 'name',
-      },
-    },
   },
 })
 
 export type FilterContext = {
   [API_MODULES_CONFIG]: Record<string, ZuoraApiModuleConfig>
-  [DEFAULT_NAME_FIELD]: string
 }

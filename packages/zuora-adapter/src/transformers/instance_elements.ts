@@ -16,85 +16,105 @@
 import _ from 'lodash'
 import {
   InstanceElement, Values, ObjectType, ReferenceExpression, isObjectType, isListType,
-  isReferenceExpression,
+  isReferenceExpression, CORE_ANNOTATIONS, isPrimitiveType,
 } from '@salto-io/adapter-api'
-import { values as lowerdashValues } from '@salto-io/lowerdash'
+import { values as lowerDashValues } from '@salto-io/lowerdash'
 import { pathNaclCase, naclCase, transformElement, TransformFunc } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { ZUORA, RECORDS_PATH, ADDITIONAL_PROPERTIES_FIELD } from '../constants'
-import { FieldToExtractConfig } from '../types'
+import { ZUORA, RECORDS_PATH, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
+import { CUSTOMIZATIONS } from './customizations'
+import { getNameField, apiName } from './transformer'
 
-const { isDefined } = lowerdashValues
+const { isDefined } = lowerDashValues
 const log = logger(module)
 
 // TODON also need the reverse pre-deploy
-const normalizeAdditionalProps = (entry: Values, type: ObjectType): Values => {
-  const adPropsType = type.fields[ADDITIONAL_PROPERTIES_FIELD]?.type
-  if (adPropsType === undefined) {
-    return entry
+const normalizeAdditionalProps = (instance: InstanceElement): InstanceElement => {
+  const transformAdditionalProps: TransformFunc = ({ value, field, path }) => {
+    const fieldType = path?.isEqual(instance.elemID) ? instance.type : field?.type
+    if (
+      !isObjectType(fieldType)
+      || fieldType.fields[ADDITIONAL_PROPERTIES_FIELD] === undefined
+    ) {
+      return value
+    }
+
+    const additionalProps = _.pickBy(value, (_val, key) => (
+      !(
+        Object.keys(fieldType.fields).includes(key)
+        || Object.keys(fieldType.annotationTypes).includes(key)
+      )
+    ))
+    return {
+      ..._.omit(value, Object.keys(additionalProps)),
+      [ADDITIONAL_PROPERTIES_FIELD]: additionalProps,
+    }
   }
-  const additionalProps = _.pickBy(entry, (_val, key) => (
-    !(
-      Object.keys(type.fields).includes(key)
-      || Object.keys(type.annotationTypes).includes(key)
-    )
-  ))
-  return {
-    ..._.omit(entry, Object.keys(additionalProps)),
-    [ADDITIONAL_PROPERTIES_FIELD]: additionalProps,
-  }
+
+  return transformElement({
+    element: instance,
+    transformFunc: transformAdditionalProps,
+    strict: false,
+  })
 }
 
-const toInstance = ({ entry, type, nameField, namePrefix }: {
+const toInstance = ({ entry, type, nestName, parent }: {
   entry: Values
   type: ObjectType
-  nameField: string
-  namePrefix?: string
+  nestName?: boolean
+  parent?: InstanceElement
 }): InstanceElement => {
   // TODON improve, don't use type except in specific cases. also put as annotation?
+  const nameField = getNameField(type.elemID.name)
   const name = _.get(entry, nameField)
   if (name === undefined) {
     throw new Error(`could not find name for entry - expected name field ${nameField}, available fields ${Object.keys(entry)}`)
   }
-  const naclName = naclCase((namePrefix ? `${namePrefix}__${name}` : name).slice(0, 100))
+  const naclName = naclCase(
+    (parent && nestName ? `${apiName(parent)}__${name}` : String(name)).slice(0, 100)
+  )
 
   const inst = new InstanceElement(
     naclName,
     type,
-    normalizeAdditionalProps(entry, type),
+    {
+      ...entry,
+      ...parent ? { [CORE_ANNOTATIONS.PARENT]: [new ReferenceExpression(parent.elemID)] } : {},
+    },
     [ZUORA, RECORDS_PATH, pathNaclCase(type.elemID.name), pathNaclCase(naclName)],
+    {
+      [INSTANCE_ID]: naclName,
+    },
   )
-
-  return inst
+  return normalizeAdditionalProps(inst)
 }
 
-const extractNestedFields = ({ inst, fieldsToExtract, fieldsToOmit }: {
-  inst: InstanceElement
-  fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
-  fieldsToOmit?: string[]
-}): InstanceElement[] => {
+const extractNestedFields = (inst: InstanceElement): InstanceElement[] => {
+  const fieldsToExtract = CUSTOMIZATIONS.fieldsToExtract[apiName(inst.type)]
   if (_.isEmpty(fieldsToExtract)) {
     return [inst]
   }
   const additionalInstances: InstanceElement[] = []
 
-  const fieldsToExtractByID = _.pickBy(_.mapKeys(
-    fieldsToExtract,
-    (_val, key) => inst.type.fields[key].elemID.getFullName(),
-  ), isDefined)
+  const fieldsToExtractByID = _.pickBy(
+    _.keyBy(
+      fieldsToExtract,
+      ({ fieldName }) => inst.type.fields[fieldName]?.elemID.getFullName(),
+    ),
+    isDefined,
+  )
 
   const replaceWithReference = (
     value: Values,
     objType: ObjectType,
-    { nameField, nestName }: Required<FieldToExtractConfig>,
+    nestName?: boolean,
   ): ReferenceExpression => {
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
     const [refInst] = generateInstancesForType({
       entries: [value],
       objType,
-      nameField,
-      namePrefix: nestName ? inst.elemID.name : undefined,
-      fieldsToOmit,
+      nestName,
+      parent: inst,
     })
     additionalInstances.push(refInst)
     return new ReferenceExpression(refInst.elemID)
@@ -110,9 +130,9 @@ const extractNestedFields = ({ inst, fieldsToExtract, fieldsToOmit }: {
         return value
       }
       if (Array.isArray(value)) {
-        return value.map(val => replaceWithReference(val, refType, fieldExtractionDef))
+        return value.map(val => replaceWithReference(val, refType, fieldExtractionDef.nestName))
       }
-      return replaceWithReference(value, refType, fieldExtractionDef)
+      return replaceWithReference(value, refType, fieldExtractionDef.nestName)
     }
     return value
   }
@@ -128,35 +148,30 @@ const extractNestedFields = ({ inst, fieldsToExtract, fieldsToOmit }: {
 export const generateInstancesForType = ({
   entries,
   objType,
-  nameField,
-  namePrefix,
-  fieldsToOmit,
-  fieldsToExtract,
+  nestName,
+  parent,
 }: {
   entries: Values[]
   objType: ObjectType
-  nameField: string
-  namePrefix?: string
-  fieldsToOmit?: string[]
-  fieldsToExtract?: Record<string, Required<FieldToExtractConfig>>
+  nestName?: boolean
+  parent?: InstanceElement
 }): InstanceElement[] => (
   entries
     .map(entry => toInstance({
       entry,
       type: objType,
-      nameField,
-      namePrefix,
+      nestName,
+      parent,
     }))
-    .map(inst => (fieldsToOmit === undefined
-      ? inst
-      : transformElement({
-        element: inst,
-        transformFunc: ({ value, field }) => (
-          field !== undefined && fieldsToOmit.includes(field.name)
-            ? undefined
-            : value
-        ),
-        strict: false,
-      })))
-    .flatMap(inst => extractNestedFields({ inst, fieldsToExtract, fieldsToOmit }))
+    .map(inst => transformElement({
+      element: inst,
+      transformFunc: ({ value, field }) => (
+        (field !== undefined && isPrimitiveType(field.type)
+          && CUSTOMIZATIONS.primitiveFieldsToOmit.includes(field.name))
+          ? undefined
+          : value
+      ),
+      strict: false,
+    }))
+    .flatMap(inst => extractNestedFields(inst))
 )
