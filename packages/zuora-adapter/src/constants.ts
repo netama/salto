@@ -53,7 +53,8 @@ export const OBJECTS_PATH = 'Objects'
 export const TYPES_PATH = 'Types'
 export const SUBTYPES_PATH = 'Subtypes'
 
-export const CUSTOM_OBJECT_DEFINITION_TYPE = 'billing_CustomObjectDefinition'
+export const CUSTOM_OBJECT_DEFINITION_TYPE = 'billing__CustomObjectDefinition'
+export const BILLING_SETTINGS_OPERATION_INFO_TYPE = 'billing__SettingItemWithOperationsInformation'
 
 // Limits
 export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1

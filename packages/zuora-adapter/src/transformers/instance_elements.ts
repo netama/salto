@@ -23,7 +23,7 @@ import { pathNaclCase, naclCase, transformElement, TransformFunc } from '@salto-
 import { logger } from '@salto-io/logging'
 import { ZUORA, RECORDS_PATH, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
 import { CUSTOMIZATIONS } from './customizations'
-import { getNameField, apiName } from './transformer'
+import { getNameField, apiName, getPathField } from './transformer'
 
 const { isDefined } = lowerDashValues
 const log = logger(module)
@@ -31,6 +31,11 @@ const log = logger(module)
 // TODON also need the reverse pre-deploy
 const normalizeAdditionalProps = (instance: InstanceElement): InstanceElement => {
   const transformAdditionalProps: TransformFunc = ({ value, field, path }) => {
+    // // unrelated - removing nulls since they're not handled correctly in nacls
+    // if (value === null) {
+    //   return undefined
+    // }
+
     const fieldType = path?.isEqual(instance.elemID) ? instance.type : field?.type
     if (
       !isObjectType(fieldType)
@@ -73,6 +78,8 @@ const toInstance = ({ entry, type, nestName, parent }: {
   const naclName = naclCase(
     (parent && nestName ? `${apiName(parent)}__${name}` : String(name)).slice(0, 100)
   )
+  const fileName = _.get(entry, getPathField(type.elemID.name))
+  const naclFileName = pathNaclCase(fileName ? naclCase(fileName) : naclName)
 
   const inst = new InstanceElement(
     naclName,
@@ -81,7 +88,7 @@ const toInstance = ({ entry, type, nestName, parent }: {
       ...entry,
       ...parent ? { [CORE_ANNOTATIONS.PARENT]: [new ReferenceExpression(parent.elemID)] } : {},
     },
-    [ZUORA, RECORDS_PATH, pathNaclCase(type.elemID.name), pathNaclCase(naclName)],
+    [ZUORA, RECORDS_PATH, pathNaclCase(type.elemID.name), naclFileName],
     {
       [INSTANCE_ID]: naclName,
     },

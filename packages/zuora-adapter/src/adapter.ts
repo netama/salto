@@ -25,6 +25,7 @@ import {
   ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, DependsOnConfig,
 } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
+import billingSettingsFilter from './filters/billing_settings'
 import fieldReferencesFilter from './filters/field_references'
 import customObjectsFilter from './filters/custom_objects'
 import customObjectSplitFilter from './filters/custom_object_split'
@@ -37,11 +38,12 @@ const { makeArray } = collections.array
 const log = logger(module)
 
 export const DEFAULT_FILTERS = [
-  // should run before everything else
+  // customObjectsFilter should run before everything else
   customObjectsFilter,
-  // references should be computed after all elements were created
+  billingSettingsFilter,
+  // fieldReferencesFilter should run after all elements were created
   fieldReferencesFilter,
-  // should run at the end - splits elements into multiple files (and therefore elements)
+  // customObjectSplitFilter should run at the end - splits elements to divide to multiple files
   customObjectSplitFilter,
 ]
 

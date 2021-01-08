@@ -22,6 +22,7 @@ import { logger } from '@salto-io/logging'
 import { CUSTOMIZATIONS } from './customizations'
 import {
   API_NAME, METADATA_TYPE, CUSTOM_FIELD, CUSTOM_OBJECT, CUSTOM_OBJECT_DEFINITION_TYPE, INSTANCE_ID,
+  ZUORA_CUSTOM_SUFFIX,
 } from '../constants'
 
 const { makeArray } = collections.array
@@ -64,6 +65,10 @@ export const getNameField = (typeName: string): string => (
   CUSTOMIZATIONS.nameFieldOverrides[typeName] ?? CUSTOMIZATIONS.defaultNameField
 )
 
+export const getPathField = (typeName: string): string => (
+  CUSTOMIZATIONS.pathFieldOverrides[typeName] ?? getNameField(typeName)
+)
+
 export const apiName = (elem: Element): string => {
   if (isInstanceElement(elem)) {
     // TODON is fallback needed?
@@ -101,6 +106,6 @@ export const isInstanceOfCustomObjectDef = (element: Element): element is Instan
 )
 
 export const isCustomField = (field: Field): boolean => (
-  // TODON make sure reliable
-  field.annotations.origin === 'custom'
+  // using the suffix as well because custom fields of standard objects don't always have origin
+  field.annotations.origin === 'custom' || field.name.endsWith(ZUORA_CUSTOM_SUFFIX)
 )

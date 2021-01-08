@@ -278,6 +278,10 @@ export const configType = new ObjectType({
                 endpointRegex: '^/objects/definitions/default$',
               },
               {
+                // TODON undocumented. convert to namespace placeholder with above
+                endpointRegex: '^/objects/definitions/com_zuora$',
+              },
+              {
                 endpointRegex: '^/v1/accounting-codes$',
                 // TODO name is not unique (has one conflict in the trial account)
               },
@@ -318,13 +322,14 @@ export const configType = new ObjectType({
             ],
             excludeRegex: [],
           },
-          revenue: {
-            // supports both uri and local file
-            swagger: 'https://assets.zuora.com/zuora-documentation/RevPro_api.yaml',
-            include: [
-            ],
-            excludeRegex: [],
-          },
+          // requires different credentials - should be in a separate module?
+          // revenue: {
+          //   // supports both uri and local file
+          //   swagger: 'https://assets.zuora.com/zuora-documentation/RevPro_api.yaml',
+          //   include: [
+          //   ],
+          //   excludeRegex: [],
+          // },
         },
       },
     },

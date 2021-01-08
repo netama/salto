@@ -30,6 +30,7 @@ import {
   API_NAME, METADATA_TYPE, INSTANCE_ID,
 } from '../constants'
 import { toPrimitiveType } from './transformer'
+import { CUSTOMIZATIONS } from './customizations'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)
@@ -59,7 +60,7 @@ const toTypeName = (endpointName: string): string => (
 const toNormalizedTypeName = (moduleName: string, refName: string): string => (
   // conflicts can only happen if the swagger ref definitions have names that only differ
   // in non-alnum characters - hopefully that's unlikely
-  pathNaclCase(naclCase(`${moduleName}_${_.last(refName.split('/'))}`))
+  pathNaclCase(naclCase(`${moduleName}__${_.last(refName.split('/'))}`))
 )
 
 const findDataField = (type: ObjectType): string | undefined => {
@@ -185,7 +186,10 @@ const generateTypesForModule = async (
         if (apiEndpointName !== undefined) {
           annotationTypes[GET_ENDPOINT_SCHEMA_ANNOTATION] = new ListType(BuiltinTypes.STRING)
           annotationTypes[GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION] = BuiltinTypes.STRING
-          annotations[GET_ENDPOINT_SCHEMA_ANNOTATION] = [apiEndpointName]
+          annotations[GET_ENDPOINT_SCHEMA_ANNOTATION] = [
+            apiEndpointName,
+            ...(CUSTOMIZATIONS.schemaOverrides.getEndpointAdditions[naclObjName] ?? []),
+          ]
         }
 
         // first add an empty type, to avoid endless recursion in cyclic references from fields
