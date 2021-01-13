@@ -14,61 +14,67 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import axios from 'axios'
+import { RequestRetryOptions, RetryStrategies } from 'requestretry'
 import Bottleneck from 'bottleneck'
-import { collections, decorators } from '@salto-io/lowerdash'
+import { decorators, collections, values as lowerfashValues } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { DEFAULT_MAX_CONCURRENT_API_REQUESTS } from '../constants'
 import {
-  Credentials, ZuoraClientConfig, ClientRateLimitConfig, ClientRetryConfig,
+  Credentials, ZendeskClientConfig, ClientRateLimitConfig, ClientRetryConfig,
+  ZendeskApiConfig,
 } from '../types'
-import Connection, { ZuoraAPI, realConnection, RetryOptions } from './connection'
+import Connection, { ZendeskAPI, realConnection } from './connection'
 
+const { isDefined } = lowerfashValues
 const { makeArray } = collections.array
 const log = logger(module)
-
-export class UnauthorizedError extends Error {}
 
 const DEFAULT_RETRY_OPTS: Required<ClientRetryConfig> = {
   maxAttempts: 5, // try 5 times
   retryDelay: 5000, // wait for 5s before trying again
-  // retryStrategy: 'NetworkError', // retry on network errors
+  retryStrategy: 'NetworkError', // retry on network errors
 }
+
+// TODON make configurable?
+const ZENDESK_DEFAULT_PAGE_SIZE = 100
 
 type RateLimitBucketName = keyof ClientRateLimitConfig
 
 type ClientOpts = {
   credentials: Credentials
   connection?: Connection
-  config?: ZuoraClientConfig
+  config?: ZendeskClientConfig
+  api: ZendeskApiConfig
 }
 
 export type ClientGetParams = {
   endpointName: string
-  queryArgs?: Record<string, string>
+  queryArgs: Record<string, string> | undefined
+  recursiveQueryArgs: Record<string, (entry: Values) => string> | undefined
+  paginationField?: string
 }
 
 export class ApiLimitsTooLowError extends Error {}
 
-const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): RetryOptions => ({
-  retries: retryOptions.maxAttempts,
-  retryDelay: (retryCount, err) => {
-    log.error('Failed to run Zuora call to %s for reason: %s (%s). Retrying in %ds (attempt %d).',
-      err.config.url,
-      err.code,
-      err.message,
-      retryOptions.retryDelay / 1000,
-      retryCount)
+const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): RequestRetryOptions => ({
+  maxAttempts: retryOptions.maxAttempts,
+  retryStrategy: RetryStrategies[retryOptions.retryStrategy],
+  delayStrategy: (err, response) => {
+    log.error('Failed to run Zendesk call for reason: %s. Retrying in %ds (attempt %d).',
+      err.message, retryOptions.retryDelay / 1000,
+      _.get(response, 'attempts') || _.get(err, 'attempts'))
     return retryOptions.retryDelay
   },
 })
 
-const createConnectionForModules = (
-  retryOptions: RetryOptions,
+const createConnection = (
+  // config: ZendeskApiConfig,
+  _options: RequestRetryOptions,
 ): Connection => (
-  realConnection(retryOptions)
+  realConnection()
 )
+
 
 const createRateLimitersFromConfig = (
   rateLimit: ClientRateLimitConfig,
@@ -78,7 +84,7 @@ const createRateLimitersFromConfig = (
   // 0 is an invalid value (blocked in configuration)
   ): number | undefined => (num && num < 0 ? undefined : num)
   const rateLimitConfig = _.mapValues(rateLimit, toLimit)
-  log.debug('Zuora rate limit config: %o', rateLimitConfig)
+  log.debug('Zendesk rate limit config: %o', rateLimitConfig)
   return {
     total: new Bottleneck({ maxConcurrent: rateLimitConfig.total }),
     get: new Bottleneck({ maxConcurrent: rateLimitConfig.get }),
@@ -87,7 +93,7 @@ const createRateLimitersFromConfig = (
 }
 
 export const loginFromCredentials = async (conn: Connection, creds: Credentials):
-    Promise<ZuoraAPI> => (
+    Promise<ZendeskAPI> => (
   conn.login(creds)
 )
 
@@ -107,21 +113,25 @@ const logDecorator = (keys?: string[]): LogDescFunc => ((
   return `client.${name}(${printableArgs})`
 })
 
-export default class ZuoraClient {
+export default class ZendeskClient {
   private readonly conn: Connection
   private isLoggedIn = false
   private readonly credentials: Credentials
-  private readonly config?: ZuoraClientConfig
+  private readonly config?: ZendeskClientConfig
+  // private readonly apiConfig: ZendeskApiConfig
   private readonly rateLimiters: Record<RateLimitBucketName, Bottleneck>
-  private apiClient?: ZuoraAPI
-  private loginPromise?: Promise<ZuoraAPI>
+  private apiClient?: ZendeskAPI
+  private loginPromise?: Promise<ZendeskAPI>
 
   constructor(
+    // { credentials, connection, config, api }: ClientOpts
     { credentials, connection, config }: ClientOpts
   ) {
     this.credentials = credentials
     this.config = config
-    this.conn = connection ?? createConnectionForModules(
+    // this.apiConfig = api
+    this.conn = connection ?? createConnection(
+      // this.apiConfig,
       createRetryOptions(_.defaults({}, this.config?.retry, DEFAULT_RETRY_OPTS)),
     )
     this.rateLimiters = createRateLimitersFromConfig(
@@ -144,7 +154,7 @@ export default class ZuoraClient {
 
   protected static requiresLogin = decorators.wrapMethodWith(
     async function withLogin(
-      this: ZuoraClient,
+      this: ZendeskClient,
       originalMethod: decorators.OriginalCall
     ): Promise<unknown> {
       await this.ensureLoggedIn()
@@ -158,7 +168,7 @@ export default class ZuoraClient {
   ): decorators.InstanceMethodDecorator =>
     decorators.wrapMethodWith(
       async function withRateLimit(
-        this: ZuoraClient,
+        this: ZendeskClient,
         originalMethod: decorators.OriginalCall,
       ): Promise<unknown> {
         log.debug('%s enqueued', logDecorator(keys)(originalMethod))
@@ -174,17 +184,14 @@ export default class ZuoraClient {
     decorators.wrapMethodWith(
       // eslint-disable-next-line prefer-arrow-callback
       async function logFailure(
-        this: ZuoraClient,
+        this: ZendeskClient,
         originalMethod: decorators.OriginalCall,
       ): Promise<unknown> {
         const desc = logDecorator(keys)(originalMethod)
         try {
           return await log.time(originalMethod.call, desc)
         } catch (e) {
-          log.error('failed to run Zuora client call %s: %s', desc, e.message)
-          if (axios.isAxiosError(e) && e.response?.status === 401) {
-            throw new UnauthorizedError('Unauthorized - update credentials and fetch again')
-          }
+          log.error('failed to run Zendesk client call %s: %s', desc, e.message)
           throw e
         }
       }
@@ -193,61 +200,82 @@ export default class ZuoraClient {
   /**
    * Fetch instances of a specific type
    */
-  @ZuoraClient.throttle('get', ['endpointName', 'queryArgs'])
-  @ZuoraClient.logDecorator(['endpointName', 'queryArgs'])
-  @ZuoraClient.requiresLogin
+  @ZendeskClient.throttle('get', ['endpointName', 'queryArgs', 'recursiveQueryArgs'])
+  @ZendeskClient.logDecorator(['endpointName', 'queryArgs', 'recursiveQueryArgs'])
+  @ZendeskClient.requiresLogin
   public async get({
     endpointName,
     queryArgs,
+    recursiveQueryArgs,
+    paginationField,
   }: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
     if (this.apiClient === undefined) {
-      throw new Error('unitialized client')
+      throw new Error('uninitialized api client')
     }
-    const client = this.apiClient
 
-    // TODON convert to generator?
-    const getAllResponseData = async (): Promise<Values[]> => {
-      const entries = []
-      let nextPageArgs: Values = {}
-      while (true) {
-        const params = {
-          ...queryArgs,
-          ...nextPageArgs,
+    const requestQueryArgs: Record<string, string>[] = [{}]
+
+    const allResults = []
+
+    const usedParams = new Set<string>()
+
+    try {
+      while (requestQueryArgs.length > 0) {
+        const additionalArgs = requestQueryArgs.pop() as Record<string, string>
+        const serializedArgs = JSON.stringify(additionalArgs)
+        if (usedParams.has(serializedArgs)) {
+          // eslint-disable-next-line no-continue
+          continue
         }
+        usedParams.add(serializedArgs)
+        const params = { ...queryArgs, ...additionalArgs }
         // eslint-disable-next-line no-await-in-loop
-        const response = await client.get(
+        const response = await this.apiClient.get(
           endpointName,
-          {
-            params,
-          },
+          Object.keys(params).length > 0 ? { params } : undefined
         )
-        // TODO remove
         log.info(`Full HTTP response for ${endpointName} ${JSON.stringify(params)}: ${JSON.stringify(response.data)}`)
 
-        // TODON check if need the 2nd condition. the success field doesn't always exist
-        if (response.status !== 200 || response.data.success === false) {
-          // TODON check if can get actual error
-          log.error(`error getting result for ${endpointName}`)
-          break
-        }
-        entries.push(...makeArray(response.data))
-        // TODON support other types of pagination too
-        if (response.data.nextPage === undefined) {
-          break
-        }
-        const nextPage = new URL(response.data.nextPage, 'http://localhost')
-        // TODON verify pathname is the same
-        nextPageArgs = Object.fromEntries(nextPage.searchParams.entries())
-      }
-      log.info('Received %d results for endpoint %s', // TODON inaccurate when not extracting nested field
-        entries.length, endpointName)
-      return entries
-    }
+        const results: Values[] = (
+          (_.isObjectLike(response.data) && Array.isArray(response.data.items))
+            ? response.data.items
+            : makeArray(response.data)
+        )
 
-    const result = await getAllResponseData()
-    return {
-      result,
-      errors: [],
+        allResults.push(...results)
+
+        if (paginationField !== undefined && results.length >= ZENDESK_DEFAULT_PAGE_SIZE) {
+          requestQueryArgs.unshift({
+            ...additionalArgs,
+            [paginationField]: (additionalArgs[paginationField] ?? 1) + 1,
+          })
+        }
+
+        if (recursiveQueryArgs !== undefined && Object.keys(recursiveQueryArgs).length > 0) {
+          const newArgs = (results
+            .map(res => _.pickBy(
+              _.mapValues(
+                recursiveQueryArgs,
+                mapper => mapper(res),
+              ),
+              isDefined,
+            ))
+            .filter(args => Object.keys(args).length > 0)
+          )
+          requestQueryArgs.unshift(...newArgs)
+        }
+      }
+
+      return {
+        result: allResults,
+        errors: [],
+      }
+    } catch (e) {
+      log.error(`failed to get ${endpointName}: ${e}, stack: ${e.stack}`)
+      return {
+        result: [],
+        errors: [e], // TODON to string
+      }
     }
   }
 }

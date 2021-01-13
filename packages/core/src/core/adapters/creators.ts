@@ -20,6 +20,7 @@ import { adapter as netsuiteAdapter } from '@salto-io/netsuite-adapter'
 import { adapter as marketoAdapter } from '@salto-io/marketo-adapter'
 import { adapter as dummyAdapter } from '@salto-io/dummy-adapter'
 import { adapter as workatoAdapter } from '@salto-io/workato-adapter'
+import { adapter as zendeskAdapter } from '@salto-io/zendesk-adapter'
 import { adapter as zuoraAdapter } from '@salto-io/zuora-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
@@ -29,6 +30,7 @@ const adapterCreators: Record<string, Adapter> = {
   marketo: marketoAdapter,
   dummy: dummyAdapter,
   workato: workatoAdapter,
+  zendesk: zendeskAdapter,
   zuora: zuoraAdapter,
 }
 

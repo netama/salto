@@ -231,7 +231,7 @@ export default class WorkatoClient {
         endpointName,
         Object.keys(params).length > 0 ? { params } : undefined
       )
-      log.info(`Full HTTP response for ${endpointName} ${params}: ${JSON.stringify(response.data)}`)
+      log.info(`Full HTTP response for ${endpointName} ${JSON.stringify(params)}: ${JSON.stringify(response.data)}`)
 
       const results: Values[] = (
         (_.isObjectLike(response.data) && Array.isArray(response.data.items))
