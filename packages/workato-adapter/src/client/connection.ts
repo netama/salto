@@ -13,38 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import axios, { AxiosInstance } from 'axios'
-import { Credentials, WorkatoApiConfig } from '../types'
+import { client as clientUtils } from '@salto-io/adapter-utils'
+import { Credentials } from '../types'
 
-export type WorkatoAPI = AxiosInstance
-
-export default interface Connection {
-  login: (creds: Credentials) => Promise<WorkatoAPI>
+export const validateCredentials = async (
+  _creds: Credentials, conn: clientUtils.APIConnection,
+): Promise<void> => {
+  await conn.get('/users/me')
 }
 
-// TODON support retries
-export const realConnection = (
-  config: WorkatoApiConfig,
-  // TODON use retry options
-  // retryOptions: RequestRetryOptions,
-): Connection => {
-  const login = async (
-    { username, token }: Credentials,
-  ): Promise<WorkatoAPI> => {
-    const httpClient = axios.create({
-      baseURL: config.baseUrl,
+export const realConnection: clientUtils.ConnectionCreator = ({ apiConfig, retryOptions }) => (
+  clientUtils.axiosConnection({
+    apiConfig,
+    retryOptions,
+    authParamsFunc: ({ username, token }: Credentials) => ({
       headers: {
         'x-user-email': username,
         'x-user-token': token,
       },
-    })
-
-    // TODON move to config, also use to validate credentials
-    await httpClient.get('/users/me')
-    return httpClient
-  }
-
-  return {
-    login,
-  }
-}
+    }),
+    credValidateFunc: validateCredentials,
+  })
+)

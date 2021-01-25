@@ -24,7 +24,6 @@ module.exports = deepMerge(
     collectCoverageFrom: [
       '!<rootDir>/dist/index.js',
     ],
-    // TODON e2e
     coverageThreshold: {
       'global': {
         branches: 89,

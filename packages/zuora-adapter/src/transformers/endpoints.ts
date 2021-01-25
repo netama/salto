@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { ZuoraApiModuleConfig, DependsOnConfig } from '../types'
 import { ModuleTypeDefs } from './type_elements'
@@ -64,7 +65,7 @@ export const filterEndpointsWithDetails = (
       }))
   )
 
-  log.info('Based on the configuration, going to use the following endpoints: %s', JSON.stringify(endpointsWithDeps))
-  log.debug('For reference, these are all the endpoints: %s', JSON.stringify(allGetEndpoints))
+  log.info('Based on the configuration, going to use the following endpoints: %s', safeJsonStringify(endpointsWithDeps))
+  log.debug('For reference, these are all the endpoints: %s', safeJsonStringify(allGetEndpoints))
   return endpointsWithDeps
 }

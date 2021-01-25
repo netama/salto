@@ -14,75 +14,31 @@
 * limitations under the License.
 */
 import {
-  ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, createRestriction, FieldDefinition, ListType,
-  MapType,
+  ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS,
 } from '@salto-io/adapter-api'
+import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
+
+const { createClientConfigType, createApiBootstrapConfigType } = configUtils
 
 // TODON add to documentation
 export const CLIENT_CONFIG = 'client'
 export const API_CONFIG = 'api'
-export const DISABLE_FILTERS = 'disableFilters'
 
-export type ClientRateLimitConfig = Partial<{
-  total: number
-  get: number
-  put: number
-}>
+export type ZendeskClientConfig = configUtils.ClientBaseConfig
 
-export type ClientPageSizeConfig = Partial<{
-  get: number
-  put: number
-}>
-
-export enum RetryStrategyName {
-  'HttpError',
-  'HTTPOrNetworkError',
-  'NetworkError',
-}
-type RetryStrategy = keyof typeof RetryStrategyName
-export type ClientRetryConfig = Partial<{
-  maxAttempts: number
-  retryDelay: number
-  retryStrategy: RetryStrategy
-}>
-
-export type ZendeskClientConfig = Partial<{
-  retry: ClientRetryConfig
-  rateLimit: ClientRateLimitConfig
-  pageSize: ClientPageSizeConfig
-  maxPagesToGetForEachType: number
-}>
-
-export type EndpointConfig = {
-  endpoint: string
-  queryParams?: Record<string, string>
-  paginationField?: string
-  dependsOn?: string[]
-  fieldsToOmit?: string[]
-  // fields to convert into their own type and instances.
-  // if the field value is a string, first parse it into json
-  fieldsToExtract?: string[]
-  // endpoints whose response is a single object with dynamic keys
-  hasDynamicFields?: boolean
-  nameField?: string
-  pathField?: string
+export type ZendeskEndpointConfig = configUtils.EndpointConfig & {
   // when true, avoid trying to extract nested fields from response
   keepOriginal?: boolean
 }
 
-export type ZendeskApiConfig = {
-  getEndpoints: EndpointConfig[]
-  // TODON rename, support fallbacks + different one by endpoint / regex
-  defaultNameField: string
-  defaultPathField: string
-  fieldsToOmit?: string[]
+export type ZendeskApiConfig = Omit<configUtils.ApiEndpointBaseConfig, 'getEndpoints'> & {
+  getEndpoints: ZendeskEndpointConfig[]
 }
 
 export type ZendeskConfig = {
   [CLIENT_CONFIG]?: ZendeskClientConfig
   [API_CONFIG]: ZendeskApiConfig
-  [DISABLE_FILTERS]: boolean
 }
 
 export type ConfigChangeSuggestion = {
@@ -123,89 +79,17 @@ export class UsernamePasswordRESTCredentials {
 
 export type Credentials = UsernamePasswordRESTCredentials
 
-const clientRateLimitConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'clientRateLimitConfig'),
-  fields: {
-    total: { type: BuiltinTypes.NUMBER },
-    get: { type: BuiltinTypes.NUMBER },
-    put: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ClientRateLimitConfig, FieldDefinition>,
-})
-
-const clientPageSizeConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'clientPageSizeConfig'),
-  fields: {
-    get: { type: BuiltinTypes.NUMBER },
-    put: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ClientPageSizeConfig, FieldDefinition>,
-})
-
-const clientRetryConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'clientRetryConfig'),
-  fields: {
-    maxAttempts: { type: BuiltinTypes.NUMBER },
-    retryDelay: { type: BuiltinTypes.NUMBER },
-    retryStrategy: {
-      type: BuiltinTypes.STRING,
-      annotations: {
-        [CORE_ANNOTATIONS.RESTRICTION]: createRestriction({
-          values: Object.keys(RetryStrategyName),
-        }),
-      },
-    },
-  } as Record<keyof ClientRetryConfig, FieldDefinition>,
-})
-
-const clientConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'clientConfig'),
-  fields: {
-    retry: { type: clientRetryConfigType },
-    rateLimit: { type: clientRateLimitConfigType },
-    pageSize: { type: clientPageSizeConfigType },
-    maxPagesToGetForEachType: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ZendeskClientConfig, FieldDefinition>,
-})
-
-const endpointConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'endpointConfig'),
-  fields: {
-    endpoint: {
-      type: BuiltinTypes.STRING,
-      annotations: {
-        [CORE_ANNOTATIONS.REQUIRED]: true,
-      },
-    },
-    // TODON needs more adjustments
-    queryParams: { type: new MapType(BuiltinTypes.STRING) },
-    dependsOn: { type: new ListType(BuiltinTypes.STRING) },
-    paginationField: { type: BuiltinTypes.STRING },
-    fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
-    fieldsToExtract: { type: new ListType(BuiltinTypes.STRING) },
-    hasDynamicFields: { type: BuiltinTypes.BOOLEAN },
-    nameField: { type: BuiltinTypes.STRING },
-    pathField: { type: BuiltinTypes.STRING },
-    keepOriginal: { type: BuiltinTypes.BOOLEAN },
-  },
-})
-
-const apiModuleConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK, 'apiModuleConfig'),
-  fields: {
-    getEndpoints: { type: new ListType(endpointConfigType) },
-    defaultNameField: { type: BuiltinTypes.STRING },
-    defaultPathField: { type: BuiltinTypes.STRING },
-    fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
-  },
-})
-
 export const configType = new ObjectType({
   elemID: configID,
   fields: {
     [CLIENT_CONFIG]: {
-      type: clientConfigType,
+      type: createClientConfigType(constants.ZENDESK),
     },
     [API_CONFIG]: {
-      type: apiModuleConfigType,
+      type: createApiBootstrapConfigType(
+        constants.ZENDESK,
+        { keepOriginal: { type: BuiltinTypes.BOOLEAN } },
+      ),
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
@@ -334,10 +218,16 @@ export const configType = new ObjectType({
         },
       },
     },
-    [DISABLE_FILTERS]: { type: BuiltinTypes.BOOLEAN },
   },
 })
 
 export type FilterContext = {
   [API_CONFIG]: ZendeskApiConfig
+}
+
+export class ZendeskClient extends clientUtils.AdapterHTTPClient<Credentials> {
+  // eslint-disable-next-line class-methods-use-this
+  clientName(): string {
+    return constants.ZENDESK
+  }
 }

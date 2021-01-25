@@ -17,8 +17,8 @@ import _ from 'lodash'
 import {
   ObjectType, ElemID, BuiltinTypes, Values, MapType, PrimitiveType, ListType, isObjectType,
 } from '@salto-io/adapter-api'
-import { pathNaclCase, naclCase } from '@salto-io/adapter-utils'
-import { ZENDESK, TYPES_PATH, SUBTYPES_PATH, NAMESPACE_SEPARATOR, GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION } from '../constants'
+import { pathNaclCase, naclCase } from '../../nacl_case_utils'
+import { TYPES_PATH, SUBTYPES_PATH, NAMESPACE_SEPARATOR, GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION } from '../constants'
 
 type ObjectTypeWithNestedTypes = {
   type: ObjectType
@@ -30,21 +30,23 @@ type NestedTypeWithNestedTypes = {
   nestedTypes: ObjectType[]
 }
 
-const generateNestedType = ({ typeName, parentName, entries, hasDynamicKeys }: {
+const generateNestedType = ({ adapterName, typeName, parentName, entries, hasDynamicFields }: {
+  adapterName: string
   typeName: string
   parentName: string
   entries: Values[]
-  hasDynamicKeys: boolean
+  hasDynamicFields: boolean
 }): NestedTypeWithNestedTypes => {
   const name = `${parentName}${NAMESPACE_SEPARATOR}${typeName}`
   if (entries.length > 0) {
     if (entries.every(entry => Array.isArray(entry))) {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
       const nestedType = generateNestedType({
+        adapterName,
         typeName,
         parentName,
         entries: entries.flat(),
-        hasDynamicKeys,
+        hasDynamicFields,
       })
       return {
         type: new ListType(nestedType.type),
@@ -56,7 +58,7 @@ const generateNestedType = ({ typeName, parentName, entries, hasDynamicKeys }: {
 
     if (entries.every(entry => _.isObjectLike(entry))) {
       // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      return generateType(name, entries, hasDynamicKeys, true)
+      return generateType({ adapterName, name, entries, hasDynamicFields, isSubType: true })
     }
 
     // primitive types
@@ -86,13 +88,25 @@ const generateNestedType = ({ typeName, parentName, entries, hasDynamicKeys }: {
   }
 }
 
-export const generateType = (
-  name: string, entries: Values[], hasDynamicKeys: boolean, isSubType = false,
-): ObjectTypeWithNestedTypes => {
+export const generateType = ({
+  adapterName,
+  name,
+  entries,
+  hasDynamicFields,
+  isSubType = false,
+}: {
+  adapterName: string
+  name: string
+  entries: Values[]
+  hasDynamicFields: boolean
+  isSubType?: boolean
+}): ObjectTypeWithNestedTypes => {
   const naclName = naclCase(name)
-  const path = (isSubType
-    ? [ZENDESK, TYPES_PATH, SUBTYPES_PATH, ...naclName.split(NAMESPACE_SEPARATOR).map(pathNaclCase)]
-    : [ZENDESK, TYPES_PATH, pathNaclCase(naclName)])
+  const path = [
+    adapterName, TYPES_PATH,
+    ...(isSubType
+      ? [SUBTYPES_PATH, ...naclName.split(NAMESPACE_SEPARATOR).map(pathNaclCase)]
+      : [pathNaclCase(naclName)])]
 
   const nestedTypes: ObjectType[] = []
   const addNestedType = (
@@ -105,25 +119,36 @@ export const generateType = (
     return typeWithNested.type
   }
 
-  const fields = hasDynamicKeys
-    ? { value: { type: new MapType(BuiltinTypes.UNKNOWN) } } // TODON improve nested structure
+  const fields = hasDynamicFields
+    ? {
+      value: {
+        type: new MapType(addNestedType(generateNestedType({
+          adapterName,
+          typeName: 'value',
+          parentName: name,
+          entries: entries.flatMap(Object.values).filter(entry => entry !== undefined),
+          hasDynamicFields: false,
+        }))),
+      },
+    }
     : Object.fromEntries(
       _.uniq(entries.flatMap(e => Object.keys(e)))
         .map(fieldName => [
           fieldName,
           {
             type: addNestedType(generateNestedType({
+              adapterName,
               typeName: fieldName,
               parentName: name,
               entries: entries.map(entry => entry[fieldName]).filter(entry => entry !== undefined),
-              hasDynamicKeys: false,
+              hasDynamicFields: false,
             })),
           },
         ])
     )
 
   const type = new ObjectType({
-    elemID: new ElemID(ZENDESK, naclName),
+    elemID: new ElemID(adapterName, naclName),
     fields,
     path,
   })

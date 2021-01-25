@@ -16,26 +16,6 @@
 
 export const ZENDESK = 'zendesk'
 
-// NACL files path
-export const RECORDS_PATH = 'Records'
-export const TYPES_PATH = 'Types'
-export const SUBTYPES_PATH = 'Subtypes'
-
-export const NAMESPACE_SEPARATOR = '__'
-
-// type annotations
-// all the GET endpoints that use this as their response schema
-export const GET_ENDPOINT_SCHEMA_ANNOTATION = 'getEndpoint'
-// the field containing the relevant instance data, when not the entire response
-// schema is relevant (such as in list endpoints)
-export const GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION = 'dataField'
-
-// Limits
-export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1
-export const DEFAULT_MAX_CONCURRENT_API_REQUESTS = {
-  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
-  get: 10,
-  put: 3,
-}
+export const baseUrl = (subdomain: string): string => `https://${subdomain}.zendesk.com/api/v2`
 
 export const PAGINATION_FIELDS = ['count', 'next_page', 'previous_page']

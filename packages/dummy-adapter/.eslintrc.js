@@ -18,6 +18,7 @@ const path = require('path')
 
 module.exports = deepMerge(
   require('../../eslintrc.js'),
+  require('../../eslint/adapter-api.rules.js'),
   {
     parserOptions: {
       tsconfigRootDir: __dirname,

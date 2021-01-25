@@ -13,46 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import axios, { AxiosInstance, AxiosError } from 'axios'
-import axiosRetry from 'axios-retry'
+import { client as clientUtils } from '@salto-io/adapter-utils'
 import { Credentials, OAuthAccessTokenCredentials } from '../types'
 
-export type ZuoraAPI = AxiosInstance
-
-export default interface Connection {
-  login: (creds: Credentials) => Promise<ZuoraAPI>
-}
-
-export type RetryOptions = {
-  retries: number
-  retryDelay?: (retryCount: number, error: AxiosError) => number
-}
-
-export const realConnection = (
-  retryOptions: RetryOptions,
-): Connection => {
-  const login = async (
-    creds: Credentials,
-  ): Promise<ZuoraAPI> => {
-    const headers = (creds instanceof OAuthAccessTokenCredentials
-      ? {
-        Authorization: `Bearer ${creds.accessToken}`,
-      }
-      : {
-        apiAccessKeyId: creds.username,
-        apiSecretAccessKey: creds.password,
-      })
-    const httpClient = axios.create({
-      baseURL: creds.baseURL,
-      headers,
-    })
-    axiosRetry(httpClient, retryOptions)
-
-    // TODON validate credentials
-    return httpClient
-  }
-
-  return {
-    login,
-  }
-}
+export const realConnection: clientUtils.ConnectionCreator = ({ apiConfig, retryOptions }) => (
+  clientUtils.axiosConnection({
+    apiConfig,
+    retryOptions,
+    baseURLFunc: (_apiConfig, { baseURL }) => baseURL,
+    authParamsFunc: (creds: Credentials) => ({
+      headers: (creds instanceof OAuthAccessTokenCredentials
+        ? {
+          Authorization: `Bearer ${creds.accessToken}`,
+        }
+        : {
+          apiAccessKeyId: creds.username,
+          apiSecretAccessKey: creds.password,
+        }),
+    }),
+    // TODON add auth validator
+    credValidateFunc: () => Promise.resolve(),
+  })
+)

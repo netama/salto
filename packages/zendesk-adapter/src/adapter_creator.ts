@@ -17,16 +17,19 @@ import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
-import ZendeskClient from './client/client'
+import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
 import changeValidator from './change_validator'
 import ZendeskAdapter from './adapter'
 import {
-  configType, ZendeskConfig, CLIENT_CONFIG, ZendeskClientConfig, RetryStrategyName,
+  configType, ZendeskConfig, CLIENT_CONFIG, ZendeskClient,
   UsernamePasswordRESTCredentials, Credentials, usernamePasswordRESTCredentialsType,
-  API_CONFIG,
 } from './types'
+import { realConnection } from './client/connection'
+import { baseUrl } from './constants'
 
 const log = logger(module)
+const { validateCredentials } = clientUtils
+const { validateClientConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
   new UsernamePasswordRESTCredentials({
@@ -36,28 +39,13 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
   })
 )
 
+// TODON generalize too? or too early?
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): ZendeskConfig => {
-  const validateClientConfig = (clientConfig: ZendeskClientConfig | undefined): void => {
-    if (clientConfig?.rateLimit !== undefined) {
-      const invalidValues = (Object.entries(clientConfig.rateLimit)
-        .filter(([_name, value]) => value === 0))
-      if (invalidValues.length > 0) {
-        throw Error(`${CLIENT_CONFIG}.rateLimit values cannot be set to 0. Invalid keys: ${invalidValues.map(([name]) => name).join(', ')}`)
-      }
-    }
-
-    if (clientConfig?.retry?.retryStrategy !== undefined
-        && RetryStrategyName[clientConfig.retry.retryStrategy] === undefined) {
-      throw Error(`${CLIENT_CONFIG}.clientConfig.retry.retryStrategy value '${clientConfig.retry.retryStrategy}' is not supported`)
-    }
-  }
-
-  validateClientConfig(config?.value?.client)
+  validateClientConfig(CLIENT_CONFIG, config?.value?.client)
 
   const adapterConfig: { [K in keyof Required<ZendeskConfig>]: ZendeskConfig[K] } = {
     client: config?.value?.client,
     api: config?.value?.api,
-    disableFilters: config?.value?.disableFilters,
   }
   Object.keys(config?.value ?? {})
     .filter(k => !Object.keys(adapterConfig).includes(k))
@@ -70,17 +58,24 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new ZendeskAdapter({
-      client: new ZendeskClient({
-        credentials,
-        config: config[CLIENT_CONFIG],
-        api: config[API_CONFIG],
-      }),
+      client: new ZendeskClient(
+        {
+          credentials,
+          config: config[CLIENT_CONFIG],
+          api: { baseUrl: baseUrl(credentials.subdomain) },
+        },
+        realConnection,
+      ),
       config,
     })
   },
-  // TODON validate credentials
-  // validateCredentials: async config => validateCredentials(credentialsFromConfig(config)),
-  validateCredentials: async () => (Promise.resolve('ok')),
+  validateCredentials: async config => validateCredentials(
+    credentialsFromConfig(config),
+    {
+      apiConfig: { baseUrl: baseUrl(credentialsFromConfig(config).subdomain) },
+      createConnection: realConnection,
+    },
+  ),
   authenticationMethods: {
     basic: {
       credentialsType: usernamePasswordRESTCredentialsType,

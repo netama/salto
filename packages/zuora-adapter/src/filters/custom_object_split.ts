@@ -15,10 +15,12 @@
 */
 import _ from 'lodash'
 import { Element, ObjectType, Field } from '@salto-io/adapter-api'
-import { pathNaclCase } from '@salto-io/adapter-utils'
+import { pathNaclCase, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { isCustomObject, isCustomField } from '../transformers/transformer'
 import { FilterWith } from '../filter'
-import { ZUORA, OBJECTS_PATH } from '../constants'
+import { ZUORA } from '../constants'
+
+const { OBJECTS_PATH } = elementsUtils
 
 export const annotationsFileName = (objectName: string): string => `${pathNaclCase(objectName)}Annotations`
 export const standardFieldsFileName = (objectName: string): string => `${pathNaclCase(objectName)}StandardFields`

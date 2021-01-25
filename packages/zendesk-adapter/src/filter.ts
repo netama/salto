@@ -15,8 +15,7 @@
 */
 import { Element } from '@salto-io/adapter-api'
 import { types, promises } from '@salto-io/lowerdash'
-import ZendeskClient from './client/client'
-import { FilterContext } from './types'
+import { FilterContext, ZendeskClient } from './types'
 
 export type Filter = Partial<{
   onFetch(elements: Element[]): Promise<void>
@@ -28,7 +27,7 @@ export type FilterCreator = (
   opts: { client: ZendeskClient; config: FilterContext }
 ) => Filter
 
-export const filtersRunner = (
+export const filtersRunner = ( // TODON move to shared code too?
   client: ZendeskClient,
   config: FilterContext,
   filterCreators: ReadonlyArray<FilterCreator>,

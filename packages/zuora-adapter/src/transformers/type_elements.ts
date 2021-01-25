@@ -18,14 +18,14 @@ import {
   ObjectType, TypeElement, PrimitiveType, ElemID, BuiltinTypes, Field, MapType, ListType,
   isListType, isObjectType, TypeMap, Values,
 } from '@salto-io/adapter-api'
-import { naclCase, pathNaclCase } from '@salto-io/adapter-utils'
+import { naclCase, pathNaclCase, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPI, OpenAPIV2, IJsonSchema } from 'openapi-types'
 import { ZuoraApiModuleConfig } from '../types'
 import {
-  TYPES_PATH, ZUORA, SUBTYPES_PATH, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
+  ZUORA, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
   GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, PAGINATION_FIELDS, ADDITIONAL_PROPERTIES_FIELD,
   API_NAME, METADATA_TYPE, INSTANCE_ID,
 } from '../constants'
@@ -34,6 +34,7 @@ import { CUSTOMIZATIONS } from './customizations'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)
+const { TYPES_PATH, SUBTYPES_PATH } = elementsUtils
 
 // TODON also support v3
 type ReferenceObject = OpenAPIV2.ReferenceObject

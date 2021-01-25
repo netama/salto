@@ -18,15 +18,15 @@ import {
   InstanceElement, isObjectType, ElemID, isInstanceElement, ReferenceExpression, ObjectType,
   Element,
 } from '@salto-io/adapter-api'
+import { elements as elementUtils } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { WORKATO } from '../constants'
 import { FilterCreator } from '../filter'
 import { API_CONFIG } from '../types'
 import { endpointToTypeName } from '../transformers/transformer'
-import { generateType } from '../transformers/type_elements'
-import { toInstance } from '../transformers/instance_elements'
 
 const log = logger(module)
+const { generateType, toInstance } = elementUtils.bootstrap
 
 const convertStringToObject = (inst: InstanceElement, fieldsToExtract: string[]): void => {
   inst.value = _.mapValues(inst.value, (fieldValue, fieldName) => {
@@ -60,23 +60,31 @@ const addFieldTypeAndInstances = ({
 }): Element[] => {
   const elements: Element[] = []
   const instancesWithValues = instances.filter(inst => inst.value[fieldName] !== undefined)
-  const fieldType = generateType(
+  const fieldType = generateType({
+    adapterName: WORKATO,
     // TODON better names, verify can't collide with other types due to shared prefixes
-    `${typeName}__${fieldName}`,
-    instancesWithValues.map(inst => inst.value[fieldName]),
-    false,
-  )
-  type.fields[fieldName].type = fieldType
-  elements.push(fieldType)
+    name: `${typeName}__${fieldName}`,
+    entries: instancesWithValues.map(inst => inst.value[fieldName]),
+    hasDynamicFields: false,
+    isSubType: true,
+  })
+  type.fields[fieldName].type = fieldType.type
+  elements.push(fieldType.type, ...fieldType.nestedTypes)
 
   instancesWithValues.forEach((inst, index) => {
     const fieldInstance = toInstance({
+      adapterName: WORKATO,
       entry: inst.value[fieldName],
-      type: fieldType,
+      type: fieldType.type,
       nameField: defaultNameField,
       defaultName: `inst_${index}`,
       nameSuffix: inst.elemID.name,
     })
+    if (fieldInstance === undefined) {
+      // cannot happen
+      log.error('unexpected empty nested field %s for instance %s', fieldName, inst.elemID.getFullName())
+      return
+    }
     inst.value[fieldName] = new ReferenceExpression(fieldInstance.elemID)
     elements.push(fieldInstance)
   })

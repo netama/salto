@@ -13,37 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import axios, { AxiosInstance } from 'axios'
+import { client as clientUtils } from '@salto-io/adapter-utils'
 import { Credentials } from '../types'
 
-export type ZendeskAPI = AxiosInstance
-
-export default interface Connection {
-  login: (creds: Credentials) => Promise<ZendeskAPI>
-}
-
-// TODON support retries
-export const realConnection = (
-  // config: ZendeskApiConfig,
-  // TODON use retry options
-  // retryOptions: RequestRetryOptions,
-): Connection => {
-  const login = async (
-    { username, password, subdomain }: Credentials,
-  ): Promise<ZendeskAPI> => {
-    const httpClient = axios.create({
-      baseURL: `https://${subdomain}.zendesk.com/api/v2`,
+export const realConnection: clientUtils.ConnectionCreator = ({ apiConfig, retryOptions }) => (
+  clientUtils.axiosConnection({
+    apiConfig,
+    retryOptions,
+    authParamsFunc: ({ username, password }: Credentials) => ({
       auth: {
         username,
         password,
       },
-    })
-
-    // TODON validate
-    return httpClient
-  }
-
-  return {
-    login,
-  }
-}
+    }),
+    // TODON add auth validator
+    credValidateFunc: () => Promise.resolve(),
+  })
+)

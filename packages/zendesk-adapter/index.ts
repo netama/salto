@@ -17,5 +17,4 @@
 export { default } from './src/adapter'
 export { adapter } from './src/adapter_creator'
 export { default as changeValidator } from './src/change_validator'
-export { default as ZendeskClient } from './src/client/client'
-export { UsernamePasswordRESTCredentials } from './src/types'
+export { ZendeskClient, UsernamePasswordRESTCredentials } from './src/types'

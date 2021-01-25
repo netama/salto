@@ -16,15 +16,4 @@
 
 export const WORKATO = 'workato'
 
-// NACL files path
-export const RECORDS_PATH = 'Records'
-export const TYPES_PATH = 'Types'
-export const SUBTYPES_PATH = 'Subtypes'
-
-// Limits
-export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1
-export const DEFAULT_MAX_CONCURRENT_API_REQUESTS = {
-  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
-  get: 10,
-  put: 3,
-}
+export const BASE_URL = 'https://www.workato.com/api'

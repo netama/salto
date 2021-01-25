@@ -18,9 +18,10 @@ import {
   FetchResult, AdapterOperations, DeployResult, TypeElement, DeployOptions, InstanceElement,
   ObjectType, isListType, isObjectType, isMapType, Values,
 } from '@salto-io/adapter-api'
+import { client as clientUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { collections, decorators } from '@salto-io/lowerdash'
-import ZuoraClient, { ClientGetParams, UnauthorizedError } from './client/client'
+import { collections } from '@salto-io/lowerdash'
+import ZuoraClient, { UnauthorizedError } from './client/client'
 import {
   ZuoraConfig, DISABLE_FILTERS, API_MODULES_CONFIG, DependsOnConfig,
 } from './types'
@@ -55,14 +56,6 @@ export interface ZuoraAdapterParams {
   config: ZuoraConfig
 }
 
-const logDuration = (message: string): decorators.InstanceMethodDecorator => (
-  decorators.wrapMethodWith(
-    async (original: decorators.OriginalCall): Promise<unknown> => (
-      log.time(original.call, message)
-    )
-  )
-)
-
 const computeGetArgs = ({
   endpointName,
   contextElements,
@@ -71,7 +64,7 @@ const computeGetArgs = ({
   endpointName: string
   contextElements?: Record<string, InstanceElement[]>
   dependsOn: Record<string, DependsOnConfig>
-}): { getArgs: ClientGetParams; calculatedParams?: Values }[] => {
+}): { getArgs: clientUtils.ClientGetParams; calculatedParams?: Values }[] => {
   if (endpointName.includes('{')) {
     if (contextElements === undefined || _.isEmpty(dependsOn)) {
       throw new Error(`cannot resolve endpoint ${endpointName} - missing context`)

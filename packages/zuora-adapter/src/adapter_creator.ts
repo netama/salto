@@ -19,16 +19,20 @@ import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
+import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
 import ZuoraClient from './client/client'
 import changeValidator from './change_validator'
 import ZuoraAdapter from './adapter'
 import {
-  configType, ZuoraConfig, CLIENT_CONFIG, ZuoraClientConfig,
+  configType, ZuoraConfig, CLIENT_CONFIG,
   UsernamePasswordRESTCredentials, Credentials, usernamePasswordRESTCredentialsType,
   accessTokenCredentialsType, OAuthAccessTokenCredentials, isAccessTokenConfig,
 } from './types'
+import { realConnection } from './client/connection'
 
 const log = logger(module)
+const { validateCredentials } = clientUtils
+const { validateClientConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
   isAccessTokenConfig(config)
@@ -55,23 +59,7 @@ const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined):
     }
   }
 
-  const validateClientConfig = (clientConfig: ZuoraClientConfig | undefined): void => {
-    if (clientConfig?.rateLimit !== undefined) {
-      const invalidValues = (Object.entries(clientConfig.rateLimit)
-        .filter(([_name, value]) => value === 0))
-      if (invalidValues.length > 0) {
-        throw Error(`${CLIENT_CONFIG}.rateLimit values cannot be set to 0. Invalid keys: ${invalidValues.map(([name]) => name).join(', ')}`)
-      }
-    }
-
-    // if (clientConfig?.retry?.retryStrategy !== undefined
-    //     && RetryStrategyName[clientConfig.retry.retryStrategy] === undefined) {
-    //   throw Error(`${CLIENT_CONFIG}.clientConfig.retry.retryStrategy value '${
-    //     clientConfig.retry.retryStrategy}' is not supported`)
-    // }
-  }
-
-  validateClientConfig(config?.value?.client)
+  validateClientConfig(CLIENT_CONFIG, config?.value?.client)
 
   const apiRegexLists = (Object.entries(config?.value?.apiModules ?? {})
     .flatMap(([name, def]) => [
@@ -97,16 +85,27 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new ZuoraAdapter({
-      client: new ZuoraClient({
-        credentials,
-        config: config[CLIENT_CONFIG],
-      }),
+      client: new ZuoraClient(
+        {
+          credentials,
+          config: config[CLIENT_CONFIG],
+          api: {
+            baseUrl: credentials.baseURL,
+          },
+
+        },
+        realConnection,
+      ),
       config,
     })
   },
-  // TODON validate credentials
-  // validateCredentials: async config => validateCredentials(credentialsFromConfig(config)),
-  validateCredentials: async () => (Promise.resolve('ok')),
+  validateCredentials: async config => validateCredentials(
+    credentialsFromConfig(config),
+    {
+      apiConfig: { baseUrl: credentialsFromConfig(config).baseURL },
+      createConnection: realConnection,
+    },
+  ),
   authenticationMethods: {
     basic: {
       credentialsType: usernamePasswordRESTCredentialsType,

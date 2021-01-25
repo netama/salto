@@ -47,19 +47,5 @@ export const API_NAME = 'apiName'
 export const METADATA_TYPE = 'metadataType'
 export const INSTANCE_ID = 'instanceId'
 
-// NACL files path
-export const RECORDS_PATH = 'Records'
-export const OBJECTS_PATH = 'Objects'
-export const TYPES_PATH = 'Types'
-export const SUBTYPES_PATH = 'Subtypes'
-
 export const CUSTOM_OBJECT_DEFINITION_TYPE = 'billing__CustomObjectDefinition'
 export const BILLING_SETTINGS_OPERATION_INFO_TYPE = 'billing__SettingItemWithOperationsInformation'
-
-// Limits
-export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1
-export const DEFAULT_MAX_CONCURRENT_API_REQUESTS = {
-  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
-  get: 10,
-  put: 3,
-}

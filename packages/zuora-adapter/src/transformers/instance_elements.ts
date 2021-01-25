@@ -18,14 +18,15 @@ import {
   InstanceElement, Values, ObjectType, ReferenceExpression, isObjectType, isListType,
   isReferenceExpression, CORE_ANNOTATIONS, isPrimitiveType,
 } from '@salto-io/adapter-api'
+import { pathNaclCase, naclCase, transformElement, TransformFunc, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { values as lowerDashValues } from '@salto-io/lowerdash'
-import { pathNaclCase, naclCase, transformElement, TransformFunc } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { ZUORA, RECORDS_PATH, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
+import { ZUORA, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
 import { CUSTOMIZATIONS } from './customizations'
 import { getNameField, apiName, getPathField } from './transformer'
 
 const { isDefined } = lowerDashValues
+const { RECORDS_PATH } = elementsUtils
 const log = logger(module)
 
 // TODON also need the reverse pre-deploy

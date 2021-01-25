@@ -14,47 +14,20 @@
 * limitations under the License.
 */
 import {
-  ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType,
-  MapType,
+  ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType, MapType,
   InstanceElement,
 } from '@salto-io/adapter-api'
+import { config as configUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
+
+const { createClientConfigType } = configUtils
 
 // TODON add to documentation
 export const CLIENT_CONFIG = 'client'
-export const API_MODULES_CONFIG = 'apiModules'
+export const API_MODULES_CONFIG = 'apiModules' // TODON single module?
 export const DISABLE_FILTERS = 'disableFilters'
 
-export type ClientRateLimitConfig = Partial<{
-  total: number
-  get: number
-  put: number
-}>
-
-export type ClientPageSizeConfig = Partial<{
-  get: number
-  put: number
-}>
-
-// TODON adjust for axios-retry
-// export enum RetryStrategyName {
-//   'HttpError',
-//   'HTTPOrNetworkError',
-//   'NetworkError',
-// }
-// type RetryStrategy = keyof typeof RetryStrategyName
-export type ClientRetryConfig = Partial<{
-  maxAttempts: number
-  retryDelay: number
-  // retryStrategy: RetryStrategy
-}>
-
-export type ZuoraClientConfig = Partial<{
-  retry: ClientRetryConfig
-  rateLimit: ClientRateLimitConfig
-  pageSize: ClientPageSizeConfig
-  maxPagesToGetForEachType: number
-}>
+export type ZuoraClientConfig = configUtils.ClientBaseConfig
 
 export type DependsOnConfig = {
   endpoint: string
@@ -137,6 +110,7 @@ export const oauthRequestParameters = new ObjectType({
   },
 })
 
+// TODON reuse
 export class UsernamePasswordRESTCredentials {
   constructor({ username, password, baseURL }:
     { username: string; password: string; baseURL: string }) {
@@ -164,50 +138,6 @@ export class OAuthAccessTokenCredentials {
 }
 
 export type Credentials = UsernamePasswordRESTCredentials | OAuthAccessTokenCredentials
-
-const clientRateLimitConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'clientRateLimitConfig'),
-  fields: {
-    total: { type: BuiltinTypes.NUMBER },
-    get: { type: BuiltinTypes.NUMBER },
-    put: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ClientRateLimitConfig, FieldDefinition>,
-})
-
-const clientPageSizeConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'clientPageSizeConfig'),
-  fields: {
-    total: { type: BuiltinTypes.NUMBER },
-    get: { type: BuiltinTypes.NUMBER },
-    put: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ClientPageSizeConfig, FieldDefinition>,
-})
-
-const clientRetryConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'clientRetryConfig'),
-  fields: {
-    maxAttempts: { type: BuiltinTypes.NUMBER },
-    retryDelay: { type: BuiltinTypes.NUMBER },
-    // retryStrategy: {
-    //   type: BuiltinTypes.STRING,
-    //   annotations: {
-    //     [CORE_ANNOTATIONS.RESTRICTION]: createRestriction({
-    //       values: Object.keys(RetryStrategyName),
-    //     }),
-    //   },
-    // },
-  } as Record<keyof ClientRetryConfig, FieldDefinition>,
-})
-
-const clientConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'clientConfig'),
-  fields: {
-    retry: { type: clientRetryConfigType },
-    rateLimit: { type: clientRateLimitConfigType },
-    pageSize: { type: clientPageSizeConfigType },
-    maxPagesToGetForEachType: { type: BuiltinTypes.NUMBER },
-  } as Record<keyof ZuoraClientConfig, FieldDefinition>,
-})
 
 const dependsOnConfigType = new ObjectType({
   elemID: new ElemID(constants.ZUORA, 'dependsOnConfig'),
@@ -260,7 +190,7 @@ export const configType = new ObjectType({
   elemID: configID,
   fields: {
     [CLIENT_CONFIG]: {
-      type: clientConfigType,
+      type: createClientConfigType(constants.ZUORA),
     },
     [API_MODULES_CONFIG]: {
       type: new MapType(apiModuleConfigType),

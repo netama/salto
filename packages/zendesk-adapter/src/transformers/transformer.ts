@@ -14,48 +14,8 @@
 * limitations under the License.
 */
 
-import { ObjectType, Field, isListType, isObjectType } from '@salto-io/adapter-api'
-import { logger } from '@salto-io/logging'
-import { PAGINATION_FIELDS } from '../constants'
-
-const log = logger(module)
-
 export const endpointToTypeName = (endpoint: string): string => (
   // TODON different from workato - consolidate correctly
   (endpoint.endsWith('.json') ? endpoint.slice(0, -5) : endpoint)
     .split('/').filter(p => p).join('_') // '__' is already taken - TODON give option to override?
 )
-
-export const findNesteField = (type: ObjectType): {
-  field: Field
-  type: ObjectType
-} | undefined => {
-  const potentialFields = (Object.values(type.fields)
-    .filter(field => !PAGINATION_FIELDS.includes(field.name)))
-
-  if (potentialFields.length > 1) {
-    log.info('found more than one nested field for type %s: %s, extracting full entry',
-      type.elemID.name, potentialFields.map(f => f.name))
-    return undefined
-  }
-  if (potentialFields.length === 0) {
-    log.info('could not find nested fields for type %s, extracting full entry',
-      type.elemID.name)
-    return undefined
-  }
-  const nestedField = potentialFields[0]
-  const nestedType = (isListType(nestedField.type)
-    ? nestedField.type.innerType
-    : nestedField.type)
-
-  if (!isObjectType(nestedType)) {
-    log.info('unexpected field type for type %s field %s (%s), extracting full entry',
-      type.elemID.name, nestedField.name, nestedType.elemID.getFullName())
-    return undefined
-  }
-
-  return {
-    field: nestedField,
-    type: nestedType,
-  }
-}

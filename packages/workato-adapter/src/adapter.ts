@@ -17,20 +17,21 @@ import _ from 'lodash'
 import {
   FetchResult, AdapterOperations, DeployResult, Element, isInstanceElement, Values, DeployOptions,
 } from '@salto-io/adapter-api'
-import { naclCase } from '@salto-io/adapter-utils'
+import { naclCase, client as clientUtils, config as configUtils, elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { decorators } from '@salto-io/lowerdash'
-import WorkatoClient, { ClientGetParams } from './client/client'
-import { WorkatoConfig, API_CONFIG, DISABLE_FILTERS, EndpointConfig } from './types'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
+import { WorkatoConfig, API_CONFIG, WorkatoClient } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import extractFieldsFilter from './filters/extract_fields'
 import fieldReferencesFilter from './filters/field_references'
-import { generateType } from './transformers/type_elements'
-import { toInstance } from './transformers/instance_elements'
 import { endpointToTypeName } from './transformers/transformer'
+import { WORKATO } from './constants'
 
 const log = logger(module)
+const { isDefined } = lowerdashValues
+const { generateType, toInstance } = elementUtils.bootstrap
 
+// TODON if using, move to shared code too
 const ARG_PLACEHOLDER_MATCHER = /\$\{([\w._]+)\}/g
 // const EXACT_ARG_PLACEHODER_MATCHER = /^\{([\w._]+)\}$/
 // TODON only supporting what we need for now - '${.<fieldName>}'
@@ -46,13 +47,6 @@ export interface WorkatoAdapterParams {
   client: WorkatoClient
   config: WorkatoConfig
 }
-
-const logDuration = (message: string): decorators.InstanceMethodDecorator =>
-  decorators.wrapMethodWith(
-    async (original: decorators.OriginalCall): Promise<unknown> => (
-      log.time(original.call, message)
-    )
-  )
 
 export default class WorkatoAdapter implements AdapterOperations {
   private filtersRunner: Required<Filter>
@@ -84,10 +78,10 @@ export default class WorkatoAdapter implements AdapterOperations {
         paginationField,
         fieldsToOmit,
         hasDynamicFields,
-      }: EndpointConfig,
+      }: configUtils.EndpointConfig,
       contextElements?: Record<string, Element[]>,
     ): Promise<Element[]> => {
-      const computeGetArgs = (): ClientGetParams[] => {
+      const computeGetArgs = (): clientUtils.ClientGetParams[] => {
         const queryArgs = _.omitBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val))
         const recursiveQueryArgs = _.mapValues(
           _.pickBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val)),
@@ -146,21 +140,23 @@ export default class WorkatoAdapter implements AdapterOperations {
 
       // endpoints with dynamic fields will be associated with the dynamic_keys type
 
-      const type = generateType(
-        endpointToTypeName(endpoint),
-        naclEntries,
-        hasDynamicFields === true,
-      )
+      const { type, nestedTypes } = generateType({
+        adapterName: WORKATO,
+        name: endpointToTypeName(endpoint),
+        entries: naclEntries,
+        hasDynamicFields: hasDynamicFields === true,
+      })
 
       const instances = naclEntries.map((entry, index) => toInstance({
+        adapterName: WORKATO,
         entry,
         type,
         nameField: this.userConfig[API_CONFIG].defaultNameField,
         defaultName: `inst_${index}`,
         fieldsToOmit,
         hasDynamicFields,
-      }))
-      return [type, ...instances]
+      })).filter(isDefined)
+      return [type, ...nestedTypes, ...instances]
     }
 
     // for now assuming flat dependencies for simplicity
@@ -189,13 +185,9 @@ export default class WorkatoAdapter implements AdapterOperations {
    */
   @logDuration('fetching account configuration')
   async fetch(): Promise<FetchResult> {
+    // TODON also move to shared code and make getElements customizable
     log.debug('going to fetch workato account configuration..')
     const elements = await this.getElements()
-
-    if (this.userConfig[DISABLE_FILTERS]) {
-      log.info('Not running filters based on user configuration')
-      return { elements }
-    }
 
     log.debug('going to run filters on %d fetched elements', elements.length)
     await this.filtersRunner.onFetch(elements)
@@ -207,7 +199,7 @@ export default class WorkatoAdapter implements AdapterOperations {
    */
   @logDuration('deploying account configuration')
   async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
-    // TODON add preDeploy step for re-escaping fields parsed as JSON (if needed)
+    // TODON when implementing deploy, add preDeploy for re-escaping fields parsed as JSON
     throw new Error(`Not implemented. ${this.client !== undefined} ${changeGroup.changes.length}`)
   }
 }

@@ -17,20 +17,20 @@ import _ from 'lodash'
 import {
   FetchResult, AdapterOperations, DeployResult, Element, isInstanceElement, Values, DeployOptions,
 } from '@salto-io/adapter-api'
-import { naclCase } from '@salto-io/adapter-utils'
+import { naclCase, client as clientUtils, elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { collections, decorators, values as lowerdashValues } from '@salto-io/lowerdash'
-import ZendeskClient, { ClientGetParams } from './client/client'
-import { ZendeskConfig, API_CONFIG, DISABLE_FILTERS, EndpointConfig } from './types'
+import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
+import { ZendeskConfig, API_CONFIG, ZendeskEndpointConfig, ZendeskClient } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
-import { generateType, addGetEndpointAnnotations } from './transformers/type_elements'
-import { toInstance } from './transformers/instance_elements'
-import { endpointToTypeName, findNesteField } from './transformers/transformer'
-import { PAGINATION_FIELDS } from './constants'
+import { endpointToTypeName } from './transformers/transformer'
+import { PAGINATION_FIELDS, ZENDESK } from './constants'
 
 const log = logger(module)
 const { makeArray } = collections.array
 const { isDefined } = lowerdashValues
+const {
+  generateType, toInstance, addGetEndpointAnnotations, findNesteField,
+} = elementUtils.bootstrap
 
 const ARG_PLACEHOLDER_MATCHER = /\$\{([\w._]+)\}/g
 // const EXACT_ARG_PLACEHODER_MATCHER = /^\{([\w._]+)\}$/
@@ -45,13 +45,6 @@ export interface ZendeskAdapterParams {
   client: ZendeskClient
   config: ZendeskConfig
 }
-
-const logDuration = (message: string): decorators.InstanceMethodDecorator =>
-  decorators.wrapMethodWith(
-    async (original: decorators.OriginalCall): Promise<unknown> => (
-      log.time(original.call, message)
-    )
-  )
 
 export default class ZendeskAdapter implements AdapterOperations {
   private filtersRunner: Required<Filter>
@@ -76,6 +69,7 @@ export default class ZendeskAdapter implements AdapterOperations {
 
   @logDuration('generating instances and types from service')
   private async getElements(): Promise<Element[]> {
+    // TODON move to shared code where possible
     const getTypeAndInstances = async (
       {
         endpoint,
@@ -86,10 +80,10 @@ export default class ZendeskAdapter implements AdapterOperations {
         nameField,
         pathField,
         keepOriginal,
-      }: EndpointConfig,
+      }: ZendeskEndpointConfig,
       contextElements?: Record<string, Element[]>,
     ): Promise<Element[]> => {
-      const computeGetArgs = (): ClientGetParams[] => {
+      const computeGetArgs = (): clientUtils.ClientGetParams[] => {
         const queryArgs = _.omitBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val))
         const recursiveQueryArgs = _.mapValues(
           _.pickBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val)),
@@ -149,18 +143,20 @@ export default class ZendeskAdapter implements AdapterOperations {
 
       // endpoints with dynamic fields will be associated with the dynamic_keys type
 
-      const { type, nestedTypes } = generateType(
-        endpointToTypeName(endpoint),
-        naclEntries,
-        hasDynamicFields === true,
-      )
-      const nestedFieldDetails = findNesteField(type)
+      const { type, nestedTypes } = generateType({
+        adapterName: ZENDESK,
+        name: endpointToTypeName(endpoint),
+        entries: naclEntries,
+        hasDynamicFields: hasDynamicFields === true,
+      })
+      const nestedFieldDetails = findNesteField(type, PAGINATION_FIELDS)
       addGetEndpointAnnotations(type, endpoint, nestedFieldDetails?.field.name)
 
       const instances = naclEntries.flatMap((entry, index) => {
         if (nestedFieldDetails !== undefined && !keepOriginal) {
           return makeArray(entry[nestedFieldDetails.field.name]).flatMap(
             (nestedEntry, nesteIndex) => toInstance({
+              adapterName: ZENDESK,
               entry: nestedEntry,
               type: nestedFieldDetails.type,
               nameField: nameField ?? this.userConfig[API_CONFIG].defaultNameField,
@@ -175,6 +171,7 @@ export default class ZendeskAdapter implements AdapterOperations {
 
         log.info(`storing full entry for ${type.elemID.name}`)
         return toInstance({
+          adapterName: ZENDESK,
           entry,
           type,
           nameField: nameField ?? this.userConfig[API_CONFIG].defaultNameField,
@@ -215,14 +212,9 @@ export default class ZendeskAdapter implements AdapterOperations {
    * Account credentials were given in the constructor.
    */
   @logDuration('fetching account configuration')
-  async fetch(): Promise<FetchResult> {
+  async fetch(): Promise<FetchResult> { // TODON can almost definitely be shared...
     log.debug('going to fetch zendesk account configuration..')
     const elements = await this.getElements()
-
-    if (this.userConfig[DISABLE_FILTERS]) {
-      log.info('Not running filters based on user configuration')
-      return { elements }
-    }
 
     log.debug('going to run filters on %d fetched elements', elements.length)
     await this.filtersRunner.onFetch(elements)
@@ -232,7 +224,7 @@ export default class ZendeskAdapter implements AdapterOperations {
   /**
    * Deploy configuration elements to the given account.
    */
-  @logDuration('deploying account configuration')
+  @logDuration('deploying account configuration') // TODON can be shared for these
   async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
     // TODON add preDeploy step for re-escaping fields parsed as JSON (if needed)
     throw new Error(`Not implemented. ${this.client !== undefined} ${changeGroup.changes.length}`)

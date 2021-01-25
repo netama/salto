@@ -16,15 +16,16 @@
 import {
   Element, ObjectType, ElemID, MapType, BuiltinTypes, InstanceElement, Values,
 } from '@salto-io/adapter-api'
-import { pathNaclCase, naclCase } from '@salto-io/adapter-utils'
+import { pathNaclCase, naclCase, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../filter'
 import {
   isInstanceOfType,
 } from '../transformers/transformer'
-import { BILLING_SETTINGS_OPERATION_INFO_TYPE, ZUORA, RECORDS_PATH } from '../constants'
+import { BILLING_SETTINGS_OPERATION_INFO_TYPE, ZUORA } from '../constants'
 
 const log = logger(module)
+const { RECORDS_PATH } = elementsUtils
 
 /**
  * Billing settings filter.

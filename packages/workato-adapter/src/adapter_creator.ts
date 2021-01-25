@@ -17,16 +17,19 @@ import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
-import WorkatoClient from './client/client'
+import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
 import changeValidator from './change_validator'
 import WorkatoAdapter from './adapter'
 import {
-  configType, WorkatoConfig, CLIENT_CONFIG, WorkatoClientConfig, RetryStrategyName,
+  configType, WorkatoConfig, CLIENT_CONFIG, WorkatoClient,
   UsernameTokenCredentials, Credentials, usernameTokenCredentialsType,
-  API_CONFIG,
 } from './types'
+import { realConnection } from './client/connection'
+import { BASE_URL } from './constants'
 
 const log = logger(module)
+const { validateCredentials } = clientUtils
+const { validateClientConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
   new UsernameTokenCredentials({
@@ -36,27 +39,11 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
 )
 
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): WorkatoConfig => {
-  const validateClientConfig = (clientConfig: WorkatoClientConfig | undefined): void => {
-    if (clientConfig?.rateLimit !== undefined) {
-      const invalidValues = (Object.entries(clientConfig.rateLimit)
-        .filter(([_name, value]) => value === 0))
-      if (invalidValues.length > 0) {
-        throw Error(`${CLIENT_CONFIG}.rateLimit values cannot be set to 0. Invalid keys: ${invalidValues.map(([name]) => name).join(', ')}`)
-      }
-    }
-
-    if (clientConfig?.retry?.retryStrategy !== undefined
-        && RetryStrategyName[clientConfig.retry.retryStrategy] === undefined) {
-      throw Error(`${CLIENT_CONFIG}.clientConfig.retry.retryStrategy value '${clientConfig.retry.retryStrategy}' is not supported`)
-    }
-  }
-
-  validateClientConfig(config?.value?.client)
+  validateClientConfig(CLIENT_CONFIG, config?.value?.client)
 
   const adapterConfig: { [K in keyof Required<WorkatoConfig>]: WorkatoConfig[K] } = {
     client: config?.value?.client,
     api: config?.value?.api,
-    disableFilters: config?.value?.disableFilters,
   }
   Object.keys(config?.value ?? {})
     .filter(k => !Object.keys(adapterConfig).includes(k))
@@ -69,17 +56,24 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new WorkatoAdapter({
-      client: new WorkatoClient({
-        credentials,
-        config: config[CLIENT_CONFIG],
-        api: config[API_CONFIG],
-      }),
+      client: new WorkatoClient(
+        {
+          credentials,
+          config: config[CLIENT_CONFIG],
+          api: { baseUrl: BASE_URL },
+        },
+        realConnection,
+      ),
       config,
     })
   },
-  // TODON validate credentials - use the /users/me endpoint
-  // validateCredentials: async config => validateCredentials(credentialsFromConfig(config)),
-  validateCredentials: async () => (Promise.resolve('ok')),
+  validateCredentials: async config => validateCredentials(
+    credentialsFromConfig(config),
+    {
+      apiConfig: { baseUrl: BASE_URL },
+      createConnection: realConnection,
+    },
+  ),
   authenticationMethods: {
     basic: {
       credentialsType: usernameTokenCredentialsType,
