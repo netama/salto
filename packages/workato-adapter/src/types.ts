@@ -92,13 +92,12 @@ export const configType = new ObjectType({
               fieldsToExtract: ['code'],
             },
             {
-              // TODON needs recursion, pagination
               endpoint: '/folders',
-              queryParams: {
+              queryParams: { // TODON add recursiveQueryParams for clarity?
                 // eslint-disable-next-line @typescript-eslint/camelcase,no-template-curly-in-string
-                parent_id: '${.id}',
+                parent_id: '${.id}', // TODON remove the dollar?
               },
-              paginationField: 'page',
+              paginationField: 'page', // TODON move to per-adapter constant?
             },
             {
               endpoint: '/api_collections',

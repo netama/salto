@@ -62,17 +62,19 @@ export const createRetryOptions = (retryOptions: Required<ClientRetryConfig>): R
   },
 })
 
+type ConnectionParams = {
+  connection?: Connection
+  apiConfig: ApiConnectionBaseConfig
+  retryOptions?: RetryOptions
+  createConnection: ConnectionCreator
+}
+
 export const createClientConnection = ({
   connection,
   apiConfig,
   retryOptions,
   createConnection,
-}: {
-  connection?: Connection
-  apiConfig: ApiConnectionBaseConfig
-  retryOptions?: RetryOptions
-  createConnection: ConnectionCreator
-}): Connection => (
+}: ConnectionParams): Connection => (
   connection ?? createConnection({
     apiConfig,
     retryOptions: retryOptions ?? createRetryOptions(DEFAULT_RETRY_OPTS),
@@ -81,12 +83,12 @@ export const createClientConnection = ({
 
 export const validateCredentials = async (
   creds: Credentials,
-  createConnectionArgs: Parameters<typeof createClientConnection>[0],
+  createConnectionArgs: ConnectionParams,
 ): Promise<string> => {
   const conn = createClientConnection(createConnectionArgs)
   await conn.login(creds)
   // should return account id but not used by default flow
-  return ''
+  return '' // TODON saas credentials? need something?
 }
 
 export const axiosConnection = ({

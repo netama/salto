@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 import { Element } from '@salto-io/adapter-api'
+import { filterRunner } from '@salto-io/adapter-utils'
 import { types, promises } from '@salto-io/lowerdash'
 import { FilterContext, WorkatoClient } from './types'
 
@@ -23,9 +24,7 @@ export type Filter = Partial<{
 
 export type FilterWith<M extends keyof Filter> = types.HasMember<Filter, M>
 
-export type FilterCreator = (
-  opts: { client: WorkatoClient; config: FilterContext }
-) => Filter
+export type FilterCreator = filterRunner.FilterCreator<WorkatoClient, FilterContext>
 
 export const filtersRunner = (
   client: WorkatoClient,
