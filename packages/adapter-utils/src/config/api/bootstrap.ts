@@ -20,6 +20,7 @@ import {
 export type EndpointConfig = {
   endpoint: string
   queryParams?: Record<string, string>
+  recursiveQueryByResponseField?: Record<string, string>
   paginationField?: string
   dependsOn?: string[]
   fieldsToOmit?: string[]
@@ -30,6 +31,8 @@ export type EndpointConfig = {
   hasDynamicFields?: boolean
   nameField?: string
   pathField?: string
+  // when true, avoid trying to extract nested fields from response
+  keepOriginal?: boolean
 }
 
 export type ApiEndpointBaseConfig = {
@@ -55,6 +58,8 @@ export const createApiBootstrapConfigType = (
       },
       // TODON needs more adjustments
       queryParams: { type: new MapType(BuiltinTypes.STRING) },
+      // TODON should be hard-coded somewhere?
+      recursiveQueryByResponseField: { type: new MapType(BuiltinTypes.STRING) },
       dependsOn: { type: new ListType(BuiltinTypes.STRING) },
       paginationField: { type: BuiltinTypes.STRING },
       fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
@@ -62,6 +67,7 @@ export const createApiBootstrapConfigType = (
       hasDynamicFields: { type: BuiltinTypes.BOOLEAN },
       nameField: { type: BuiltinTypes.STRING },
       pathField: { type: BuiltinTypes.STRING },
+      keepOriginal: { type: BuiltinTypes.BOOLEAN },
       ...additionalEndpointFields,
     },
   })

@@ -27,10 +27,7 @@ export const API_CONFIG = 'api'
 
 export type ZendeskClientConfig = configUtils.ClientBaseConfig
 
-export type ZendeskEndpointConfig = configUtils.EndpointConfig & {
-  // when true, avoid trying to extract nested fields from response
-  keepOriginal?: boolean
-}
+export type ZendeskEndpointConfig = configUtils.EndpointConfig
 
 export type ZendeskApiConfig = Omit<configUtils.ApiEndpointBaseConfig, 'getEndpoints'> & {
   getEndpoints: ZendeskEndpointConfig[]
@@ -86,10 +83,7 @@ export const configType = new ObjectType({
       type: createClientConfigType(constants.ZENDESK),
     },
     [API_CONFIG]: {
-      type: createApiBootstrapConfigType(
-        constants.ZENDESK,
-        { keepOriginal: { type: BuiltinTypes.BOOLEAN } },
-      ),
+      type: createApiBootstrapConfigType(constants.ZENDESK),
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {

@@ -15,27 +15,19 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, Element, isInstanceElement, Values, DeployOptions,
+  FetchResult, AdapterOperations, DeployResult, Element, DeployOptions,
 } from '@salto-io/adapter-api'
-import { naclCase, client as clientUtils, elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
+import { elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
-import { ZendeskConfig, API_CONFIG, ZendeskEndpointConfig, ZendeskClient } from './types'
+import { ZendeskConfig, API_CONFIG, ZendeskClient } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import { endpointToTypeName } from './transformers/transformer'
 import { PAGINATION_FIELDS, ZENDESK } from './constants'
 
 const log = logger(module)
-const { makeArray } = collections.array
-const { isDefined } = lowerdashValues
 const {
-  generateType, toInstance, addGetEndpointAnnotations, findNesteField,
+  findNestedField, simpleGetArgs, getTypeAndInstances,
 } = elementUtils.bootstrap
-
-const ARG_PLACEHOLDER_MATCHER = /\$\{([\w._]+)\}/g
-// const EXACT_ARG_PLACEHODER_MATCHER = /^\{([\w._]+)\}$/
-// TODON only supporting what we need for now - '${.<fieldName>}'
-const EXACT_ARG_PLACEHODER_MATCHER = /^\$\{\.([\w_]+)\}$/
 
 export const DEFAULT_FILTERS = [
 ]
@@ -69,122 +61,6 @@ export default class ZendeskAdapter implements AdapterOperations {
 
   @logDuration('generating instances and types from service')
   private async getElements(): Promise<Element[]> {
-    // TODON move to shared code where possible
-    const getTypeAndInstances = async (
-      {
-        endpoint,
-        queryParams,
-        paginationField,
-        fieldsToOmit,
-        hasDynamicFields,
-        nameField,
-        pathField,
-        keepOriginal,
-      }: ZendeskEndpointConfig,
-      contextElements?: Record<string, Element[]>,
-    ): Promise<Element[]> => {
-      const computeGetArgs = (): clientUtils.ClientGetParams[] => {
-        const queryArgs = _.omitBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val))
-        const recursiveQueryArgs = _.mapValues(
-          _.pickBy(queryParams, val => EXACT_ARG_PLACEHODER_MATCHER.test(val)),
-          // TODON for now only variables inside the entry are supported - extend
-          val => ((entry: Values): string => entry[val.slice(3, -1)])
-        )
-        // TODON split queryParams into fixed, recursive, and depending on other element types
-        // TODON determine fetch order based on that (or just run in configuration order?)
-        if (contextElements !== undefined) {
-          if (endpoint.includes('$')) {
-            // TODON just one for now - check if need to extend
-            const urlParams = endpoint.match(ARG_PLACEHOLDER_MATCHER)
-            if (urlParams === null) {
-              // TODON catch earlier in the validation
-              throw new Error(`invalid endpoint definition ${endpoint}`)
-            }
-            if (urlParams.length > 1) {
-              // TODON add handling
-              throw new Error(`too many variables in endpoint ${endpoint}`)
-            }
-            // TODON improve
-            const [referenceEndpoint, field] = urlParams[0].slice(2, -1).split('.')
-            const contextInstances = (contextElements[`/${referenceEndpoint}`] ?? []).filter(
-              isInstanceElement
-            )
-            if (!contextInstances) {
-              throw new Error(`no instances found for ${referenceEndpoint}, cannot call endpoint ${endpoint}`)
-            }
-            const potentialParams = contextInstances.map(e => e.value[field])
-            return potentialParams.map(p => ({
-              endpointName: endpoint.replace(ARG_PLACEHOLDER_MATCHER, p),
-              queryArgs,
-              recursiveQueryArgs,
-              paginationField,
-            }))
-          }
-        }
-        return [{ endpointName: endpoint, queryArgs, recursiveQueryArgs, paginationField }]
-      }
-      const getEntries = async (): Promise<Values[]> => {
-        const getArgs = computeGetArgs()
-        return (await Promise.all(
-          // TODON anything to do on error? collect so we can report and suggest to disable?
-          getArgs.map(args => this.client.get(args))
-        )).flatMap(r => r.result.map(entry =>
-          (fieldsToOmit !== undefined
-            ? _.omit(entry, fieldsToOmit)
-            : entry
-          )))
-      }
-
-      const entries = await getEntries()
-
-      // escape "field" names with '.'
-      // TODON instead handle in filter? (not sure if "." is consistent enough for actual nesting)
-      const naclEntries = entries.map(e => _.mapKeys(e, (_val, key) => naclCase(key)))
-
-      // endpoints with dynamic fields will be associated with the dynamic_keys type
-
-      const { type, nestedTypes } = generateType({
-        adapterName: ZENDESK,
-        name: endpointToTypeName(endpoint),
-        entries: naclEntries,
-        hasDynamicFields: hasDynamicFields === true,
-      })
-      const nestedFieldDetails = findNesteField(type, PAGINATION_FIELDS)
-      addGetEndpointAnnotations(type, endpoint, nestedFieldDetails?.field.name)
-
-      const instances = naclEntries.flatMap((entry, index) => {
-        if (nestedFieldDetails !== undefined && !keepOriginal) {
-          return makeArray(entry[nestedFieldDetails.field.name]).flatMap(
-            (nestedEntry, nesteIndex) => toInstance({
-              adapterName: ZENDESK,
-              entry: nestedEntry,
-              type: nestedFieldDetails.type,
-              nameField: nameField ?? this.userConfig[API_CONFIG].defaultNameField,
-              pathField: pathField ?? this.userConfig[API_CONFIG].defaultPathField,
-              defaultName: `inst_${index}_${nesteIndex}`, // TODON improve
-              fieldsToOmit,
-              hasDynamicFields,
-            })
-          ).filter(isDefined)
-        }
-        // TODON same for dynamicFields types?
-
-        log.info(`storing full entry for ${type.elemID.name}`)
-        return toInstance({
-          adapterName: ZENDESK,
-          entry,
-          type,
-          nameField: nameField ?? this.userConfig[API_CONFIG].defaultNameField,
-          pathField,
-          defaultName: `inst_${index}`,
-          // we only omit the pagination fields at the top level
-          fieldsToOmit: [...PAGINATION_FIELDS, ...(fieldsToOmit ?? [])],
-          hasDynamicFields,
-        })
-      })
-      return [type, ...nestedTypes, ...instances].filter(isDefined)
-    }
-
     // for now assuming flat dependencies for simplicity
     // TODO use a real DAG instead (without interfering with parallelizing the requests),
     // (not yet needed for zendesk, but keeping for now)
@@ -195,12 +71,34 @@ export default class ZendeskAdapter implements AdapterOperations {
       })),
       e => _.isEmpty(e.dependsOn)
     )
+
+    const elementGenerationParams = {
+      adapterName: ZENDESK,
+      client: this.client,
+      endpointToTypeName,
+      nestedFieldFinder: findNestedField,
+      computeGetArgs: simpleGetArgs,
+      defaultNameField: this.userConfig[API_CONFIG].defaultNameField,
+      defaultPathField: this.userConfig[API_CONFIG].defaultPathField,
+      topLevelFieldsToOmit: PAGINATION_FIELDS,
+    }
     const contextElements: Record<string, Element[]> = Object.fromEntries(await Promise.all(
-      independentEndpoints.map(async e => [e.endpoint, await getTypeAndInstances(e)])
+      independentEndpoints.map(async endpointConf => [
+        endpointConf.endpoint,
+        await getTypeAndInstances({
+          ...elementGenerationParams,
+          endpointConf,
+        }),
+      ])
     ))
     const dependentElements = await Promise.all(
-      dependentEndpoints.map(e => getTypeAndInstances(e, contextElements))
+      dependentEndpoints.map(endpointConf => getTypeAndInstances({
+        ...elementGenerationParams,
+        endpointConf,
+        contextElements,
+      }))
     )
+
     return [
       ...Object.values(contextElements).flat(),
       ...dependentElements.flat(),

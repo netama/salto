@@ -93,9 +93,9 @@ export const configType = new ObjectType({
             },
             {
               endpoint: '/folders',
-              queryParams: { // TODON add recursiveQueryParams for clarity?
-                // eslint-disable-next-line @typescript-eslint/camelcase,no-template-curly-in-string
-                parent_id: '${.id}', // TODON remove the dollar?
+              recursiveQueryByResponseField: {
+                // eslint-disable-next-line @typescript-eslint/camelcase
+                parent_id: 'id',
               },
               paginationField: 'page', // TODON move to per-adapter constant?
             },

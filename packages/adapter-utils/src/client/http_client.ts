@@ -32,12 +32,18 @@ type ClientOpts<TCred extends Credentials> = ClientOptsBase & {
   credentials: TCred
 }
 
+export interface HTTPClientInterface {
+  get(params: ClientGetParams): Promise<{ result: Values[]; errors: string[]}>
+}
+
 export const loginFromCredentials = async <TCred>(conn: Connection, creds: TCred):
     Promise<APIConnection> => (
   conn.login(creds)
 )
 
-export abstract class AdapterHTTPClient<TCred extends Credentials> extends AdapterClientBase {
+export abstract class AdapterHTTPClient<
+  TCred extends Credentials
+> extends AdapterClientBase implements HTTPClientInterface {
   protected readonly conn: Connection
   private readonly credentials: Credentials
 

@@ -15,88 +15,120 @@
 */
 import _ from 'lodash'
 import {
-  Element, Values,
+  FetchResult, AdapterOperations, DeployResult, Element,
 } from '@salto-io/adapter-api'
-import {
-  naclCase, config as configUtils, elements as elementUtils,
-  simpleAdapter,
-} from '@salto-io/adapter-utils'
-import { values as lowerdashValues } from '@salto-io/lowerdash'
+import { elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
+import { logger } from '@salto-io/logging'
+import { FilterCreator, Filter, filtersRunner } from './filter'
 import { API_CONFIG, WorkatoClient, WorkatoConfig } from './types'
 import extractFieldsFilter from './filters/extract_fields'
 import fieldReferencesFilter from './filters/field_references'
 import { endpointToTypeName } from './transformers/transformer'
 import { WORKATO } from './constants'
 
-const { isDefined } = lowerdashValues
-const { generateType, toInstance } = elementUtils.bootstrap
-const { computeGetArgs } = simpleAdapter
+const log = logger(module)
+const {
+  findNestedField, simpleGetArgs, getTypeAndInstances,
+} = elementUtils.bootstrap
 
 export const DEFAULT_FILTERS = [
   extractFieldsFilter,
   fieldReferencesFilter,
 ]
 
-type WorkatoAdapterParams = simpleAdapter.AdapterBaseParams<WorkatoClient, WorkatoConfig>
+export interface WorkatoAdapterParams {
+  filterCreators?: FilterCreator[]
+  client: WorkatoClient
+  config: WorkatoConfig
+}
 
-export default class WorkatoAdapter extends simpleAdapter.BootstrapBaseAdapter<
-  WorkatoClient, WorkatoConfig
-> {
+export default class WorkatoAdapter implements AdapterOperations {
+  private filtersRunner: Required<Filter>
+  private client: WorkatoClient
+  private userConfig: WorkatoConfig
+
   public constructor({
     filterCreators = DEFAULT_FILTERS,
     client,
     config,
   }: WorkatoAdapterParams) {
-    super({ filterCreators, client, config })
+    this.userConfig = config
+    this.client = client
+    this.filtersRunner = filtersRunner(
+      this.client,
+      {
+        api: config.api,
+      },
+      filterCreators,
+    )
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  protected get clientName(): string {
-    return WORKATO
-  }
+  @logDuration('generating instances and types from service')
+  private async getElements(): Promise<Element[]> {
+    // TODON remove for workato? after demonstrating
+    // for now assuming flat dependencies for simplicity
+    // TODO use a real DAG instead (without interfering with parallelizing the requests),
+    // (not yet needed for zendesk, but keeping for now)
+    const [independentEndpoints, dependentEndpoints] = _.partition(
+      this.userConfig[API_CONFIG].getEndpoints.map(e => ({
+        ...e,
+        fieldsToOmit: [...e.fieldsToOmit ?? [], ...this.userConfig[API_CONFIG].fieldsToOmit ?? []],
+      })),
+      e => _.isEmpty(e.dependsOn)
+    )
 
-  // TODON make this match zendesk!!!
-  protected async getTypeAndInstances(
-    endpointConf: configUtils.EndpointConfig,
-    contextElements?: Record<string, Element[]>,
-  ): Promise<Element[]> {
-    const { endpoint, fieldsToOmit, hasDynamicFields } = endpointConf
-
-    const getEntries = async (): Promise<Values[]> => {
-      const getArgs = computeGetArgs(endpointConf, contextElements)
-      return (await Promise.all(
-        getArgs.map(args => this.client.get(args))
-      )).flatMap(r => r.result.map(entry =>
-        (fieldsToOmit !== undefined
-          ? _.omit(entry, fieldsToOmit)
-          : entry
-        )))
+    const elementGenerationParams = {
+      adapterName: WORKATO,
+      client: this.client,
+      endpointToTypeName,
+      nestedFieldFinder: findNestedField,
+      computeGetArgs: simpleGetArgs,
+      defaultNameField: this.userConfig[API_CONFIG].defaultNameField,
+      defaultPathField: this.userConfig[API_CONFIG].defaultPathField,
     }
+    const contextElements: Record<string, Element[]> = Object.fromEntries(await Promise.all(
+      independentEndpoints.map(async endpointConf => [
+        endpointConf.endpoint,
+        await getTypeAndInstances({
+          ...elementGenerationParams,
+          endpointConf,
+        }),
+      ])
+    ))
+    const dependentElements = await Promise.all(
+      dependentEndpoints.map(endpointConf => getTypeAndInstances({
+        ...elementGenerationParams,
+        endpointConf,
+        contextElements,
+      }))
+    )
 
-    const entries = await getEntries()
+    return [
+      ...Object.values(contextElements).flat(),
+      ...dependentElements.flat(),
+    ]
+  }
 
-    // escape "field" names with '.'
-    // TODON instead handle in filter? (not sure if "." is consistent enough for actual nesting)
-    const naclEntries = entries.map(e => _.mapKeys(e, (_val, key) => naclCase(key)))
+  /**
+   * Fetch configuration elements in the given account.
+   * Account credentials were given in the constructor.
+   */
+  @logDuration('fetching account configuration')
+  async fetch(): Promise<FetchResult> {
+    log.debug('going to fetch workato account configuration..')
+    const elements = await this.getElements()
 
-    // endpoints with dynamic fields will be associated with the dynamic_keys type
+    log.debug('going to run filters on %d fetched elements', elements.length)
+    await this.filtersRunner.onFetch(elements)
+    return { elements }
+  }
 
-    const { type, nestedTypes } = generateType({
-      adapterName: WORKATO,
-      name: endpointToTypeName(endpoint),
-      entries: naclEntries,
-      hasDynamicFields: hasDynamicFields === true,
-    })
-
-    const instances = naclEntries.map((entry, index) => toInstance({
-      adapterName: WORKATO,
-      entry,
-      type,
-      nameField: this.userConfig[API_CONFIG].defaultNameField,
-      defaultName: `inst_${index}`,
-      fieldsToOmit,
-      hasDynamicFields,
-    })).filter(isDefined)
-    return [type, ...nestedTypes, ...instances]
+  /**
+   * Deploy configuration elements to the given account.
+   */
+  @logDuration('deploying account configuration')
+  // eslint-disable-next-line class-methods-use-this
+  async deploy(): Promise<DeployResult> {
+    throw new Error('Not implemented.')
   }
 }
