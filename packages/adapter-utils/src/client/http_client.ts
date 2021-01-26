@@ -14,20 +14,17 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { collections, values as lowerfashValues } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { DEFAULT_MAX_CONCURRENT_API_REQUESTS, DEFAULT_RETRY_OPTS, DEFAULT_PAGE_SIZE } from './constants'
 import { ClientOptsBase, ClientGetParams } from './types'
 import { Connection, APIConnection, ConnectionCreator, Credentials, createRetryOptions, createClientConnection } from './http_connection'
-import { safeJsonStringify } from '../utils'
 import { AdapterClientBase } from './base'
+import { GetAllItemsFunc } from './pagination'
 
-const { isDefined } = lowerfashValues
-const { makeArray } = collections.array
 const log = logger(module)
 
-type ClientOpts<TCred extends Credentials> = ClientOptsBase & {
+export type ClientOpts<TCred extends Credentials> = ClientOptsBase & {
   connection?: Connection
   credentials: TCred
 }
@@ -69,6 +66,8 @@ export abstract class AdapterHTTPClient<
     this.credentials = credentials
   }
 
+  protected abstract getAllItems: GetAllItemsFunc
+
   protected async ensureLoggedIn(): Promise<void> {
     if (!this.isLoggedIn) {
       if (this.loginPromise === undefined) {
@@ -88,78 +87,25 @@ export abstract class AdapterHTTPClient<
   @AdapterHTTPClient.throttle('get', ['endpointName', 'queryArgs', 'recursiveQueryArgs'])
   @AdapterHTTPClient.logDecorator(['endpointName', 'queryArgs', 'recursiveQueryArgs'])
   @AdapterHTTPClient.requiresLogin
-  public async get({
-    endpointName,
-    queryArgs,
-    recursiveQueryArgs,
-    paginationField,
-  }: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
+  public async get(getParams: ClientGetParams): Promise<{ result: Values[]; errors: string[]}> {
     if (this.apiClient === undefined) {
-      throw new Error('uninitialized api client')
+      // initialized by requiresLogin (through ensureLoggedIn in this case)
+      throw new Error(`uninitialized ${this.clientName()} client`)
     }
 
-    const requestQueryArgs: Record<string, string>[] = [{}]
-
-    const allResults = []
-
-    const usedParams = new Set<string>()
-
     try {
-      // TODON extract to nextPageFunc so can reuse including zuora
-      while (requestQueryArgs.length > 0) {
-        const additionalArgs = requestQueryArgs.pop() as Record<string, string>
-        const serializedArgs = safeJsonStringify(additionalArgs)
-        if (usedParams.has(serializedArgs)) {
-          // eslint-disable-next-line no-continue
-          continue
-        }
-        usedParams.add(serializedArgs)
-        const params = { ...queryArgs, ...additionalArgs }
-        // eslint-disable-next-line no-await-in-loop
-        const response = await this.apiClient.get(
-          endpointName,
-          Object.keys(params).length > 0 ? { params } : undefined
-        )
-        log.info(`Full HTTP response for ${endpointName} ${safeJsonStringify(params)}: ${safeJsonStringify(response.data)}`)
-
-        const results: Values[] = (
-          (_.isObjectLike(response.data) && Array.isArray(response.data.items))
-            ? response.data.items
-            : makeArray(response.data)
-        )
-
-        allResults.push(...results)
-
-        // TODON support getting page size from config
-        if (paginationField !== undefined && results.length >= this.getPageSize) {
-          requestQueryArgs.unshift({
-            ...additionalArgs,
-            [paginationField]: (additionalArgs[paginationField] ?? 1) + 1,
-          })
-        }
-
-        // TODON decide if want to include
-        if (recursiveQueryArgs !== undefined && Object.keys(recursiveQueryArgs).length > 0) {
-          const newArgs = (results
-            .map(res => _.pickBy(
-              _.mapValues(
-                recursiveQueryArgs,
-                mapper => mapper(res),
-              ),
-              isDefined,
-            ))
-            .filter(args => Object.keys(args).length > 0)
-          )
-          requestQueryArgs.unshift(...newArgs)
-        }
-      }
+      const allResults = await this.getAllItems({
+        client: this.apiClient,
+        pageSize: this.getPageSize,
+        getParams,
+      })
 
       return {
         result: allResults,
         errors: [],
       }
     } catch (e) {
-      log.error(`failed to get ${endpointName}: ${e}, stack: ${e.stack}`)
+      log.error(`failed to get ${getParams.endpointName}: ${e}, stack: ${e.stack}`)
       return {
         result: [],
         errors: [e],

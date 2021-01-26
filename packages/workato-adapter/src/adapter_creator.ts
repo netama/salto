@@ -21,9 +21,10 @@ import { client as clientUtils, config as configUtils } from '@salto-io/adapter-
 import changeValidator from './change_validator'
 import WorkatoAdapter from './adapter'
 import {
-  configType, WorkatoConfig, CLIENT_CONFIG, WorkatoClient,
+  configType, WorkatoConfig, CLIENT_CONFIG,
   UsernameTokenCredentials, Credentials, usernameTokenCredentialsType,
 } from './types'
+import WorkatoClient from './client/client'
 import { realConnection } from './client/connection'
 import { BASE_URL } from './constants'
 
@@ -56,14 +57,11 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new WorkatoAdapter({
-      client: new WorkatoClient(
-        {
-          credentials,
-          config: config[CLIENT_CONFIG],
-          api: { baseUrl: BASE_URL },
-        },
-        realConnection,
-      ),
+      client: new WorkatoClient({
+        credentials,
+        config: config[CLIENT_CONFIG],
+        api: { baseUrl: BASE_URL },
+      }),
       config,
     })
   },

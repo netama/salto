@@ -21,9 +21,10 @@ import { client as clientUtils, config as configUtils } from '@salto-io/adapter-
 import changeValidator from './change_validator'
 import ZendeskAdapter from './adapter'
 import {
-  configType, ZendeskConfig, CLIENT_CONFIG, ZendeskClient,
+  configType, ZendeskConfig, CLIENT_CONFIG,
   UsernamePasswordRESTCredentials, Credentials, usernamePasswordRESTCredentialsType,
 } from './types'
+import ZendeskClient from './client/client'
 import { realConnection } from './client/connection'
 import { baseUrl } from './constants'
 
@@ -58,14 +59,11 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new ZendeskAdapter({
-      client: new ZendeskClient(
-        {
-          credentials,
-          config: config[CLIENT_CONFIG],
-          api: { baseUrl: baseUrl(credentials.subdomain) },
-        },
-        realConnection,
-      ),
+      client: new ZendeskClient({
+        credentials,
+        config: config[CLIENT_CONFIG],
+        api: { baseUrl: baseUrl(credentials.subdomain) },
+      }),
       config,
     })
   },

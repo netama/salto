@@ -85,17 +85,14 @@ export const adapter: Adapter = {
     const config = adapterConfigFromConfig(context.config)
     const credentials = credentialsFromConfig(context.credentials)
     return new ZuoraAdapter({
-      client: new ZuoraClient(
-        {
-          credentials,
-          config: config[CLIENT_CONFIG],
-          api: {
-            baseUrl: credentials.baseURL,
-          },
-
+      client: new ZuoraClient({
+        credentials,
+        config: config[CLIENT_CONFIG],
+        api: {
+          baseUrl: credentials.baseURL,
         },
-        realConnection,
-      ),
+
+      }),
       config,
     })
   },

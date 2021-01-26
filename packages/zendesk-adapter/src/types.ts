@@ -16,7 +16,7 @@
 import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS,
 } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
+import { config as configUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
 const { createClientConfigType, createApiBootstrapConfigType } = configUtils
@@ -217,11 +217,4 @@ export const configType = new ObjectType({
 
 export type FilterContext = {
   [API_CONFIG]: ZendeskApiConfig
-}
-
-export class ZendeskClient extends clientUtils.AdapterHTTPClient<Credentials> {
-  // eslint-disable-next-line class-methods-use-this
-  clientName(): string {
-    return constants.ZENDESK
-  }
 }

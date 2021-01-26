@@ -17,4 +17,5 @@
 export { default } from './src/adapter'
 export { adapter } from './src/adapter_creator'
 export { default as changeValidator } from './src/change_validator'
-export { WorkatoClient, UsernameTokenCredentials } from './src/types'
+export { default as WorkatoClient } from './src/client/client'
+export { UsernameTokenCredentials } from './src/types'

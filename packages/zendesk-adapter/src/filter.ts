@@ -15,7 +15,8 @@
 */
 import { Element } from '@salto-io/adapter-api'
 import { types, promises } from '@salto-io/lowerdash'
-import { FilterContext, ZendeskClient } from './types'
+import { FilterContext } from './types'
+import ZendeskClient from './client/client'
 
 export type Filter = Partial<{
   onFetch(elements: Element[]): Promise<void>

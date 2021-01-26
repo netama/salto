@@ -15,14 +15,12 @@
 */
 import { client as clientUtils } from '@salto-io/adapter-utils'
 import { realConnection } from './connection'
+import { ZENDESK } from '../constants'
 import { Credentials } from '../types'
-import { ZUORA } from '../constants'
 
-const { getWithCursorPagination } = clientUtils
+const { getWithOffsetPagination } = clientUtils
 
-export class UnauthorizedError extends Error {}
-
-export default class ZuoraClient extends clientUtils.AdapterHTTPClient<Credentials> {
+export default class ZendeskClient extends clientUtils.AdapterHTTPClient<Credentials> {
   constructor(
     clientOpts: clientUtils.ClientOpts<Credentials>,
   ) {
@@ -34,8 +32,8 @@ export default class ZuoraClient extends clientUtils.AdapterHTTPClient<Credentia
 
   // eslint-disable-next-line class-methods-use-this
   clientName(): string {
-    return ZUORA
+    return ZENDESK
   }
 
-  protected getAllItems = getWithCursorPagination
+  protected getAllItems = getWithOffsetPagination
 }

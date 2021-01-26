@@ -16,7 +16,8 @@
 import { Element } from '@salto-io/adapter-api'
 import { filterRunner } from '@salto-io/adapter-utils'
 import { types, promises } from '@salto-io/lowerdash'
-import { FilterContext, WorkatoClient } from './types'
+import WorkatoClient from './client/client'
+import { FilterContext } from './types'
 
 export type Filter = Partial<{
   onFetch(elements: Element[]): Promise<void>
