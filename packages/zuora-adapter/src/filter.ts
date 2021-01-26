@@ -13,36 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Element } from '@salto-io/adapter-api'
-import { types, promises } from '@salto-io/lowerdash'
+import { filterUtils } from '@salto-io/adapter-utils'
 import ZuoraClient from './client/client'
 import { FilterContext } from './types'
 
-export type Filter = Partial<{
-  onFetch(elements: Element[]): Promise<void>
-}>
+export const { filtersRunner } = filterUtils
 
-export type FilterWith<M extends keyof Filter> = types.HasMember<Filter, M>
+export type Filter = filterUtils.Filter
 
-export type FilterCreator = (
-  opts: { client: ZuoraClient; config: FilterContext }
-) => Filter
-
-export const filtersRunner = (
-  client: ZuoraClient,
-  config: FilterContext,
-  filterCreators: ReadonlyArray<FilterCreator>,
-): Required<Filter> => {
-  const allFilters = filterCreators.map(f => f({ client, config }))
-
-  const filtersWith = <M extends keyof Filter>(m: M): FilterWith<M>[] =>
-    types.filterHasMember<Filter, M>(m, allFilters)
-
-  return {
-    onFetch: async elements => {
-      await promises.array.series(
-        filtersWith('onFetch').map(filter => () => filter.onFetch(elements))
-      )
-    },
-  }
-}
+export type FilterCreator = filterUtils.FilterCreator<ZuoraClient, FilterContext>

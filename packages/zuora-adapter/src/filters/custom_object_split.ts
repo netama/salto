@@ -17,7 +17,7 @@ import _ from 'lodash'
 import { Element, ObjectType, Field } from '@salto-io/adapter-api'
 import { pathNaclCase, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { isCustomObject, isCustomField } from '../transformers/transformer'
-import { FilterWith } from '../filter'
+import { FilterCreator } from '../filter'
 import { ZUORA } from '../constants'
 
 const { OBJECTS_PATH } = elementsUtils
@@ -53,7 +53,7 @@ const customObjectToSplitElements = (customObject: ObjectType): ObjectType[] => 
   return [annotationsObject, standardFieldsObject, customFieldsObject]
 }
 
-const filterCreator = (): FilterWith<'onFetch'> => ({
+const filterCreator: FilterCreator = () => ({
   onFetch: async (elements: Element[]) => {
     const customObjects = elements.filter(isCustomObject)
     const newSplitCustomObjects = _.flatten(customObjects.map(customObjectToSplitElements))
