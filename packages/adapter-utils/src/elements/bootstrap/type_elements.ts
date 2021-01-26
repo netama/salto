@@ -37,6 +37,7 @@ const generateNestedType = ({ adapterName, typeName, parentName, entries, hasDyn
   entries: Values[]
   hasDynamicFields: boolean
 }): NestedTypeWithNestedTypes => {
+  // TODO use better separator to avoid edge cases?
   const name = `${parentName}${NAMESPACE_SEPARATOR}${typeName}`
   if (entries.length > 0) {
     if (entries.every(entry => Array.isArray(entry))) {

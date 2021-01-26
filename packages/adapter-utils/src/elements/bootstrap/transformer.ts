@@ -64,6 +64,8 @@ export const findNestedField: FindNestedFieldFunc = (type, fieldsToIgnore) => {
   }
 }
 
+export const returnFullEntry: FindNestedFieldFunc = () => undefined
+
 type ComputeGetArgsFunc = (
   endpoint: EndpointConfig,
   contextElements?: Record<string, Element[]>,

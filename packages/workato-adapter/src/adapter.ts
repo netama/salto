@@ -29,7 +29,7 @@ import { WORKATO } from './constants'
 
 const log = logger(module)
 const {
-  findNestedField, simpleGetArgs, getTypeAndInstances,
+  returnFullEntry, simpleGetArgs, getTypeAndInstances,
 } = elementUtils.bootstrap
 
 export const DEFAULT_FILTERS = [
@@ -82,7 +82,7 @@ export default class WorkatoAdapter implements AdapterOperations {
       adapterName: WORKATO,
       client: this.client,
       endpointToTypeName,
-      nestedFieldFinder: findNestedField,
+      nestedFieldFinder: returnFullEntry,
       computeGetArgs: simpleGetArgs,
       defaultNameField: this.userConfig[API_CONFIG].defaultNameField,
       defaultPathField: this.userConfig[API_CONFIG].defaultPathField,
