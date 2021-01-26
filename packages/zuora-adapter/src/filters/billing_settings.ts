@@ -25,7 +25,7 @@ import {
 import { BILLING_SETTINGS_OPERATION_INFO_TYPE, ZUORA } from '../constants'
 
 const log = logger(module)
-const { RECORDS_PATH } = elementsUtils
+const { RECORDS_PATH, TYPES_PATH } = elementsUtils
 
 /**
  * Billing settings filter.
@@ -70,6 +70,7 @@ const filterCreator: FilterCreator = ({ client }) => ({
       fields: {
         data: { type: new MapType(BuiltinTypes.UNKNOWN) },
       },
+      path: [TYPES_PATH, 'billing', 'settingsPlaceholderType'],
     })
     const instances = Object.entries(resultsByType).flatMap(([type, entries]) => (
       entries.map((res, idx) => {
