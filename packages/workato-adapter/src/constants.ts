@@ -13,6 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { client as clientUtils } from '@salto-io/adapter-utils'
+
+const { RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS } = clientUtils
 
 export const WORKATO = 'workato'
 
@@ -20,3 +23,14 @@ export const BASE_URL = 'https://www.workato.com/api'
 
 export const DEFAULT_NAME_FIELD = 'name'
 export const DEFAULT_PATH_FIELD = 'name'
+
+// TODO set correct defaults
+
+export const DEFAULT_MAX_CONCURRENT_API_REQUESTS: Required<clientUtils.ClientRateLimitConfig> = {
+  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  get: 10,
+}
+
+export const DEFAULT_PAGE_SIZE: Required<clientUtils.ClientPageSizeConfig> = {
+  get: 100,
+}

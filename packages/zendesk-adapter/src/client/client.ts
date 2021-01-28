@@ -15,10 +15,10 @@
 */
 import { client as clientUtils } from '@salto-io/adapter-utils'
 import { realConnection } from './connection'
-import { ZENDESK } from '../constants'
+import { ZENDESK, DEFAULT_PAGE_SIZE, DEFAULT_MAX_CONCURRENT_API_REQUESTS } from '../constants'
 import { Credentials } from '../types'
 
-const { getWithOffsetPagination } = clientUtils
+const { getWithOffsetPagination, DEFAULT_RETRY_OPTS } = clientUtils
 
 export default class ZendeskClient extends clientUtils.AdapterHTTPClient<Credentials> {
   constructor(
@@ -27,6 +27,11 @@ export default class ZendeskClient extends clientUtils.AdapterHTTPClient<Credent
     super(
       clientOpts,
       realConnection,
+      {
+        pageSize: DEFAULT_PAGE_SIZE,
+        rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,
+        retry: DEFAULT_RETRY_OPTS,
+      }
     )
   }
 

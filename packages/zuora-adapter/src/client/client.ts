@@ -15,10 +15,10 @@
 */
 import { client as clientUtils } from '@salto-io/adapter-utils'
 import { realConnection } from './connection'
+import { ZUORA, DEFAULT_MAX_CONCURRENT_API_REQUESTS, DEFAULT_PAGE_SIZE } from '../constants'
 import { Credentials } from '../types'
-import { ZUORA } from '../constants'
 
-const { getWithCursorPagination } = clientUtils
+const { getWithCursorPagination, DEFAULT_RETRY_OPTS } = clientUtils
 
 export class UnauthorizedError extends Error {}
 
@@ -29,6 +29,11 @@ export default class ZuoraClient extends clientUtils.AdapterHTTPClient<Credentia
     super(
       clientOpts,
       realConnection,
+      {
+        pageSize: DEFAULT_PAGE_SIZE,
+        rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,
+        retry: DEFAULT_RETRY_OPTS,
+      }
     )
   }
 

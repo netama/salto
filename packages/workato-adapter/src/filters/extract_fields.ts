@@ -23,7 +23,6 @@ import { logger } from '@salto-io/logging'
 import { WORKATO, DEFAULT_NAME_FIELD } from '../constants'
 import { FilterCreator } from '../filter'
 import { API_RESOURCES_CONFIG } from '../types'
-import { endpointToTypeName } from '../transformers/transformer'
 
 const log = logger(module)
 const { generateType, toInstance } = elementUtils.ducktype
@@ -62,7 +61,7 @@ const addFieldTypeAndInstances = ({
   const instancesWithValues = instances.filter(inst => inst.value[fieldName] !== undefined)
   const fieldType = generateType({
     adapterName: WORKATO,
-    // TODON better names, verify can't collide with other types due to shared prefixes
+    // TODO improve names, verify can't collide with other types due to shared prefixes
     name: `${typeName}__${fieldName}`,
     entries: instancesWithValues.map(inst => inst.value[fieldName]),
     hasDynamicFields: false,
@@ -98,13 +97,13 @@ const addFieldTypeAndInstances = ({
  */
 const filter: FilterCreator = ({ config }) => ({
   onFetch: async elements => {
-    const typesWithFieldsToExtract = Object.fromEntries(
-      Object.values(config[API_RESOURCES_CONFIG].resources) // TODON
-        .map(r => r.endpoint)
-        .filter(e =>
-          e.fieldsToExtract !== undefined && e.fieldsToExtract.length > 0)
-        .map(e => [endpointToTypeName(e.url), e.fieldsToExtract as string[]])
-    )
+    const typesWithFieldsToExtract = _.pickBy(
+      _.mapValues(
+        config[API_RESOURCES_CONFIG].resources,
+        resource => resource.endpoint.fieldsToExtract,
+      ),
+      fieldsToExtract => !_.isEmpty(fieldsToExtract),
+    ) as Record<string, string[]>
 
     const allTypes = elements.filter(isObjectType)
     const allInstances = elements.filter(isInstanceElement)

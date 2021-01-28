@@ -22,7 +22,7 @@ import * as constants from './constants'
 const { createClientConfigType } = clientUtils
 const { createUserFetchConfigType, createAdapterApiConfigType } = elementUtils.ducktype
 
-// TODON add to documentation
+// TODO add to documentation
 export const CLIENT_CONFIG = 'client'
 export const FETCH_CONFIG = 'fetch'
 
@@ -40,7 +40,7 @@ export type WorkatoConfig = {
 }
 
 export type ConfigChangeSuggestion = {
-  // TODON add change suggestions?
+  // TODO either add change suggestions or remove
   type: keyof WorkatoConfig
   value: string
   reason?: string
@@ -76,16 +76,13 @@ export class UsernameTokenCredentials {
 
 export type Credentials = UsernameTokenCredentials
 
-// TODON decide if using lists or maps... omit name from duplicate?
 export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceConfig> = {
   connections: {
-    // name: 'connections', // TODON remove
     endpoint: {
       url: '/connections',
     },
   },
   recipes: {
-    // name: 'recipes',
     endpoint: {
       url: '/recipes',
       fieldsToOmit: ['last_run_at'],
@@ -93,7 +90,6 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
     },
   },
   folders: {
-    // name: 'folders',
     endpoint: {
       url: '/folders',
       recursiveQueryByResponseField: {
@@ -105,40 +101,34 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
   },
   // eslint-disable-next-line @typescript-eslint/camelcase
   api_collections: {
-    // name: 'api_collections',
     endpoint: {
       url: '/api_collections',
     },
   },
   // eslint-disable-next-line @typescript-eslint/camelcase
   api_endpoints: {
-    // name: 'api_endpoints',
     endpoint: {
       url: '/api_endpoints',
     },
   },
   // eslint-disable-next-line @typescript-eslint/camelcase
   api_clients: {
-    // name: 'api_clients',
     endpoint: {
       url: '/api_clients',
     },
   },
   // eslint-disable-next-line @typescript-eslint/camelcase
   api_access_profiles: {
-    // name: 'api_access_profiles',
     endpoint: {
       url: '/api_access_profiles',
     },
   },
   roles: {
-    // name: 'roles',
     endpoint: {
       url: '/roles',
     },
   },
   properties: {
-    // name: 'properties',
     endpoint: {
       url: '/properties',
       queryParams: {
@@ -160,17 +150,15 @@ export const configType = new ObjectType({
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
-          // TODON decide on order?
-          includeResources: Object.keys(DEFAULT_RESOURCES),
+          includeResources: [...Object.keys(DEFAULT_RESOURCES)].sort(),
         },
       },
     },
     [API_RESOURCES_CONFIG]: {
       type: createAdapterApiConfigType(constants.WORKATO),
-      // TODO decide if want to keep or remove
+      // TODO decide if want to keep visible
       annotations: {
         [CORE_ANNOTATIONS.DEFAULT]: {
-          // TODON decide on order?
           resources: DEFAULT_RESOURCES,
         },
       },

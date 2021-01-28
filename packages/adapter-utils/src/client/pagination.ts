@@ -59,7 +59,7 @@ export const getWithOffsetPagination: GetAllItemsFunc = async ({ client, pageSiz
     log.debug(`Full HTTP response for ${endpointName} ${safeJsonStringify(params)}: ${safeJsonStringify(response.data)}`)
 
     const results: Values[] = (
-      // TODON is items a generic-enough field?
+      // TODO is items a generic-enough field?
       (_.isObjectLike(response.data) && Array.isArray(response.data.items))
         ? response.data.items
         : makeArray(response.data)
@@ -67,7 +67,6 @@ export const getWithOffsetPagination: GetAllItemsFunc = async ({ client, pageSiz
 
     allResults.push(...results)
 
-    // TODON support getting page size from config
     if (paginationField !== undefined && results.length >= pageSize) {
       requestQueryArgs.unshift({
         ...additionalArgs,
@@ -110,25 +109,24 @@ export const getWithCursorPagination: GetAllItemsFunc = async ({ client, getPara
         params,
       },
     )
-    // TODO remove
+    // TODO remove?
     log.info(`Full HTTP response for ${endpointName} ${safeJsonStringify(params)}: ${safeJsonStringify(response.data)}`)
 
-    // TODON check if need the 2nd condition. the success field doesn't always exist
+    // TODO check if need the 2nd condition. the success field doesn't always exist
     if (response.status !== 200 || response.data.success === false) {
       // TODO extract better error
       log.error(`error getting result for ${endpointName}: %s %o %o`, response.status, response.statusText, response.data)
       break
     }
     entries.push(...makeArray(response.data))
-    // TODON support other types of pagination too
     if (response.data[nextPageField] === undefined) {
       break
     }
     const nextPage = new URL(response.data[nextPageField], 'http://localhost')
-    // TODON verify pathname is the same
+    // TODO verify pathname is the same
     nextPageArgs = Object.fromEntries(nextPage.searchParams.entries())
   }
-  log.info('Received %d results for endpoint %s', // TODON inaccurate when not extracting nested field
+  log.info('Received %d results for endpoint %s', // TODO inaccurate when not extracting nested field
     entries.length, endpointName)
   return entries
 }

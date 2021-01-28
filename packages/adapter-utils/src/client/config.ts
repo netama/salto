@@ -22,13 +22,11 @@ import {
 export type ClientRateLimitConfig = Partial<{
   total: number
   get: number
-  put: number
-}>
+}> & Record<string, number>
 
 export type ClientPageSizeConfig = Partial<{
   get: number
-  put: number
-}>
+}> & Record<string, number>
 
 export type ClientRetryConfig = Partial<{
   maxAttempts: number
@@ -42,21 +40,21 @@ export type ClientBaseConfig = Partial<{
   pageSize: ClientPageSizeConfig
 }>
 
-export const createClientConfigType = (adapter: string): ObjectType => {
+export const createClientConfigType = (adapter: string, bucketNames?: string[]): ObjectType => {
   const clientRateLimitConfigType = new ObjectType({
     elemID: new ElemID(adapter, 'clientRateLimitConfig'),
     fields: {
       total: { type: BuiltinTypes.NUMBER },
       get: { type: BuiltinTypes.NUMBER },
-      put: { type: BuiltinTypes.NUMBER },
+      ...Object.fromEntries((bucketNames ?? []).map(name => [name, { type: BuiltinTypes.NUMBER }])),
     } as Record<keyof ClientRateLimitConfig, FieldDefinition>,
   })
 
   const clientPageSizeConfigType = new ObjectType({
     elemID: new ElemID(adapter, 'clientPageSizeConfig'),
     fields: {
+      // can extend to additional operations when needed
       get: { type: BuiltinTypes.NUMBER },
-      put: { type: BuiltinTypes.NUMBER },
     } as Record<keyof ClientPageSizeConfig, FieldDefinition>,
   })
 

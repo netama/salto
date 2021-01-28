@@ -13,6 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { client as clientUtils } from '@salto-io/adapter-utils'
+
+const { RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS } = clientUtils
 
 export const ZENDESK = 'zendesk'
 
@@ -22,3 +25,14 @@ export const DEFAULT_NAME_FIELD = 'id'
 export const DEFAULT_PATH_FIELD = 'name'
 export const FIELDS_TO_OMIT = ['created_at', 'updated_at']
 export const PAGINATION_FIELDS = ['count', 'next_page', 'previous_page']
+
+// TODO set correct defaults
+
+export const DEFAULT_MAX_CONCURRENT_API_REQUESTS: Required<clientUtils.ClientRateLimitConfig> = {
+  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  get: 10,
+}
+
+export const DEFAULT_PAGE_SIZE: Required<clientUtils.ClientPageSizeConfig> = {
+  get: 100,
+}

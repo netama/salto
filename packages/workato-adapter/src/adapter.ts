@@ -25,7 +25,6 @@ import { FilterCreator, Filter, filtersRunner } from './filter'
 import { WorkatoConfig, DEFAULT_RESOURCES } from './types'
 import extractFieldsFilter from './filters/extract_fields'
 import fieldReferencesFilter from './filters/field_references'
-import { endpointToTypeName } from './transformers/transformer'
 import { WORKATO, DEFAULT_NAME_FIELD, DEFAULT_PATH_FIELD } from './constants'
 
 const log = logger(module)
@@ -69,7 +68,7 @@ export default class WorkatoAdapter implements AdapterOperations {
 
   @logDuration('generating instances and types from service')
   private async getElements(): Promise<Element[]> {
-    // TODON remove for workato? after demonstrating
+    // TODO remove for workato? after demonstrating
     // for now assuming flat dependencies for simplicity
     // TODO use a real DAG instead (without interfering with parallelizing the requests),
     // (not yet needed for zendesk, but keeping for now)
@@ -89,7 +88,6 @@ export default class WorkatoAdapter implements AdapterOperations {
     const elementGenerationParams = {
       adapterName: WORKATO,
       client: this.client,
-      endpointToTypeName,
       nestedFieldFinder: returnFullEntry,
       computeGetArgs: simpleGetArgs,
       defaultNameField: DEFAULT_NAME_FIELD,

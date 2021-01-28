@@ -16,11 +16,11 @@
 import _ from 'lodash'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
-import { DEFAULT_MAX_CONCURRENT_API_REQUESTS, DEFAULT_RETRY_OPTS, DEFAULT_PAGE_SIZE } from './constants'
 import { ClientOptsBase, ClientGetParams } from './types'
 import { Connection, APIConnection, ConnectionCreator, Credentials, createRetryOptions, createClientConnection } from './http_connection'
 import { AdapterClientBase } from './base'
 import { GetAllItemsFunc } from './pagination'
+import { ClientRetryConfig, ClientRateLimitConfig, ClientPageSizeConfig } from './config'
 
 const log = logger(module)
 
@@ -47,10 +47,10 @@ export abstract class AdapterHTTPClient<
   constructor(
     { credentials, connection, config, api }: ClientOpts<TCred>,
     createConnection: ConnectionCreator,
-    defaults = {
-      retry: DEFAULT_RETRY_OPTS,
-      rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,
-      pageSize: DEFAULT_PAGE_SIZE,
+    defaults: {
+      retry: Required<ClientRetryConfig>
+      rateLimit: Required<ClientRateLimitConfig>
+      pageSize: Required<ClientPageSizeConfig>
     },
   ) {
     super(

@@ -23,14 +23,3 @@ export const DEFAULT_RETRY_OPTS: Required<ClientRetryConfig> = {
 }
 
 export const RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS = -1
-export const DEFAULT_MAX_CONCURRENT_API_REQUESTS = {
-  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
-  get: 10,
-  put: 3,
-}
-
-// TODON make configurable?
-export const DEFAULT_PAGE_SIZE = {
-  get: 100,
-  put: 100,
-}

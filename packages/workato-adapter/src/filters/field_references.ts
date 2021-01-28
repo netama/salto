@@ -42,7 +42,7 @@ const replaceReferenceValues = (
   ): Element | undefined => {
     const findElem = (value: string, targetType?: string): Element | undefined => (
       targetType !== undefined
-        // TODON make the field we're using to look up more explicit
+        // TODO make the field we're using to look up more explicit
         ? elemLookupMaps.map(lookup => lookup[targetType]?.[value]).find(isDefined)
         : undefined
     )
@@ -68,7 +68,7 @@ const replaceReferenceValues = (
         // field,
       }) === val) ? new ReferenceExpression(elem.elemID) : undefined
       if (res !== undefined && path !== undefined) {
-        // TODON get field instead of path when have real types
+        // TODO get field instead of path when we have real types
         fieldsWithResolvedReferences.add(path.getFullName())
       }
       return res
@@ -112,7 +112,7 @@ const mapFieldToElem = (
   instances: InstanceElement[], fieldName: string,
 ): Record<string, Element> => (
   _(instances)
-    // TODON generalize?
+    // TODO generalize?
     .filter(e => e.value[fieldName] !== undefined)
     .map(e => [e.value[fieldName], e])
     .fromPairs()

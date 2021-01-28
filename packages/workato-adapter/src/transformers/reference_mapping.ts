@@ -131,7 +131,7 @@ const matchName = (fieldName: string, matcher: string | RegExp): boolean => (
 )
 
 const matchType = (elem: Element, types: string[]): boolean => (
-  // TODON change when using structured types (right now most are unknown)
+  // TODO change when using structured types (when this was written most types were unknown)
   types.includes(elem.elemID.name)
 )
 
@@ -179,7 +179,7 @@ export const generateReferenceResolverFinder = (
     .groupBy(def => def.src.field)
     .value()
 
-  // TODON filter by parent too when we have real types
+  // TODO filter by parent too when we have real types
   return (fieldName => (
     [
       ...(matchersByFieldName[fieldName] ?? []),

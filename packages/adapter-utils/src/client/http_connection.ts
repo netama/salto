@@ -88,7 +88,7 @@ export const validateCredentials = async (
   const conn = createClientConnection(createConnectionArgs)
   await conn.login(creds)
   // should return account id but not used by default flow
-  return '' // TODON saas credentials? need something?
+  return '' // TODO needed for SaaS - check details
 }
 
 export const axiosConnection = ({
@@ -111,7 +111,7 @@ export const axiosConnection = ({
     creds: Credentials,
   ): Promise<APIConnection> => {
     const httpClient = axios.create({
-      // TODON decide if want base-url func (and no base url in config), or to always set it earlier
+      // TODO decide if want base-url func (and no base url in config), or to always set it earlier
       baseURL: baseURLFunc !== undefined ? baseURLFunc(apiConfig, creds) : apiConfig.baseUrl,
       ...authParamsFunc(creds),
     })

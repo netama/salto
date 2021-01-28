@@ -13,6 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { client as clientUtils } from '@salto-io/adapter-utils'
+
+const { RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS } = clientUtils
 
 export const ZUORA = 'zuora'
 export const CUSTOM_OBJECT = 'CustomObject'
@@ -49,3 +52,14 @@ export const INSTANCE_ID = 'instanceId'
 
 export const CUSTOM_OBJECT_DEFINITION_TYPE = 'billing__CustomObjectDefinition'
 export const BILLING_SETTINGS_OPERATION_INFO_TYPE = 'billing__SettingItemWithOperationsInformation'
+
+// TODO set correct defaults
+
+export const DEFAULT_MAX_CONCURRENT_API_REQUESTS: Required<clientUtils.ClientRateLimitConfig> = {
+  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  get: 10,
+}
+
+export const DEFAULT_PAGE_SIZE: Required<clientUtils.ClientPageSizeConfig> = {
+  get: 100,
+}

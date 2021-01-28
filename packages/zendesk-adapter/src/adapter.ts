@@ -23,7 +23,6 @@ import { values as lowerdashValues } from '@salto-io/lowerdash'
 import ZendeskClient from './client/client'
 import { ZendeskConfig, DEFAULT_RESOURCES } from './types'
 import { FilterCreator, Filter, filtersRunner } from './filter'
-import { endpointToTypeName } from './transformers/transformer'
 import { ZENDESK, DEFAULT_NAME_FIELD, DEFAULT_PATH_FIELD, PAGINATION_FIELDS, FIELDS_TO_OMIT } from './constants'
 
 const log = logger(module)
@@ -91,7 +90,6 @@ export default class ZendeskAdapter implements AdapterOperations {
     const elementGenerationParams = {
       adapterName: ZENDESK,
       client: this.client,
-      endpointToTypeName,
       nestedFieldFinder: findNestedField,
       computeGetArgs: simpleGetArgs,
       defaultNameField: DEFAULT_NAME_FIELD,

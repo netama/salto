@@ -22,7 +22,7 @@ import * as constants from './constants'
 const { createClientConfigType } = clientUtils
 const { createUserFetchConfigType, createAdapterApiConfigType } = elementUtils.ducktype
 
-// TODON add to documentation
+// TODO add to documentation
 export const CLIENT_CONFIG = 'client'
 export const FETCH_CONFIG = 'fetch'
 
@@ -40,7 +40,7 @@ export type ZendeskConfig = {
 }
 
 export type ConfigChangeSuggestion = {
-  // TODON add change suggestions?
+  // TODO either add change suggestions or remove
   type: keyof ZendeskConfig
   value: string
   reason?: string
@@ -164,7 +164,7 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
   dynamic_content_items: {
     endpoint: {
       url: '/dynamic_content/items',
-      // TODON ensure includes variants too
+      // TODO ensure includes variants too
     },
   },
   locales: {
@@ -250,7 +250,7 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
   },
   // eslint-disable-next-line @typescript-eslint/camelcase
   oauth_clients: {
-    // TODON should include?
+    // TODO should include?
     endpoint: {
       url: '/oauth/clients',
     },
@@ -268,7 +268,7 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
     },
   },
   ips: {
-    // TODON should include?
+    // TODO should include?
     endpoint: {
       url: '/ips',
     },
@@ -285,7 +285,7 @@ export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceCon
       url: '/channels/twitter/monitored_twitter_handles',
     },
   },
-  // TODON sunshine workflows?
+  // TODO sunshine workflows?
 }
 
 export const configType = new ObjectType({
@@ -299,17 +299,15 @@ export const configType = new ObjectType({
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
-          // TODON decide on order?
-          includeResources: Object.keys(DEFAULT_RESOURCES),
+          includeResources: [...Object.keys(DEFAULT_RESOURCES)].sort(),
         },
       },
     },
     [API_RESOURCES_CONFIG]: {
       type: createAdapterApiConfigType(constants.ZENDESK),
-      // TODO decide if want to keep or remove
+      // TODO decide if want to keep visible
       annotations: {
         [CORE_ANNOTATIONS.DEFAULT]: {
-          // TODON decide on order?
           resources: DEFAULT_RESOURCES,
         },
       },

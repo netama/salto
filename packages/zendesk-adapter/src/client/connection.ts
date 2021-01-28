@@ -26,7 +26,7 @@ export const realConnection: clientUtils.ConnectionCreator = ({ apiConfig, retry
         password,
       },
     }),
-    // TODON add auth validator
+    // TODO add auth validator
     credValidateFunc: () => Promise.resolve(),
   })
 )

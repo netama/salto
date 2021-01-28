@@ -83,7 +83,6 @@ export const simpleGetArgs: ComputeGetArgsFunc = (
     recursiveQueryByResponseField,
     val => ((entry: Values): string => entry[val])
   )
-  // TODON use name instead of url
   return [{ endpointName: url, queryArgs: queryParams, recursiveQueryArgs, paginationField }]
 }
 
@@ -104,7 +103,7 @@ export const getTypeAndInstances = async ({
   client: HTTPClientInterface
   nestedFieldFinder: FindNestedFieldFunc
   computeGetArgs: ComputeGetArgsFunc
-  endpoint: EndpointConfig // TODON split into two?
+  endpoint: EndpointConfig // TODO split into two?
   defaultNameField: string
   defaultPathField: string
   topLevelFieldsToOmit?: string[]
@@ -129,7 +128,7 @@ export const getTypeAndInstances = async ({
   const entries = await getEntries()
 
   // escape "field" names with '.'
-  // TODON instead handle in filter? (not sure if "." is consistent enough for actual nesting)
+  // TODO instead handle in filter? (not sure if "." is consistent enough for actual nesting)
   const naclEntries = entries.map(e => _.mapKeys(e, (_val, key) => naclCase(key)))
 
   // endpoints with dynamic fields will be associated with the dynamic_keys type
@@ -151,7 +150,7 @@ export const getTypeAndInstances = async ({
           type: nestedFieldDetails.type,
           nameField: nameField ?? defaultNameField,
           pathField: pathField ?? defaultPathField,
-          defaultName: `inst_${index}_${nesteIndex}`, // TODON improve
+          defaultName: `inst_${index}_${nesteIndex}`, // TODO improve
           fieldsToOmit,
           hasDynamicFields,
         })
@@ -165,7 +164,7 @@ export const getTypeAndInstances = async ({
       type,
       nameField: nameField ?? defaultNameField,
       pathField: pathField ?? defaultPathField,
-      defaultName: `inst_${index}`, // TODON improve
+      defaultName: `inst_${index}`, // TODO improve
       // we only omit the pagination fields at the top level
       fieldsToOmit: [...(topLevelFieldsToOmit ?? []), ...(fieldsToOmit ?? [])],
       hasDynamicFields,

@@ -36,7 +36,6 @@ export type EndpointConfig = {
 }
 
 export type ResourceConfig = {
-  // name: string // TODON remove
   endpoint: EndpointConfig
 }
 
