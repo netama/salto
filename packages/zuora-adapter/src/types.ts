@@ -17,17 +17,17 @@ import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType, MapType,
   InstanceElement,
 } from '@salto-io/adapter-api'
-import { config as configUtils } from '@salto-io/adapter-utils'
+import { client as clientUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-const { createClientConfigType } = configUtils
+const { createClientConfigType } = clientUtils
 
 // TODON add to documentation
 export const CLIENT_CONFIG = 'client'
 export const API_MODULES_CONFIG = 'apiModules' // TODON single module?
 export const DISABLE_FILTERS = 'disableFilters'
 
-export type ZuoraClientConfig = configUtils.ClientBaseConfig
+export type ZuoraClientConfig = clientUtils.ClientBaseConfig
 
 export type DependsOnConfig = {
   endpoint: string

@@ -401,7 +401,7 @@ export const loadWorkspace = async (config: WorkspaceConfigSource, credentials: 
     updateServiceCredentials:
       async (service: string, servicesCredentials: Readonly<InstanceElement>): Promise<void> =>
         credentials.set(credsPath(service), servicesCredentials),
-    updateServiceConfig:
+    updateServiceConfig: // TODON update service config
       async (service: string, newConfig: Readonly<InstanceElement>): Promise<void> => {
         await config.setAdapter(service, newConfig)
       },

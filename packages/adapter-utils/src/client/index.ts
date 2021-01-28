@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 export * from './base'
+export * from './config'
 export * from './constants'
 export * from './http_client'
 export * from './http_connection'

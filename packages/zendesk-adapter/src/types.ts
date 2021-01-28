@@ -16,26 +16,27 @@
 import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS,
 } from '@salto-io/adapter-api'
-import { config as configUtils } from '@salto-io/adapter-utils'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-const { createClientConfigType, createApiBootstrapConfigType } = configUtils
+const { createClientConfigType } = clientUtils
+const { createUserFetchConfigType, createAdapterApiConfigType } = elementUtils.ducktype
 
 // TODON add to documentation
 export const CLIENT_CONFIG = 'client'
-export const API_CONFIG = 'api'
+export const FETCH_CONFIG = 'fetch'
 
-export type ZendeskClientConfig = configUtils.ClientBaseConfig
+export const API_RESOURCES_CONFIG = 'apiResources'
 
-export type ZendeskEndpointConfig = configUtils.EndpointConfig
+export type ZendeskClientConfig = clientUtils.ClientBaseConfig
 
-export type ZendeskApiConfig = Omit<configUtils.ApiEndpointBaseConfig, 'getEndpoints'> & {
-  getEndpoints: ZendeskEndpointConfig[]
-}
+export type ZendeskFetchConfig = elementUtils.ducktype.UserFetchConfig
+export type ZendeskApiConfig = elementUtils.ducktype.AdapterApiConfig
 
 export type ZendeskConfig = {
   [CLIENT_CONFIG]?: ZendeskClientConfig
-  [API_CONFIG]: ZendeskApiConfig
+  [FETCH_CONFIG]: ZendeskFetchConfig
+  [API_RESOURCES_CONFIG]?: ZendeskApiConfig
 }
 
 export type ConfigChangeSuggestion = {
@@ -76,139 +77,240 @@ export class UsernamePasswordRESTCredentials {
 
 export type Credentials = UsernamePasswordRESTCredentials
 
+export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceConfig> = {
+  groups: {
+    endpoint: {
+      url: '/groups',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  custom_roles: {
+    endpoint: {
+      url: '/custom_roles',
+    },
+  },
+  organizations: {
+    endpoint: {
+      url: '/organizations',
+    },
+  },
+  views: {
+    endpoint: {
+      url: '/views',
+      pathField: 'title',
+    },
+  },
+  triggers: {
+    endpoint: {
+      url: '/triggers',
+      pathField: 'title',
+    },
+  },
+  automations: {
+    endpoint: {
+      url: '/automations',
+      pathField: 'title',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  slas_policies: {
+    endpoint: {
+      url: '/slas/policies',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  slas_policies_definitions: {
+    endpoint: {
+      url: '/slas/policies/definitions',
+    },
+  },
+  targets: {
+    endpoint: {
+      url: '/targets',
+    },
+  },
+  macros: {
+    endpoint: {
+      url: '/macros',
+      pathField: 'title',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  macros_actions: {
+    endpoint: {
+      url: '/macros/actions',
+      // no unique identifier for individual items
+      keepOriginal: true,
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  macros_categories: {
+    endpoint: {
+      url: '/macros/categories',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  macros_definitions: {
+    endpoint: {
+      url: '/macros/definitions',
+    },
+  },
+  brands: {
+    endpoint: {
+      url: '/brands',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  dynamic_content_items: {
+    endpoint: {
+      url: '/dynamic_content/items',
+      // TODON ensure includes variants too
+    },
+  },
+  locales: {
+    endpoint: {
+      url: '/locales',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  business_hours_schedules: {
+    endpoint: {
+      url: '/business_hours/schedules',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  sharing_agreements: {
+    endpoint: {
+      url: '/sharing_agreements',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  recipient_addresses: {
+    endpoint: {
+      url: '/recipient_addresses',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  ticket_forms: {
+    // not always available
+    endpoint: {
+      url: '/ticket_forms',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  ticket_fields: {
+    endpoint: {
+      url: '/ticket_fields',
+      pathField: 'title',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  user_fields: {
+    endpoint: {
+      url: '/user_fields',
+      pathField: 'key',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  organization_fields: {
+    endpoint: {
+      url: '/organization_fields',
+      pathField: 'key',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  routing_attributes: {
+    endpoint: {
+      url: '/routing/attributes',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  routing_attributes_definitions: {
+    endpoint: {
+      url: '/routing/attributes/definitions',
+    },
+  },
+  workspaces: {
+    // not always available
+    endpoint: {
+      url: '/workspaces',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  apps_installations: {
+    endpoint: {
+      url: '/apps/installations',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  apps_owned: {
+    endpoint: {
+      url: '/apps/owned',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  oauth_clients: {
+    // TODON should include?
+    endpoint: {
+      url: '/oauth/clients',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  oauth_global_clients: {
+    endpoint: {
+      url: '/oauth/global_clients',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  account_settings: {
+    endpoint: {
+      url: '/account/settings',
+    },
+  },
+  ips: {
+    // TODON should include?
+    endpoint: {
+      url: '/ips',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  resource_collections: {
+    endpoint: {
+      url: '/resource_collections',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  monitored_twitter_handles: {
+    endpoint: {
+      url: '/channels/twitter/monitored_twitter_handles',
+    },
+  },
+  // TODON sunshine workflows?
+}
+
 export const configType = new ObjectType({
   elemID: configID,
   fields: {
     [CLIENT_CONFIG]: {
       type: createClientConfigType(constants.ZENDESK),
     },
-    [API_CONFIG]: {
-      type: createApiBootstrapConfigType(constants.ZENDESK),
+    [FETCH_CONFIG]: {
+      type: createUserFetchConfigType(constants.ZENDESK),
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
-          getEndpoints: [
-            {
-              endpoint: '/groups',
-            },
-            {
-              endpoint: '/custom_roles',
-            },
-            {
-              endpoint: '/organizations',
-            },
-            {
-              endpoint: '/views',
-              pathField: 'title',
-            },
-            {
-              endpoint: '/triggers',
-              pathField: 'title',
-            },
-            {
-              endpoint: '/automations',
-              pathField: 'title',
-            },
-            {
-              endpoint: '/slas/policies',
-            },
-            {
-              endpoint: '/slas/policies/definitions',
-            },
-            {
-              endpoint: '/targets',
-            },
-            {
-              endpoint: '/macros',
-              pathField: 'title',
-            },
-            {
-              endpoint: '/macros/actions',
-              // no unique identifier for individual items
-              keepOriginal: true,
-            },
-            {
-              endpoint: '/macros/categories',
-            },
-            {
-              endpoint: '/macros/definitions',
-            },
-            {
-              endpoint: '/brands',
-            },
-            {
-              endpoint: '/dynamic_content/items',
-              // TODON ensure includes variants too
-            },
-            {
-              endpoint: '/locales',
-            },
-            {
-              endpoint: '/business_hours/schedules',
-            },
-            {
-              endpoint: '/sharing_agreements',
-            },
-            {
-              endpoint: '/recipient_addresses',
-            },
-            {
-              // not always available
-              endpoint: '/ticket_forms',
-            },
-            {
-              endpoint: '/ticket_fields',
-              pathField: 'title',
-            },
-            {
-              endpoint: '/user_fields',
-              pathField: 'key',
-            },
-            {
-              endpoint: '/organization_fields',
-              pathField: 'key',
-            },
-            {
-              endpoint: '/routing/attributes',
-            },
-            {
-              endpoint: '/routing/attributes/definitions',
-            },
-            {
-              // not always available
-              endpoint: '/workspaces',
-            },
-            {
-              endpoint: '/apps/installations',
-            },
-            {
-              endpoint: '/apps/owned',
-            },
-            {
-              // TODON should include?
-              endpoint: '/oauth/clients',
-            },
-            {
-              endpoint: '/oauth/global_clients',
-            },
-            {
-              endpoint: '/account/settings',
-            },
-            {
-              // TODON should include?
-              endpoint: '/ips',
-            },
-            {
-              endpoint: '/resource_collections',
-            },
-            {
-              endpoint: '/channels/twitter/monitored_twitter_handles',
-            },
-            // TODON sunshine workflows?
-          ],
-          defaultNameField: 'id',
-          defaultPathField: 'name',
-          fieldsToOmit: ['created_at', 'updated_at'],
+          // TODON decide on order?
+          includeResources: Object.keys(DEFAULT_RESOURCES),
+        },
+      },
+    },
+    [API_RESOURCES_CONFIG]: {
+      type: createAdapterApiConfigType(constants.ZENDESK),
+      // TODO decide if want to keep or remove
+      annotations: {
+        [CORE_ANNOTATIONS.DEFAULT]: {
+          // TODON decide on order?
+          resources: DEFAULT_RESOURCES,
         },
       },
     },
@@ -216,5 +318,6 @@ export const configType = new ObjectType({
 })
 
 export type FilterContext = {
-  [API_CONFIG]: ZendeskApiConfig
+  [FETCH_CONFIG]: ZendeskFetchConfig
+  [API_RESOURCES_CONFIG]: ZendeskApiConfig
 }

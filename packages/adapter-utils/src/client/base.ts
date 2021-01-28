@@ -17,7 +17,7 @@ import _ from 'lodash'
 import Bottleneck from 'bottleneck'
 import { decorators } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import { ClientBaseConfig, ClientRateLimitConfig } from '../config'
+import { ClientBaseConfig, ClientRateLimitConfig } from './config'
 import { DEFAULT_MAX_CONCURRENT_API_REQUESTS, DEFAULT_RETRY_OPTS, DEFAULT_PAGE_SIZE } from './constants'
 import {
   ApiConnectionBaseConfig, ClientOptsBase,

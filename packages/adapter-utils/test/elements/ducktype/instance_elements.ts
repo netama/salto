@@ -31,7 +31,7 @@
 import _ from 'lodash'
 import { ObjectType, ElemID, InstanceElement } from '@salto-io/adapter-api'
 // eslint-disable-next-line
-import { toInstance } from '../../../src/elements/bootstrap/instance_elements'
+import { toInstance } from '../../../src/elements/ducktype/instance_elements'
 import { RECORDS_PATH } from '../../../src/elements/constants'
 
 /* eslint-disable @typescript-eslint/camelcase */

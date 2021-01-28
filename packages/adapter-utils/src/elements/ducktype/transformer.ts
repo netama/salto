@@ -18,10 +18,10 @@ import { Element, ObjectType, Field, isListType, isObjectType, Values } from '@s
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { ClientGetParams, HTTPClientInterface } from '../../client'
-import { EndpointConfig } from '../../config'
 import { naclCase } from '../../nacl_case_utils'
-import { generateType, addGetEndpointAnnotations } from './type_elements'
+import { generateType } from './type_elements'
 import { toInstance } from './instance_elements'
+import { EndpointConfig } from './resource_config'
 
 const { makeArray } = collections.array
 const { isDefined } = lowerdashValues
@@ -73,7 +73,7 @@ type ComputeGetArgsFunc = (
 
 export const simpleGetArgs: ComputeGetArgsFunc = (
   {
-    endpoint,
+    url,
     queryParams,
     recursiveQueryByResponseField,
     paginationField,
@@ -83,40 +83,39 @@ export const simpleGetArgs: ComputeGetArgsFunc = (
     recursiveQueryByResponseField,
     val => ((entry: Values): string => entry[val])
   )
-  return [{ endpointName: endpoint, queryArgs: queryParams, recursiveQueryArgs, paginationField }]
+  // TODON use name instead of url
+  return [{ endpointName: url, queryArgs: queryParams, recursiveQueryArgs, paginationField }]
 }
-
-export type TypeNameFunc = (endpointName: string) => string
 
 export const getTypeAndInstances = async ({
   adapterName,
+  typeName,
   client,
-  endpointToTypeName,
   nestedFieldFinder,
   computeGetArgs,
-  endpointConf,
+  endpoint,
   defaultNameField,
   defaultPathField,
   topLevelFieldsToOmit,
   contextElements,
 }: {
   adapterName: string
+  typeName: string
   client: HTTPClientInterface
-  endpointToTypeName: TypeNameFunc
   nestedFieldFinder: FindNestedFieldFunc
   computeGetArgs: ComputeGetArgsFunc
-  endpointConf: EndpointConfig // TODON split into two?
+  endpoint: EndpointConfig // TODON split into two?
   defaultNameField: string
   defaultPathField: string
   topLevelFieldsToOmit?: string[]
   contextElements?: Record<string, Element[]>
 }): Promise<Element[]> => {
   const {
-    endpoint, fieldsToOmit, hasDynamicFields, nameField, pathField, keepOriginal,
-  } = endpointConf
+    fieldsToOmit, hasDynamicFields, nameField, pathField, keepOriginal,
+  } = endpoint
 
   const getEntries = async (): Promise<Values[]> => {
-    const getArgs = computeGetArgs(endpointConf, contextElements)
+    const getArgs = computeGetArgs(endpoint, contextElements)
     // TODO add error handling
     return (await Promise.all(
       getArgs.map(args => client.get(args))
@@ -137,12 +136,11 @@ export const getTypeAndInstances = async ({
 
   const { type, nestedTypes } = generateType({
     adapterName,
-    name: endpointToTypeName(endpoint),
+    name: typeName,
     entries: naclEntries,
     hasDynamicFields: hasDynamicFields === true,
   })
   const nestedFieldDetails = nestedFieldFinder(type, topLevelFieldsToOmit)
-  addGetEndpointAnnotations(type, endpoint, nestedFieldDetails?.field.name)
 
   const instances = naclEntries.flatMap((entry, index) => {
     if (nestedFieldDetails !== undefined && !keepOriginal) {

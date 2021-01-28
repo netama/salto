@@ -30,8 +30,8 @@
 */
 import { ObjectType, Values, ElemID, BuiltinTypes, MapType } from '@salto-io/adapter-api'
 // eslint-disable-next-line
-import { generateType, addGetEndpointAnnotations } from '../../../src/elements/bootstrap/type_elements'
-import { GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, TYPES_PATH, SUBTYPES_PATH } from '../../../src/elements/constants'
+import { generateType } from '../../../src/elements/ducktype/type_elements'
+import { TYPES_PATH, SUBTYPES_PATH } from '../../../src/elements/constants'
 
 /* eslint-disable @typescript-eslint/camelcase */
 const ADAPTER_NAME = 'myAdapter'
@@ -264,22 +264,6 @@ describe('boostrap_type_elements', () => {
       }))).toBeTruthy()
       expect(nestedTypes).toHaveLength(0)
       expect(type.path).toEqual([ADAPTER_NAME, TYPES_PATH, SUBTYPES_PATH, 'parent_type_', 'subtypeName'])
-    })
-  })
-
-  describe('addGetEndpointAnnotations', () => {
-    it('should add get endpoint annotation', () => {
-      const type = new ObjectType({ elemID: new ElemID(ADAPTER_NAME, 'myType'), fields: {} })
-      addGetEndpointAnnotations(type, '/folders')
-      expect(type.annotations).toEqual({ [GET_ENDPOINT_SCHEMA_ANNOTATION]: ['/folders'] })
-    })
-    it('should add get endpoint and data field annotations', () => {
-      const type = new ObjectType({ elemID: new ElemID(ADAPTER_NAME, 'myType'), fields: {} })
-      addGetEndpointAnnotations(type, '/folders', 'data field')
-      expect(type.annotations).toEqual({
-        [GET_ENDPOINT_SCHEMA_ANNOTATION]: ['/folders'],
-        [GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION]: 'data field',
-      })
     })
   })
 })

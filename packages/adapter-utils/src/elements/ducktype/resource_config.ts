@@ -18,11 +18,11 @@ import {
 } from '@salto-io/adapter-api'
 
 export type EndpointConfig = {
-  endpoint: string
+  url: string
   queryParams?: Record<string, string>
   recursiveQueryByResponseField?: Record<string, string>
-  paginationField?: string
   dependsOn?: string[]
+  paginationField?: string
   fieldsToOmit?: string[]
   // fields to convert into their own type and instances.
   // if the field value is a string, first parse it into json
@@ -35,30 +35,34 @@ export type EndpointConfig = {
   keepOriginal?: boolean
 }
 
-export type ApiEndpointBaseConfig = {
-  // apiVersion?: string // TODO add when relevant
-  getEndpoints: EndpointConfig[]
-  defaultNameField: string
-  defaultPathField: string
-  fieldsToOmit?: string[]
+export type ResourceConfig = {
+  // name: string // TODON remove
+  endpoint: EndpointConfig
 }
 
-export const createApiBootstrapConfigType = (
+export type AdapterApiConfig = {
+  resources: Record<string, ResourceConfig>
+  apiVersion?: string
+}
+
+export type UserFetchConfig = {
+  includeResources: string[]
+}
+
+export const createAdapterApiConfigType = (
   adapter: string,
   additionalEndpointFields?: Record<string, FieldDefinition>,
 ): ObjectType => {
   const endpointConfigType = new ObjectType({
     elemID: new ElemID(adapter, 'endpointConfig'),
     fields: {
-      endpoint: {
+      url: {
         type: BuiltinTypes.STRING,
         annotations: {
           [CORE_ANNOTATIONS.REQUIRED]: true,
         },
       },
-      // TODON needs more adjustments
       queryParams: { type: new MapType(BuiltinTypes.STRING) },
-      // TODON should be hard-coded somewhere?
       recursiveQueryByResponseField: { type: new MapType(BuiltinTypes.STRING) },
       dependsOn: { type: new ListType(BuiltinTypes.STRING) },
       paginationField: { type: BuiltinTypes.STRING },
@@ -72,15 +76,56 @@ export const createApiBootstrapConfigType = (
     },
   })
 
-  const apiModuleConfigType = new ObjectType({
-    elemID: new ElemID(adapter, 'apiModuleConfig'),
+  const resourceConfigType = new ObjectType({
+    elemID: new ElemID(adapter, 'resourceConfig'),
     fields: {
-      // apiVersion: { type: BuiltinTypes.STRING }, // TODO add when relevant
-      getEndpoints: { type: new ListType(endpointConfigType) },
-      defaultNameField: { type: BuiltinTypes.STRING },
-      defaultPathField: { type: BuiltinTypes.STRING },
-      fieldsToOmit: { type: new ListType(BuiltinTypes.STRING) },
+      endpoint: {
+        type: endpointConfigType,
+        annotations: {
+          [CORE_ANNOTATIONS.REQUIRED]: true,
+        },
+      },
     },
   })
-  return apiModuleConfigType
+
+  const adapterApiConfigType = new ObjectType({
+    elemID: new ElemID(adapter, 'adapterApiConfig'),
+    fields: {
+      resources: {
+        type: new MapType(resourceConfigType),
+        annotations: {
+          [CORE_ANNOTATIONS.REQUIRED]: true,
+        },
+      },
+      apiVersion: {
+        type: BuiltinTypes.STRING,
+      },
+    },
+  })
+  return adapterApiConfigType
+}
+
+export const createUserFetchConfigType = (
+  adapter: string,
+): ObjectType => (
+  new ObjectType({
+    elemID: new ElemID(adapter, 'userFetchConfig'),
+    fields: {
+      includeResources: { type: new ListType(BuiltinTypes.STRING) },
+    },
+  })
+)
+
+export const validateFetchConfig = (
+  fetchConfigPath: string,
+  userFetchConfig: UserFetchConfig,
+  adapterApiConfig: AdapterApiConfig,
+): void => {
+  const resourceNames = new Set(Object.keys(adapterApiConfig.resources))
+  const invalidIncludeResources = userFetchConfig.includeResources.filter(
+    name => !resourceNames.has(name)
+  )
+  if (invalidIncludeResources.length > 0) {
+    throw Error(`Invalid resource names in ${fetchConfigPath}: ${invalidIncludeResources}`)
+  }
 }

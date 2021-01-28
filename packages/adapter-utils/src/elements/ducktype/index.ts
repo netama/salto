@@ -1,4 +1,3 @@
-
 /*
 *                      Copyright 2021 Salto Labs Ltd.
 *
@@ -14,13 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ClientBaseConfig } from './client'
-import { ApiEndpointBaseConfig } from './api'
-
-export const CLIENT_CONFIG = 'client'
-export const API_CONFIG = 'api'
-
-export type UserBootstrapBaseConfig = {
-  [CLIENT_CONFIG]?: ClientBaseConfig
-  [API_CONFIG]: ApiEndpointBaseConfig
-}
+export * from './instance_elements'
+export * from './resource_config'
+export * from './transformer'
+export * from './type_elements'

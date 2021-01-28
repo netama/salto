@@ -18,4 +18,7 @@ export const ZENDESK = 'zendesk'
 
 export const baseUrl = (subdomain: string): string => `https://${subdomain}.zendesk.com/api/v2`
 
+export const DEFAULT_NAME_FIELD = 'id'
+export const DEFAULT_PATH_FIELD = 'name'
+export const FIELDS_TO_OMIT = ['created_at', 'updated_at']
 export const PAGINATION_FIELDS = ['count', 'next_page', 'previous_page']

@@ -17,7 +17,7 @@ import axios, { AxiosInstance, AxiosError, AxiosBasicCredentials } from 'axios'
 import axiosRetry from 'axios-retry'
 import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
-import { ClientRetryConfig } from '../config'
+import { ClientRetryConfig } from './config'
 import { ApiConnectionBaseConfig } from './types'
 import { DEFAULT_RETRY_OPTS } from './constants'
 

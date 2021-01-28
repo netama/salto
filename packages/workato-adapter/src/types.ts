@@ -16,22 +16,27 @@
 import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS,
 } from '@salto-io/adapter-api'
-import { config as configUtils } from '@salto-io/adapter-utils'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-const { createClientConfigType, createApiBootstrapConfigType } = configUtils
+const { createClientConfigType } = clientUtils
+const { createUserFetchConfigType, createAdapterApiConfigType } = elementUtils.ducktype
 
 // TODON add to documentation
 export const CLIENT_CONFIG = 'client'
-export const API_CONFIG = 'api'
+export const FETCH_CONFIG = 'fetch'
 
-export type WorkatoClientConfig = configUtils.ClientBaseConfig
+export const API_RESOURCES_CONFIG = 'apiResources'
 
-export type WorkatoApiConfig = configUtils.ApiEndpointBaseConfig
+export type WorkatoClientConfig = clientUtils.ClientBaseConfig
+
+export type WorkatoFetchConfig = elementUtils.ducktype.UserFetchConfig
+export type WorkatoApiConfig = elementUtils.ducktype.AdapterApiConfig
 
 export type WorkatoConfig = {
   [CLIENT_CONFIG]?: WorkatoClientConfig
-  [API_CONFIG]: WorkatoApiConfig
+  [FETCH_CONFIG]: WorkatoFetchConfig
+  [API_RESOURCES_CONFIG]?: WorkatoApiConfig
 }
 
 export type ConfigChangeSuggestion = {
@@ -71,58 +76,102 @@ export class UsernameTokenCredentials {
 
 export type Credentials = UsernameTokenCredentials
 
+// TODON decide if using lists or maps... omit name from duplicate?
+export const DEFAULT_RESOURCES: Record<string, elementUtils.ducktype.ResourceConfig> = {
+  connections: {
+    // name: 'connections', // TODON remove
+    endpoint: {
+      url: '/connections',
+    },
+  },
+  recipes: {
+    // name: 'recipes',
+    endpoint: {
+      url: '/recipes',
+      fieldsToOmit: ['last_run_at'],
+      fieldsToExtract: ['code'],
+    },
+  },
+  folders: {
+    // name: 'folders',
+    endpoint: {
+      url: '/folders',
+      recursiveQueryByResponseField: {
+        // eslint-disable-next-line @typescript-eslint/camelcase
+        parent_id: 'id',
+      },
+      paginationField: 'page',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  api_collections: {
+    // name: 'api_collections',
+    endpoint: {
+      url: '/api_collections',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  api_endpoints: {
+    // name: 'api_endpoints',
+    endpoint: {
+      url: '/api_endpoints',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  api_clients: {
+    // name: 'api_clients',
+    endpoint: {
+      url: '/api_clients',
+    },
+  },
+  // eslint-disable-next-line @typescript-eslint/camelcase
+  api_access_profiles: {
+    // name: 'api_access_profiles',
+    endpoint: {
+      url: '/api_access_profiles',
+    },
+  },
+  roles: {
+    // name: 'roles',
+    endpoint: {
+      url: '/roles',
+    },
+  },
+  properties: {
+    // name: 'properties',
+    endpoint: {
+      url: '/properties',
+      queryParams: {
+        prefix: '',
+      },
+      hasDynamicFields: true,
+    },
+  },
+}
+
 export const configType = new ObjectType({
   elemID: configID,
   fields: {
     [CLIENT_CONFIG]: {
       type: createClientConfigType(constants.WORKATO),
     },
-    [API_CONFIG]: {
-      type: createApiBootstrapConfigType(constants.WORKATO),
+    [FETCH_CONFIG]: {
+      type: createUserFetchConfigType(constants.WORKATO),
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
-          getEndpoints: [
-            {
-              endpoint: '/connections',
-            },
-            {
-              endpoint: '/recipes',
-              fieldsToOmit: ['last_run_at'],
-              fieldsToExtract: ['code'],
-            },
-            {
-              endpoint: '/folders',
-              recursiveQueryByResponseField: {
-                // eslint-disable-next-line @typescript-eslint/camelcase
-                parent_id: 'id',
-              },
-              paginationField: 'page', // TODON move to per-adapter constant?
-            },
-            {
-              endpoint: '/api_collections',
-            },
-            {
-              endpoint: '/api_endpoints',
-            },
-            {
-              endpoint: '/api_clients',
-            },
-            {
-              endpoint: '/api_access_profiles',
-            },
-            {
-              endpoint: '/roles',
-            },
-            {
-              endpoint: '/properties',
-              queryParams: {
-                prefix: '',
-              },
-              hasDynamicFields: true,
-            },
-          ],
-          defaultNameField: 'name',
+          // TODON decide on order?
+          includeResources: Object.keys(DEFAULT_RESOURCES),
+        },
+      },
+    },
+    [API_RESOURCES_CONFIG]: {
+      type: createAdapterApiConfigType(constants.WORKATO),
+      // TODO decide if want to keep or remove
+      annotations: {
+        [CORE_ANNOTATIONS.DEFAULT]: {
+          // TODON decide on order?
+          resources: DEFAULT_RESOURCES,
         },
       },
     },
@@ -130,5 +179,6 @@ export const configType = new ObjectType({
 })
 
 export type FilterContext = {
-  [API_CONFIG]: WorkatoApiConfig
+  [FETCH_CONFIG]: WorkatoFetchConfig
+  [API_RESOURCES_CONFIG]: WorkatoApiConfig
 }

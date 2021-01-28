@@ -14,9 +14,7 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { ClientBaseConfig } from '../config/client'
-
-/* API */
+import { ClientBaseConfig } from './config'
 
 export type ApiConnectionBaseConfig = {
   baseUrl: string

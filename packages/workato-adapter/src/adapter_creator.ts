@@ -13,15 +13,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import _ from 'lodash'
 import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-utils'
 import changeValidator from './change_validator'
 import WorkatoAdapter from './adapter'
 import {
-  configType, WorkatoConfig, CLIENT_CONFIG,
+  configType, WorkatoConfig, CLIENT_CONFIG, FETCH_CONFIG, DEFAULT_RESOURCES,
   UsernameTokenCredentials, Credentials, usernameTokenCredentialsType,
 } from './types'
 import WorkatoClient from './client/client'
@@ -29,8 +30,8 @@ import { realConnection } from './client/connection'
 import { BASE_URL } from './constants'
 
 const log = logger(module)
-const { validateCredentials } = clientUtils
-const { validateClientConfig } = configUtils
+const { validateCredentials, validateClientConfig } = clientUtils
+const { validateFetchConfig } = elementUtils.ducktype
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
   new UsernameTokenCredentials({
@@ -40,12 +41,19 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
 )
 
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): WorkatoConfig => {
-  validateClientConfig(CLIENT_CONFIG, config?.value?.client)
+  const apiResources: elementUtils.ducktype.AdapterApiConfig = _.defaults(
+    {}, config?.value?.apiResources, { resources: DEFAULT_RESOURCES }
+  )
 
   const adapterConfig: { [K in keyof Required<WorkatoConfig>]: WorkatoConfig[K] } = {
     client: config?.value?.client,
-    api: config?.value?.api,
+    fetch: config?.value?.fetch,
+    apiResources,
   }
+
+  validateClientConfig(CLIENT_CONFIG, adapterConfig.client)
+  validateFetchConfig(FETCH_CONFIG, adapterConfig.fetch, apiResources)
+
   Object.keys(config?.value ?? {})
     .filter(k => !Object.keys(adapterConfig).includes(k))
     .forEach(k => log.debug('Unknown config property was found: %s', k))

@@ -17,3 +17,6 @@
 export const WORKATO = 'workato'
 
 export const BASE_URL = 'https://www.workato.com/api'
+
+export const DEFAULT_NAME_FIELD = 'name'
+export const DEFAULT_PATH_FIELD = 'name'

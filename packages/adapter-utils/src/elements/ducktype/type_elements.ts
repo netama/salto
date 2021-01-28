@@ -18,7 +18,7 @@ import {
   ObjectType, ElemID, BuiltinTypes, Values, MapType, PrimitiveType, ListType, isObjectType,
 } from '@salto-io/adapter-api'
 import { pathNaclCase, naclCase } from '../../nacl_case_utils'
-import { TYPES_PATH, SUBTYPES_PATH, NAMESPACE_SEPARATOR, GET_ENDPOINT_SCHEMA_ANNOTATION, GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION } from '../constants'
+import { TYPES_PATH, SUBTYPES_PATH, NAMESPACE_SEPARATOR } from '../constants'
 
 type ObjectTypeWithNestedTypes = {
   type: ObjectType
@@ -155,17 +155,4 @@ export const generateType = ({
   })
 
   return { type, nestedTypes }
-}
-
-export const addGetEndpointAnnotations = (
-  type: ObjectType,
-  apiEndpoint: string,
-  dataField?: string,
-): void => {
-  type.annotationTypes[GET_ENDPOINT_SCHEMA_ANNOTATION] = new ListType(BuiltinTypes.STRING)
-  type.annotationTypes[GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION] = BuiltinTypes.STRING
-  type.annotations[GET_ENDPOINT_SCHEMA_ANNOTATION] = [apiEndpoint]
-  if (dataField !== undefined) {
-    type.annotations[GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION] = dataField
-  }
 }

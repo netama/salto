@@ -20,13 +20,13 @@ import {
 } from '@salto-io/adapter-api'
 import { elements as elementUtils } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { WORKATO } from '../constants'
+import { WORKATO, DEFAULT_NAME_FIELD } from '../constants'
 import { FilterCreator } from '../filter'
-import { API_CONFIG } from '../types'
+import { API_RESOURCES_CONFIG } from '../types'
 import { endpointToTypeName } from '../transformers/transformer'
 
 const log = logger(module)
-const { generateType, toInstance } = elementUtils.bootstrap
+const { generateType, toInstance } = elementUtils.ducktype
 
 const convertStringToObject = (inst: InstanceElement, fieldsToExtract: string[]): void => {
   inst.value = _.mapValues(inst.value, (fieldValue, fieldName) => {
@@ -99,9 +99,11 @@ const addFieldTypeAndInstances = ({
 const filter: FilterCreator = ({ config }) => ({
   onFetch: async elements => {
     const typesWithFieldsToExtract = Object.fromEntries(
-      config[API_CONFIG].getEndpoints
-        .filter(e => e.fieldsToExtract !== undefined && e.fieldsToExtract.length > 0)
-        .map(e => [endpointToTypeName(e.endpoint), e.fieldsToExtract as string[]])
+      Object.values(config[API_RESOURCES_CONFIG].resources) // TODON
+        .map(r => r.endpoint)
+        .filter(e =>
+          e.fieldsToExtract !== undefined && e.fieldsToExtract.length > 0)
+        .map(e => [endpointToTypeName(e.url), e.fieldsToExtract as string[]])
     )
 
     const allTypes = elements.filter(isObjectType)
@@ -126,7 +128,7 @@ const filter: FilterCreator = ({ config }) => ({
           fieldName,
           type,
           instances,
-          defaultNameField: config[API_CONFIG].defaultNameField,
+          defaultNameField: DEFAULT_NAME_FIELD,
         }))
       })
     })

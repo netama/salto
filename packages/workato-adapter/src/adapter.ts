@@ -19,18 +19,20 @@ import {
 } from '@salto-io/adapter-api'
 import { elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import WorkatoClient from './client/client'
 import { FilterCreator, Filter, filtersRunner } from './filter'
-import { API_CONFIG, WorkatoConfig } from './types'
+import { WorkatoConfig, DEFAULT_RESOURCES } from './types'
 import extractFieldsFilter from './filters/extract_fields'
 import fieldReferencesFilter from './filters/field_references'
 import { endpointToTypeName } from './transformers/transformer'
-import { WORKATO } from './constants'
+import { WORKATO, DEFAULT_NAME_FIELD, DEFAULT_PATH_FIELD } from './constants'
 
 const log = logger(module)
+const { isDefined } = lowerdashValues
 const {
   returnFullEntry, simpleGetArgs, getTypeAndInstances,
-} = elementUtils.bootstrap
+} = elementUtils.ducktype
 
 export const DEFAULT_FILTERS = [
   extractFieldsFilter,
@@ -58,7 +60,8 @@ export default class WorkatoAdapter implements AdapterOperations {
     this.filtersRunner = filtersRunner(
       this.client,
       {
-        api: config.api,
+        fetch: config.fetch,
+        apiResources: config.apiResources ?? { resources: DEFAULT_RESOURCES },
       },
       filterCreators,
     )
@@ -70,12 +73,17 @@ export default class WorkatoAdapter implements AdapterOperations {
     // for now assuming flat dependencies for simplicity
     // TODO use a real DAG instead (without interfering with parallelizing the requests),
     // (not yet needed for zendesk, but keeping for now)
+    const allResources = this.userConfig.fetch.includeResources
+      .map(resourceName => ({
+        resourceName,
+        endpoint: this.userConfig.apiResources?.resources[
+          resourceName].endpoint as elementUtils.ducktype.EndpointConfig,
+      }))
+      // an earlier validation ensures the include resources only reference valid resources
+      .filter(({ endpoint }) => isDefined(endpoint))
     const [independentEndpoints, dependentEndpoints] = _.partition(
-      this.userConfig[API_CONFIG].getEndpoints.map(e => ({
-        ...e,
-        fieldsToOmit: [...e.fieldsToOmit ?? [], ...this.userConfig[API_CONFIG].fieldsToOmit ?? []],
-      })),
-      e => _.isEmpty(e.dependsOn)
+      allResources,
+      r => _.isEmpty(r.endpoint.dependsOn)
     )
 
     const elementGenerationParams = {
@@ -84,23 +92,24 @@ export default class WorkatoAdapter implements AdapterOperations {
       endpointToTypeName,
       nestedFieldFinder: returnFullEntry,
       computeGetArgs: simpleGetArgs,
-      defaultNameField: this.userConfig[API_CONFIG].defaultNameField,
-      defaultPathField: this.userConfig[API_CONFIG].defaultPathField,
+      defaultNameField: DEFAULT_NAME_FIELD,
+      defaultPathField: DEFAULT_PATH_FIELD,
     }
     const contextElements: Record<string, Element[]> = Object.fromEntries(await Promise.all(
-      independentEndpoints.map(async endpointConf => [
-        endpointConf.endpoint,
+      independentEndpoints.map(async ({ resourceName, endpoint }) => [
+        endpoint.url,
         await getTypeAndInstances({
           ...elementGenerationParams,
-          endpointConf,
+          typeName: resourceName,
+          endpoint,
         }),
       ])
     ))
     const dependentElements = await Promise.all(
-      dependentEndpoints.map(endpointConf => getTypeAndInstances({
+      dependentEndpoints.map(({ resourceName, endpoint }) => getTypeAndInstances({
         ...elementGenerationParams,
-        endpointConf,
-        contextElements,
+        typeName: resourceName,
+        endpoint,
       }))
     )
 

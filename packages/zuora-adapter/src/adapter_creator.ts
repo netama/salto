@@ -19,7 +19,7 @@ import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils } from '@salto-io/adapter-utils'
+import { client as clientUtils } from '@salto-io/adapter-utils'
 import ZuoraClient from './client/client'
 import changeValidator from './change_validator'
 import ZuoraAdapter from './adapter'
@@ -31,8 +31,7 @@ import {
 import { realConnection } from './client/connection'
 
 const log = logger(module)
-const { validateCredentials } = clientUtils
-const { validateClientConfig } = configUtils
+const { validateCredentials, validateClientConfig } = clientUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
   isAccessTokenConfig(config)

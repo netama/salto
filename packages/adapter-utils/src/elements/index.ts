@@ -13,9 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import * as bootstrap from './bootstrap'
+import * as ducktype from './ducktype'
 
 export * from './constants'
 export {
-  bootstrap,
+  ducktype,
 }
