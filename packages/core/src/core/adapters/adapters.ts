@@ -57,7 +57,6 @@ export const initAdapters = (
     }
   )
 
-// TODON this?
 export const getDefaultAdapterConfig = (adapterName: string): InstanceElement | undefined => {
   const { configType } = adapterCreators[adapterName]
   return configType ? createDefaultInstanceFromType(ElemID.CONFIG_NAME, configType) : undefined

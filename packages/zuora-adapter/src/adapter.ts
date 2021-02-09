@@ -36,6 +36,7 @@ import { generateInstancesForType } from './transformers/instance_elements'
 import { filterEndpointsWithDetails } from './transformers/endpoints'
 
 const { makeArray } = collections.array
+const { toArrayAsync } = collections.asynciterable
 const log = logger(module)
 
 export const DEFAULT_FILTERS = [
@@ -88,12 +89,12 @@ const computeGetArgs = ({
     const potentialParams = contextInstances.map(e => e.value[referenceDetails.field])
     return potentialParams.map(p => ({
       getArgs: {
-        endpointName: endpointName.replace(ARG_PLACEHOLDER_MATCHER, p),
+        url: endpointName.replace(ARG_PLACEHOLDER_MATCHER, p),
       },
       calculatedParams: { [argName]: p },
     }))
   }
-  return [{ getArgs: { endpointName } }]
+  return [{ getArgs: { url: endpointName } }]
 }
 
 export default class ZuoraAdapter implements AdapterOperations {
@@ -177,7 +178,7 @@ export default class ZuoraAdapter implements AdapterOperations {
 
           const results = (await Promise.all(
             args.map(async ({ getArgs, calculatedParams }) => ({
-              ...(await this.client.get(getArgs)),
+              result: (await toArrayAsync(await this.client.get(getArgs))).flat(),
               // TODON ended up not needing - keeping for now, but can remove if not used
               calculatedParams,
             }))

@@ -342,7 +342,6 @@ export const addAdapter = async (
   if (_.isUndefined((await workspace.servicesConfig([adapterName]))[adapterName])) {
     const defaultConfig = getDefaultAdapterConfig(adapterName)
     if (!_.isUndefined(defaultConfig)) {
-      // TODON just allow multiple instances?
       await workspace.updateServiceConfig(adapterName, defaultConfig)
     }
   }

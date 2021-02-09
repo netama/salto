@@ -22,6 +22,8 @@ export const CUSTOM_OBJECT = 'CustomObject'
 export const CUSTOM_FIELD = 'CustomField'
 export const ZUORA_CUSTOM_SUFFIX = '__c'
 
+export const OBJECTS_PATH = 'Objects'
+
 // type annotations
 // all the GET endpoints that use this as their response schema
 export const GET_ENDPOINT_SCHEMA_ANNOTATION = 'getEndpoint'

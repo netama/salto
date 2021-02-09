@@ -18,19 +18,17 @@ import {
   ReferenceExpression,
   isReferenceExpression,
 } from '@salto-io/adapter-api'
-import { pathNaclCase, naclCase, transformValues, TransformFunc, elements as elementsUtils } from '@salto-io/adapter-utils'
+import { pathNaclCase, naclCase, transformValues, TransformFunc } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import {
   API_NAME, CUSTOM_OBJECT, METADATA_TYPE, ZUORA, CUSTOM_OBJECT_DEFINITION_TYPE,
-  ADDITIONAL_PROPERTIES_FIELD,
+  ADDITIONAL_PROPERTIES_FIELD, OBJECTS_PATH,
 } from '../constants'
 import { FilterCreator } from '../filter'
 import {
   apiName, isInstanceOfCustomObjectDef, toPrimitiveType,
 } from '../transformers/transformer'
 import { TYPE_ANNOTATIONS } from '../transformers/type_elements'
-
-const { OBJECTS_PATH } = elementsUtils
 
 const createObjectFromInstance = (inst: InstanceElement): ObjectType => (
   new ObjectType({

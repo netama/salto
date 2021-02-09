@@ -18,12 +18,14 @@ import {
 } from '@salto-io/adapter-api'
 import { pathNaclCase, naclCase, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
+import { collections } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
 import {
   isInstanceOfType,
 } from '../transformers/transformer'
 import { BILLING_SETTINGS_OPERATION_INFO_TYPE, ZUORA } from '../constants'
 
+const { toArrayAsync } = collections.asynciterable
 const log = logger(module)
 const { RECORDS_PATH, TYPES_PATH } = elementsUtils
 
@@ -56,7 +58,11 @@ const filterCreator: FilterCreator = ({ client }) => ({
         return {}
       }
       try {
-        return { [settingsInfo.value.key]: (await client.get({ endpointName })).result }
+        return {
+          [settingsInfo.value.key]: (await toArrayAsync(await client.get({
+            url: endpointName, // TODO rename
+          }))).flat(),
+        }
       } catch (e) {
         log.error(`Could not fetch ${endpointName}: ${e}. %s`, e.stack)
         return {}
