@@ -13,12 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { AccountId } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-utils'
 import { Credentials } from '../auth'
 
 const baseUrl = (subdomain: string): string => `https://${subdomain}.zendesk.com/api/v2`
 
-export const realConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
+export const validateCredentials = async (
+  creds: Credentials, _conn: clientUtils.APIConnection,
+): Promise<AccountId> => (
+  // TODON temporary, not correct
+  creds.username
+)
+
+export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
   clientUtils.axiosConnection({
     retryOptions,
     authParamsFunc: ({ username, password }: Credentials) => ({
@@ -28,7 +36,6 @@ export const realConnection: clientUtils.ConnectionCreator<Credentials> = retryO
       },
     }),
     baseURLFunc: ({ subdomain }) => baseUrl(subdomain),
-    // TODO add auth validator
-    credValidateFunc: () => Promise.resolve(''),
+    credValidateFunc: validateCredentials,
   })
 )

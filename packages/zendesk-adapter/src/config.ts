@@ -15,10 +15,15 @@
 */
 import { ElemID, ObjectType, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
 import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-utils'
-import * as constants from './constants'
+import { ZENDESK } from './constants'
 
 const { createClientConfigType } = clientUtils
 const { createUserFetchConfigType, createAdapterApiConfigType } = elementUtils.ducktype
+
+export const DEFAULT_NAME_FIELD = 'id'
+export const DEFAULT_PATH_FIELD = 'name'
+export const FIELDS_TO_OMIT = ['created_at', 'updated_at']
+export const PAGINATION_FIELDS = ['count', 'next_page', 'previous_page']
 
 // TODO add to documentation
 export const CLIENT_CONFIG = 'client'
@@ -38,7 +43,6 @@ export type ZendeskConfig = {
 }
 
 export type ConfigChangeSuggestion = {
-  // TODO either add change suggestions or remove
   type: keyof ZendeskConfig
   value: string
   reason?: string
@@ -323,13 +327,13 @@ export const DEFAULT_ENDPOINTS: Record<string, elementUtils.ducktype.EndpointCon
 }
 
 export const configType = new ObjectType({
-  elemID: new ElemID(constants.ZENDESK),
+  elemID: new ElemID(ZENDESK),
   fields: {
     [CLIENT_CONFIG]: {
-      type: createClientConfigType(constants.ZENDESK),
+      type: createClientConfigType(ZENDESK),
     },
     [FETCH_CONFIG]: {
-      type: createUserFetchConfigType(constants.ZENDESK),
+      type: createUserFetchConfigType(ZENDESK),
       annotations: {
         [CORE_ANNOTATIONS.REQUIRED]: true,
         [CORE_ANNOTATIONS.DEFAULT]: {
@@ -338,7 +342,7 @@ export const configType = new ObjectType({
       },
     },
     [API_DEFINITIONS_CONFIG]: {
-      type: createAdapterApiConfigType(constants.ZENDESK),
+      type: createAdapterApiConfigType(ZENDESK),
       // TODO decide if want to keep visible
       annotations: {
         [CORE_ANNOTATIONS.DEFAULT]: {

@@ -19,7 +19,6 @@ import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-utils'
-import changeValidator from './change_validator'
 import ZendeskAdapter from './adapter'
 import {
   UsernamePasswordRESTCredentials, Credentials, usernamePasswordRESTCredentialsType,
@@ -28,7 +27,7 @@ import {
   configType, ZendeskConfig, CLIENT_CONFIG, FETCH_CONFIG, DEFAULT_ENDPOINTS,
 } from './config'
 import ZendeskClient from './client/client'
-import { realConnection } from './client/connection'
+import { createConnection } from './client/connection'
 
 const log = logger(module)
 const { validateCredentials, validateClientConfig } = clientUtils
@@ -79,7 +78,7 @@ export const adapter: Adapter = {
   validateCredentials: async config => validateCredentials(
     credentialsFromConfig(config),
     {
-      createConnection: realConnection,
+      createConnection,
     },
   ),
   authenticationMethods: {
@@ -88,7 +87,4 @@ export const adapter: Adapter = {
     },
   },
   configType,
-  deployModifiers: {
-    changeValidator,
-  },
 }

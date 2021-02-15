@@ -14,11 +14,24 @@
 * limitations under the License.
 */
 import { client as clientUtils } from '@salto-io/adapter-utils'
-import { realConnection } from './connection'
-import { ZENDESK, DEFAULT_PAGE_SIZE, DEFAULT_MAX_CONCURRENT_API_REQUESTS } from '../constants'
+import { createConnection } from './connection'
+import { ZENDESK } from '../constants'
 import { Credentials } from '../auth'
 
-const { getWithPageOffsetPagination, DEFAULT_RETRY_OPTS } = clientUtils
+const {
+  getWithPageOffsetPagination, DEFAULT_RETRY_OPTS, RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+} = clientUtils
+
+const DEFAULT_MAX_CONCURRENT_API_REQUESTS: Required<clientUtils.ClientRateLimitConfig> = {
+  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  // TODON set correctly
+  get: 10,
+}
+
+// not used for workato
+const DEFAULT_PAGE_SIZE: Required<clientUtils.ClientPageSizeConfig> = {
+  get: 100,
+}
 
 export default class ZendeskClient extends clientUtils.AdapterHTTPClient<
   Credentials, clientUtils.ClientRateLimitConfig
@@ -29,7 +42,7 @@ export default class ZendeskClient extends clientUtils.AdapterHTTPClient<
     super(
       ZENDESK,
       clientOpts,
-      realConnection,
+      createConnection,
       {
         pageSize: DEFAULT_PAGE_SIZE,
         rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,

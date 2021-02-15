@@ -14,14 +14,14 @@
 * limitations under the License.
 */
 import {
-  FetchResult, AdapterOperations, DeployResult, Element, DeployOptions,
+  FetchResult, AdapterOperations, DeployResult, Element,
 } from '@salto-io/adapter-api'
 import { elements as elementUtils, logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import ZendeskClient from './client/client'
-import { ZendeskConfig, DEFAULT_ENDPOINTS } from './config'
+import { ZendeskConfig, DEFAULT_ENDPOINTS, DEFAULT_NAME_FIELD, DEFAULT_PATH_FIELD, PAGINATION_FIELDS, FIELDS_TO_OMIT } from './config'
 import { FilterCreator, Filter, filtersRunner } from './filter'
-import { ZENDESK, DEFAULT_NAME_FIELD, DEFAULT_PATH_FIELD, PAGINATION_FIELDS, FIELDS_TO_OMIT } from './constants'
+import { ZENDESK } from './constants'
 
 const log = logger(module)
 const {
@@ -95,8 +95,8 @@ export default class ZendeskAdapter implements AdapterOperations {
    * Deploy configuration elements to the given account.
    */
   @logDuration('deploying account configuration')
-  async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
-    // TODO add preDeploy step for re-escaping fields parsed as JSON (when implementing deploy)
-    throw new Error(`Not implemented. ${this.client !== undefined} ${changeGroup.changes.length}`)
+  // eslint-disable-next-line class-methods-use-this
+  async deploy(): Promise<DeployResult> {
+    throw new Error('Not implemented.')
   }
 }
