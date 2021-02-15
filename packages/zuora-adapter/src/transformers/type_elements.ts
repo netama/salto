@@ -25,7 +25,7 @@ import SwaggerParser from '@apidevtools/swagger-parser'
 import { OpenAPI, OpenAPIV2, IJsonSchema } from 'openapi-types'
 import { ZuoraApiModuleConfig } from '../config'
 import {
-  ZUORA, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
+  ZUORA_BILLING, GET_ENDPOINT_SCHEMA_ANNOTATION, TOP_LEVEL_FIELDS,
   GET_RESPONSE_DATA_FIELD_SCHEMA_ANNOTATION, PAGINATION_FIELDS, ADDITIONAL_PROPERTIES_FIELD,
   API_NAME, METADATA_TYPE, INSTANCE_ID,
 } from '../constants'
@@ -195,12 +195,12 @@ const generateTypesForModule = async (
 
         // first add an empty type, to avoid endless recursion in cyclic references from fields
         definedTypes[objName] = new ObjectType({
-          elemID: new ElemID(ZUORA, naclObjName),
+          elemID: new ElemID(ZUORA_BILLING, naclObjName),
           // TODON organize better in folders
           path: apiEndpointName !== undefined
-            ? [ZUORA, ...pathRoot,
+            ? [ZUORA_BILLING, ...pathRoot,
               pathNaclCase(naclObjName)]
-            : [ZUORA, ...pathRoot, SUBTYPES_PATH,
+            : [ZUORA_BILLING, ...pathRoot, SUBTYPES_PATH,
               pathNaclCase(naclObjName), pathNaclCase(naclObjName)],
           annotationTypes,
           annotations,

@@ -16,7 +16,7 @@
 import { ElemID, ObjectType, BuiltinTypes, InstanceElement } from '@salto-io/adapter-api'
 import * as constants from './constants'
 
-const configID = new ElemID(constants.ZUORA)
+const configID = new ElemID(constants.ZUORA_BILLING)
 
 export const usernamePasswordRESTCredentialsType = new ObjectType({
   elemID: configID,

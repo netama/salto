@@ -21,7 +21,7 @@ import {
 import { pathNaclCase, naclCase, transformValues, TransformFunc } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import {
-  API_NAME, CUSTOM_OBJECT, METADATA_TYPE, ZUORA, CUSTOM_OBJECT_DEFINITION_TYPE,
+  ZUORA_BILLING, API_NAME, CUSTOM_OBJECT, METADATA_TYPE, CUSTOM_OBJECT_DEFINITION_TYPE,
   ADDITIONAL_PROPERTIES_FIELD, OBJECTS_PATH,
 } from '../constants'
 import { FilterCreator } from '../filter'
@@ -32,7 +32,7 @@ import { TYPE_ANNOTATIONS } from '../transformers/type_elements'
 
 const createObjectFromInstance = (inst: InstanceElement): ObjectType => (
   new ObjectType({
-    elemID: new ElemID(ZUORA, apiName(inst)),
+    elemID: new ElemID(ZUORA_BILLING, apiName(inst)),
     fields: _.mapValues(
       {
         ..._.omit(inst.value.schema.properties, ADDITIONAL_PROPERTIES_FIELD),
@@ -55,7 +55,7 @@ const createObjectFromInstance = (inst: InstanceElement): ObjectType => (
       [CORE_ANNOTATIONS.PARENT]: [new ReferenceExpression(inst.elemID)],
       // TODON add label?
     },
-    path: [ZUORA, OBJECTS_PATH, pathNaclCase(naclCase(apiName(inst)))],
+    path: [ZUORA_BILLING, OBJECTS_PATH, pathNaclCase(naclCase(apiName(inst)))],
   })
 )
 

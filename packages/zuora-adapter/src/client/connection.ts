@@ -13,13 +13,22 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { AccountId } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-utils'
-import { Credentials, OAuthAccessTokenCredentials } from '../auth'
+import { Credentials, OAuthAccessTokenCredentials, UsernamePasswordRESTCredentials } from '../auth'
 
-export const realConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
+export const validateCredentials = async (
+  creds: Credentials, _conn: clientUtils.APIConnection,
+): Promise<AccountId> => (
+  // TODO temporary, not correct!
+  creds instanceof UsernamePasswordRESTCredentials
+    ? creds.username
+    : 'replace me'
+)
+
+export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
   clientUtils.axiosConnection({
     retryOptions,
-    baseURLFunc: ({ baseURL }) => baseURL,
     authParamsFunc: (creds: Credentials) => ({
       headers: (creds instanceof OAuthAccessTokenCredentials
         ? {
@@ -30,7 +39,7 @@ export const realConnection: clientUtils.ConnectionCreator<Credentials> = retryO
           apiSecretAccessKey: creds.password,
         }),
     }),
-    // TODON add auth validator
-    credValidateFunc: () => Promise.resolve(''),
+    baseURLFunc: ({ baseURL }) => baseURL,
+    credValidateFunc: validateCredentials,
   })
 )

@@ -21,7 +21,7 @@ import {
 import { pathNaclCase, naclCase, transformElement, TransformFunc, elements as elementsUtils } from '@salto-io/adapter-utils'
 import { values as lowerDashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import { ZUORA, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
+import { ZUORA_BILLING, ADDITIONAL_PROPERTIES_FIELD, INSTANCE_ID } from '../constants'
 import { CUSTOMIZATIONS } from './customizations'
 import { getNameField, apiName, getPathField } from './transformer'
 
@@ -89,7 +89,7 @@ const toInstance = ({ entry, type, nestName, parent }: {
       ...entry,
       ...parent ? { [CORE_ANNOTATIONS.PARENT]: [new ReferenceExpression(parent.elemID)] } : {},
     },
-    [ZUORA, RECORDS_PATH, pathNaclCase(type.elemID.name), naclFileName],
+    [ZUORA_BILLING, RECORDS_PATH, pathNaclCase(type.elemID.name), naclFileName],
     {
       [INSTANCE_ID]: naclName,
     },

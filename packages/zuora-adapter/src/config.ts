@@ -17,7 +17,7 @@ import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType, MapType,
 } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-utils'
-import * as constants from './constants'
+import { ZUORA_BILLING } from './constants'
 
 const { createClientConfigType } = clientUtils
 
@@ -69,7 +69,7 @@ export type FetchElements<T> = {
 }
 
 const dependsOnConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'dependsOnConfig'),
+  elemID: new ElemID(ZUORA_BILLING, 'dependsOnConfig'),
   fields: {
     endpoint: {
       type: BuiltinTypes.STRING,
@@ -87,7 +87,7 @@ const dependsOnConfigType = new ObjectType({
 })
 
 const endpointConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'endpointConfig'),
+  elemID: new ElemID(ZUORA_BILLING, 'endpointConfig'),
   fields: {
     endpointRegex: {
       type: BuiltinTypes.STRING,
@@ -102,7 +102,7 @@ const endpointConfigType = new ObjectType({
 })
 
 const apiModuleConfigType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA, 'apiModuleConfig'),
+  elemID: new ElemID(ZUORA_BILLING, 'apiModuleConfig'),
   fields: {
     include: { type: new ListType(endpointConfigType) },
     excludeRegex: { type: new ListType(BuiltinTypes.STRING) },
@@ -116,10 +116,10 @@ const apiModuleConfigType = new ObjectType({
 })
 
 export const configType = new ObjectType({
-  elemID: new ElemID(constants.ZUORA),
+  elemID: new ElemID(ZUORA_BILLING),
   fields: {
     [CLIENT_CONFIG]: {
-      type: createClientConfigType(constants.ZUORA),
+      type: createClientConfigType(ZUORA_BILLING),
     },
     [API_MODULES_CONFIG]: {
       type: new MapType(apiModuleConfigType),

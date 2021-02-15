@@ -14,11 +14,24 @@
 * limitations under the License.
 */
 import { client as clientUtils } from '@salto-io/adapter-utils'
-import { realConnection } from './connection'
-import { ZUORA, DEFAULT_MAX_CONCURRENT_API_REQUESTS, DEFAULT_PAGE_SIZE } from '../constants'
+import { createConnection } from './connection'
+import { ZUORA_BILLING } from '../constants'
 import { Credentials } from '../auth'
 
-const { getWithCursorPagination, DEFAULT_RETRY_OPTS } = clientUtils
+const {
+  getWithCursorPagination, DEFAULT_RETRY_OPTS, RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+} = clientUtils
+
+// TODO set correct defaults
+
+const DEFAULT_MAX_CONCURRENT_API_REQUESTS: Required<clientUtils.ClientRateLimitConfig> = {
+  total: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  get: 10,
+}
+
+const DEFAULT_PAGE_SIZE: Required<clientUtils.ClientPageSizeConfig> = {
+  get: 100,
+}
 
 export class UnauthorizedError extends Error {}
 
@@ -29,9 +42,9 @@ export default class ZuoraClient extends clientUtils.AdapterHTTPClient<
     clientOpts: clientUtils.ClientOpts<Credentials, clientUtils.ClientRateLimitConfig>,
   ) {
     super(
-      ZUORA,
+      ZUORA_BILLING.replace('_', ' '),
       clientOpts,
-      realConnection,
+      createConnection,
       {
         pageSize: DEFAULT_PAGE_SIZE,
         rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,

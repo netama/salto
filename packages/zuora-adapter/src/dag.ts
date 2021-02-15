@@ -15,7 +15,7 @@
 */
 import { AbstractNodeMap, NodeId } from '@salto-io/dag'
 
-// TODO move to shared location?
+// TODO move to shared location / remove
 
 class NodeMap extends AbstractNodeMap {
   addNode(id: NodeId, dependsOn: Iterable<NodeId> = []): void {

@@ -30,7 +30,7 @@ import {
 import {
   configType, ZuoraConfig, CLIENT_CONFIG,
 } from './config'
-import { realConnection } from './client/connection'
+import { createConnection } from './client/connection'
 
 const log = logger(module)
 const { validateCredentials, validateClientConfig } = clientUtils
@@ -95,7 +95,7 @@ export const adapter: Adapter = {
   validateCredentials: async config => validateCredentials(
     credentialsFromConfig(config),
     {
-      createConnection: realConnection,
+      createConnection,
     },
   ),
   authenticationMethods: {

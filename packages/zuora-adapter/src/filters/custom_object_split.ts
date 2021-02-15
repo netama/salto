@@ -18,14 +18,14 @@ import { Element, ObjectType, Field } from '@salto-io/adapter-api'
 import { pathNaclCase } from '@salto-io/adapter-utils'
 import { isCustomObject, isCustomField } from '../transformers/transformer'
 import { FilterCreator } from '../filter'
-import { ZUORA, OBJECTS_PATH } from '../constants'
+import { ZUORA_BILLING, OBJECTS_PATH } from '../constants'
 
 export const annotationsFileName = (objectName: string): string => `${pathNaclCase(objectName)}Annotations`
 export const standardFieldsFileName = (objectName: string): string => `${pathNaclCase(objectName)}StandardFields`
 export const customFieldsFileName = (objectName: string): string => `${pathNaclCase(objectName)}CustomFields`
 
 const getObjectDirectoryPath = (obj: ObjectType): string[] => (
-  [ZUORA, OBJECTS_PATH, pathNaclCase(obj.elemID.name)]
+  [ZUORA_BILLING, OBJECTS_PATH, pathNaclCase(obj.elemID.name)]
 )
 
 const customObjectToSplitElements = (customObject: ObjectType): ObjectType[] => {

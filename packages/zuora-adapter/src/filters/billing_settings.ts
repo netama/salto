@@ -23,7 +23,7 @@ import { FilterCreator } from '../filter'
 import {
   isInstanceOfType,
 } from '../transformers/transformer'
-import { BILLING_SETTINGS_OPERATION_INFO_TYPE, ZUORA } from '../constants'
+import { ZUORA_BILLING, BILLING_SETTINGS_OPERATION_INFO_TYPE } from '../constants'
 
 const { toArrayAsync } = collections.asynciterable
 const log = logger(module)
@@ -72,7 +72,7 @@ const filterCreator: FilterCreator = ({ client }) => ({
 
     // TODON temp code - reuse original code from adapter for type + instance generation
     const placeholderObjectType = new ObjectType({
-      elemID: new ElemID(ZUORA, 'billing__settingsPlaceholderType'),
+      elemID: new ElemID(ZUORA_BILLING, 'billing__settingsPlaceholderType'),
       fields: {
         data: { type: new MapType(BuiltinTypes.UNKNOWN) },
       },
@@ -85,7 +85,7 @@ const filterCreator: FilterCreator = ({ client }) => ({
           instanceName,
           placeholderObjectType,
           { data: res },
-          [ZUORA, RECORDS_PATH, type, pathNaclCase(instanceName)]
+          [ZUORA_BILLING, RECORDS_PATH, type, pathNaclCase(instanceName)]
         )
       })
     ))
