@@ -17,12 +17,16 @@ import {
   ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, ListType, MapType, FieldDefinition,
 } from '@salto-io/adapter-api'
 
+export type DependsOnConfig = {
+  endpoint: string
+  field: string
+}
+
 export type RequestConfig = {
   url: string
   queryParams?: Record<string, string>
   recursiveQueryByResponseField?: Record<string, string>
-  // not finalized - do not use yet
-  dependsOn?: string[]
+  dependsOn?: Record<string, DependsOnConfig>
   paginationField?: string
 }
 
@@ -58,6 +62,24 @@ export const createAdapterApiConfigType = (
   additionalEndpointFields?: Record<string, FieldDefinition>,
   additionalTranslationFields?: Record<string, FieldDefinition>,
 ): ObjectType => {
+  const dependsOnConfigType = new ObjectType({
+    elemID: new ElemID(adapter, 'dependsOnConfig'),
+    fields: {
+      endpoint: {
+        type: BuiltinTypes.STRING,
+        annotations: {
+          [CORE_ANNOTATIONS.REQUIRED]: true,
+        },
+      },
+      field: {
+        type: BuiltinTypes.STRING,
+        annotations: {
+          [CORE_ANNOTATIONS.REQUIRED]: true,
+        },
+      },
+    } as Record<keyof DependsOnConfig, FieldDefinition>,
+  })
+
   const requestConfigType = new ObjectType({
     elemID: new ElemID(adapter, 'requestConfig'),
     fields: {
@@ -69,8 +91,7 @@ export const createAdapterApiConfigType = (
       },
       queryParams: { type: new MapType(BuiltinTypes.STRING) },
       recursiveQueryByResponseField: { type: new MapType(BuiltinTypes.STRING) },
-      // not finalized - not exposing in config yet
-      // dependsOn: { type: new ListType(BuiltinTypes.STRING) },
+      dependsOn: { type: new MapType(dependsOnConfigType) },
       paginationField: { type: BuiltinTypes.STRING },
       ...additionalEndpointFields,
     },
@@ -100,9 +121,6 @@ export const createAdapterApiConfigType = (
       },
       translation: {
         type: elementTranslationConfigType,
-        annotations: {
-          [CORE_ANNOTATIONS.REQUIRED]: true,
-        },
       },
     },
   })

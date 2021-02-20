@@ -13,12 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import * as ducktype from './ducktype'
-import * as rest from './rest'
-import { RECORDS_PATH, TYPES_PATH, SUBTYPES_PATH } from './constants'
-
 export {
-  ducktype,
-  rest,
-  RECORDS_PATH, TYPES_PATH, SUBTYPES_PATH,
-}
+  createAdapterApiConfigType, createUserFetchConfigType, validateApiDefinitionConfig,
+  validateFetchConfig, ElementTranslationConfig, AdapterApiConfig, EndpointConfig, RequestConfig,
+  UserFetchConfig, DependsOnConfig, ElementTranslationDefaultsConfig,
+} from './endpoint_config'
+export { generateInstancesForType } from './instance_elements'
+export { getAllInstances } from './transformer'
+export { generateTypesV2, toPrimitiveType, ADDITIONAL_PROPERTIES_FIELD } from './type_elements'

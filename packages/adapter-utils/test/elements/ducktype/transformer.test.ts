@@ -332,7 +332,10 @@ describe('ducktype_transformer', () => {
           file: {
             request: {
               url: '/files',
-              dependsOn: ['folder'],
+              dependsOn: {
+                // id doesn't actually exist in the url so this configuration is not realistic
+                id: { endpoint: 'folder', field: 'id' },
+              },
             },
           },
           permission: {
@@ -386,7 +389,7 @@ describe('ducktype_transformer', () => {
         computeGetArgs: simpleGetArgs,
         request: {
           url: '/files',
-          dependsOn: ['folder'],
+          dependsOn: { id: { endpoint: 'folder', field: 'id' } },
         },
         translation: {
           fieldsToOmit: ['a', 'b'],

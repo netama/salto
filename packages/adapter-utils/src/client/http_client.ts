@@ -24,6 +24,8 @@ import { throttle } from './rate_limit'
 
 const log = logger(module)
 
+export class UnauthorizedError extends Error {}
+
 export type ClientOpts<
   TCredentials,
   TRateLimitConfig extends ClientRateLimitConfig,
@@ -102,6 +104,9 @@ export abstract class AdapterHTTPClient<
       })
     } catch (e) {
       log.error(`failed to get ${getParams.url}: ${e}, stack: ${e.stack}`)
+      if (e.response?.status === 401) {
+        throw new UnauthorizedError('Unauthorized - update credentials and fetch again')
+      }
       throw new Error(`Failed to get ${getParams.url} with error: ${e}`)
     }
   }
