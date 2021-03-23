@@ -45,6 +45,7 @@
     "@salto-io/salesforce-adapter": "0.2.9",
     "@salto-io/workato-adapter": "0.2.9",
     "@salto-io/workspace": "0.2.9",
+    "@salto-io/zuora-billing-adapter": "0.2.9",
     "axios": "^0.21.1",
     "glob": "^7.1.6",
     "lodash": "^4.17.21",
