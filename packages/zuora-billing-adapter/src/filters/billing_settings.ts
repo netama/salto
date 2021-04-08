@@ -37,7 +37,7 @@ const isInstanceOfType = (type: string) => (
  * Billing settings filter.
  * Fetches the billing settings based on the schemas returned from /settings/listing
  */
-const filterCreator: FilterCreator = ({ client }) => ({
+const filterCreator: FilterCreator = ({ paginator }) => ({
   onFetch: async (elements: Element[]): Promise<void> => {
     const settingsOpsInfoInstances = elements.filter(
       isInstanceOfType(BILLING_SETTINGS_OPERATION_INFO_TYPE)
@@ -63,7 +63,7 @@ const filterCreator: FilterCreator = ({ client }) => ({
       }
       try {
         return {
-          [settingsInfo.value.key]: (await toArrayAsync(await client.get({
+          [settingsInfo.value.key]: (await toArrayAsync(await paginator({
             url,
           }))).flat(),
         }

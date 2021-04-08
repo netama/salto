@@ -19,7 +19,7 @@ import { ZUORA_BILLING } from '../constants'
 import { Credentials } from '../auth'
 
 const {
-  getWithCursorPagination, DEFAULT_RETRY_OPTS, RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+  DEFAULT_RETRY_OPTS, RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
 } = clientUtils
 
 // TODO set correct defaults
@@ -50,6 +50,4 @@ export default class ZuoraClient extends clientUtils.AdapterHTTPClient<
       }
     )
   }
-
-  protected getAllItems = getWithCursorPagination
 }

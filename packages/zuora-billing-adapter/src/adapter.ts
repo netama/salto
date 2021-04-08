@@ -18,7 +18,7 @@ import {
   FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType,
   DeployModifiers,
 } from '@salto-io/adapter-api'
-import { config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
+import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import ZuoraClient from './client/client'
@@ -31,6 +31,7 @@ import customObjectSplitFilter from './filters/custom_object_split'
 import changeValidator from './change_validator'
 import { ZUORA_BILLING } from './constants'
 
+const { createPaginator, getWithCursorPagination } = clientUtils
 const { generateTypes, getAllInstances } = elementUtils.swagger
 const log = logger(module)
 
@@ -53,6 +54,7 @@ export interface ZuoraAdapterParams {
 export default class ZuoraAdapter implements AdapterOperations {
   private filtersRunner: Required<Filter>
   private client: ZuoraClient
+  private paginator: clientUtils.Paginator
   private userConfig: ZuoraConfig
 
   public constructor({
@@ -62,8 +64,13 @@ export default class ZuoraAdapter implements AdapterOperations {
   }: ZuoraAdapterParams) {
     this.userConfig = config
     this.client = client
+    this.paginator = createPaginator({
+      client: this.client,
+      paginationFunc: getWithCursorPagination,
+    })
     this.filtersRunner = filtersRunner(
       this.client,
+      this.paginator,
       config,
       filterCreators
     )
@@ -98,7 +105,7 @@ export default class ZuoraAdapter implements AdapterOperations {
       },
     }
     return getAllInstances({
-      client: this.client,
+      paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: updatedApiDefinitionsConfig,
       fetchConfig: this.userConfig[FETCH_CONFIG],
