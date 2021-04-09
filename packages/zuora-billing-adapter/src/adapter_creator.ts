@@ -22,8 +22,8 @@ import { client as clientUtils, config as configUtils } from '@salto-io/adapter-
 import ZuoraClient from './client/client'
 import ZuoraAdapter from './adapter'
 import {
-  Credentials, usernamePasswordRESTCredentialsType,
-  accessTokenCredentialsType, isAccessTokenConfig,
+  Credentials, usernamePasswordCredentialsType,
+  oauthClientCredentialsType, isOAuthClientCredentialsConfig,
 } from './auth'
 import {
   configType, ZuoraConfig, CLIENT_CONFIG, DEFAULT_API_DEFINITIONS, API_DEFINITIONS_CONFIG,
@@ -36,9 +36,10 @@ const { validateCredentials, validateClientConfig } = clientUtils
 const { validateSwaggerApiDefinitionConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => (
-  isAccessTokenConfig(config)
+  isOAuthClientCredentialsConfig(config)
     ? {
-      accessToken: config.value.accessToken,
+      clientId: config.value.clientId,
+      clientSecret: config.value.clientSecret,
       baseURL: config.value.baseURL,
     }
     : {
@@ -87,12 +88,11 @@ export const adapter: Adapter = {
     },
   ),
   authenticationMethods: {
-    basic: {
-      credentialsType: usernamePasswordRESTCredentialsType,
+    limited: {
+      credentialsType: usernamePasswordCredentialsType,
     },
-    // TODON do the full flow
-    accessToken: {
-      credentialsType: accessTokenCredentialsType,
+    basic: {
+      credentialsType: oauthClientCredentialsType,
     },
   },
   configType,

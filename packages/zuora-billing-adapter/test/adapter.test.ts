@@ -19,7 +19,7 @@ import MockAdapter from 'axios-mock-adapter'
 import { InstanceElement, isObjectType, isInstanceElement } from '@salto-io/adapter-api'
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
 import { adapter } from '../src/adapter_creator'
-import { accessTokenCredentialsType } from '../src/auth' // TODON change
+import { oauthClientCredentialsType } from '../src/auth'
 import { configType, FETCH_CONFIG, API_DEFINITIONS_CONFIG, DEFAULT_INCLUDE_ENDPOINTS, DEFAULT_API_DEFINITIONS } from '../src/config'
 import mockReplies from './mock_replies.json'
 
@@ -57,8 +57,8 @@ describe('adapter', () => {
         const { elements } = await adapter.operations({
           credentials: new InstanceElement(
             'config',
-            accessTokenCredentialsType,
-            { token: 'token', baseUrl: 'http://localhost:8080' },
+            oauthClientCredentialsType,
+            { clientId: 'client', clientSecret: 'secret', baseUrl: 'http://localhost:8080' },
           ),
           config: new InstanceElement(
             'config',
@@ -1364,51 +1364,6 @@ describe('adapter', () => {
         // TODON continue
       })
     })
-
-    describe('endpoint overrides', () => {
-      // it('should fetch only the relevant endpoints', async () => {
-      //   const { elements } = await adapter.operations({
-      //     credentials: new InstanceElement(
-      //       'config',
-      //       accessTokenCredentialsType,
-      //       { token: 'token', baseUrl: 'http://localhost:8080' },
-      //     ),
-      //     config: new InstanceElement(
-      //       'config',
-      //       configType,
-      //       {
-      //         [FETCH_CONFIG]: {
-      //           // TODON change!
-      //           includeRegex: ['^/v1/catalog/products$'],
-      //           excludeRegex: [],
-      //         },
-      //         [API_DEFINITIONS_CONFIG]: {
-      //           endpoints: {
-      //             connection: {
-      //               request: {
-      //                 url: '/connections',
-      //               },
-      //             },
-      //           },
-      //         },
-      //       },
-      //     ),
-      //     elementsSource: buildElementsSourceFromElements([]),
-      //   }).fetch({ progressReporter: { reportProgress: () => null } })
-      //   expect(elements).toHaveLength(7)
-      //   expect(elements.filter(isObjectType)).toHaveLength(1)
-      //   expect(elements.filter(isInstanceElement)).toHaveLength(6)
-      //   expect(elements.map(e => e.elemID.getFullName()).sort()).toEqual([
-      //     'workato.connection',
-      //     'workato.connection.instance.HTTP_connection_1@s',
-      //     'workato.connection.instance.My_Gmail_connection@s',
-      //     'workato.connection.instance.My_Google_sheets_connection@s',
-      //     'workato.connection.instance.Test_NetSuite_account@s',
-      //     'workato.connection.instance.dev2_sfdc_account@s',
-      //     'workato.connection.instance.sfdev1',
-      //   ])
-      // })
-    })
   })
 
   describe('deploy', () => {
@@ -1416,7 +1371,7 @@ describe('adapter', () => {
       const operations = await adapter.operations({
         credentials: new InstanceElement(
           'config',
-          accessTokenCredentialsType,
+          oauthClientCredentialsType,
           { token: 'token', baseUrl: 'http://localhost:8080' },
         ),
         config: new InstanceElement(

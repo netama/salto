@@ -36,10 +36,12 @@
     "@salto-io/dag": "0.2.9",
     "@salto-io/logging": "0.2.9",
     "@salto-io/lowerdash": "0.2.9",
+    "axios-retry": "^3.1.9",
     "fast-xml-parser": "^3.15.0",
     "he": "^1.2.0",
     "lodash": "^4.17.21",
     "mime-types": "^2.1.27",
+    "qs": "^6.10.1",
     "requestretry": "^4.0.2",
     "stream": "0.0.2",
     "wu": "^2.1.0"

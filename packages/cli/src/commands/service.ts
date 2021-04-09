@@ -36,7 +36,7 @@ const AUTH_TYPE_OPTION: KeyedOption<AuthTypeArgs> = {
   description: 'The type of authorization you would like to use for the service. Options = [basic, oauth]',
   type: 'string',
   required: false,
-  choices: ['basic', 'accessToken', 'oauth'], // TODON
+  choices: ['basic', 'oauth', 'limited'],
   default: 'basic',
 }
 

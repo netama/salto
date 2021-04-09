@@ -19,73 +19,73 @@ import * as constants from './constants'
 
 const configID = new ElemID(constants.ZUORA_BILLING)
 
-export const usernamePasswordRESTCredentialsType = new ObjectType({
+export const usernamePasswordCredentialsType = new ObjectType({
   elemID: configID,
   fields: {
     username: { type: BuiltinTypes.STRING },
     password: { type: BuiltinTypes.STRING },
-    baseURL: { type: BuiltinTypes.STRING },
+    baseURL: {
+      type: BuiltinTypes.STRING,
+      annotations: { message: 'Base URL (e.g. https://rest.sandbox.na.zuora.com)' },
+    },
   },
 })
 
-export const accessTokenCredentialsType = new ObjectType({
-  elemID: configID,
-  fields: {
-    accessToken: { type: BuiltinTypes.STRING },
-    baseURL: { type: BuiltinTypes.STRING },
-  },
-})
-
-export const isAccessTokenConfig = (config: Readonly<InstanceElement>): boolean => (
-  // TODON change when changing to full oauth
-  config.value.authType === 'accessToken'
-)
-
-// TODON use...
-export const oauthRequestParameters = new ObjectType({
+export const oauthClientCredentialsType = new ObjectType({
   elemID: configID,
   fields: {
     clientId: {
       type: BuiltinTypes.STRING,
-      annotations: { message: 'OAuth client id' },
+      annotations: { message: 'OAuth client ID' },
     },
     clientSecret: {
-      type: BuiltinTypes.NUMBER,
+      type: BuiltinTypes.STRING,
       annotations: { message: 'OAuth client secret' },
     },
-    baseURL: { type: BuiltinTypes.STRING },
+    baseURL: {
+      type: BuiltinTypes.STRING,
+      annotations: { message: 'Base URL (e.g. https://rest.sandbox.na.zuora.com)' },
+    },
   },
 })
 
-// TODON reuse
-export type UsernamePasswordRESTCredentials = {
+export type OAuthClientCredentials = {
+  clientId: string
+  clientSecret: string
+  baseURL: string
+}
+
+export type UsernamePasswordCredentials = {
   username: string
   password: string
   baseURL: string
 }
 
-export type OAuthAccessTokenCredentials = {
-  baseURL: string
-  accessToken: string
-}
+export type Credentials = OAuthClientCredentials | UsernamePasswordCredentials
 
-export type Credentials = UsernamePasswordRESTCredentials | OAuthAccessTokenCredentials
-
-export const isUsernamePasswordRESTCredentials = (
+export const isUsernamePasswordCredentials = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   creds: any
-): creds is UsernamePasswordRESTCredentials => (
+): creds is UsernamePasswordCredentials => (
   creds !== undefined
   && _.isString(creds.username)
   && _.isString(creds.password)
   && _.isString(creds.baseURL)
 )
 
-export const isOAuthAccessTokenCredentials = (
+export const isOAuthClientCredentials = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   creds: any
-): creds is OAuthAccessTokenCredentials => (
+): creds is OAuthClientCredentials => (
   creds !== undefined
-  && _.isString(creds.accessToken)
+  && _.isString(creds.clientId)
+  && _.isString(creds.clientSecret)
   && _.isString(creds.baseURL)
+)
+
+export const isOAuthClientCredentialsConfig = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  credsInstance: Readonly<InstanceElement>
+): boolean => (
+  isOAuthClientCredentials(credsInstance.value)
 )

@@ -20,7 +20,7 @@ import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
 import ZuoraAdapter from '../src/adapter'
 import { adapter } from '../src/adapter_creator'
 // TODON add other auth types
-import { usernamePasswordRESTCredentialsType } from '../src/auth'
+import { usernamePasswordCredentialsType, oauthClientCredentialsType } from '../src/auth'
 import { configType } from '../src/config'
 import { ZUORA_BILLING } from '../src/constants'
 // import * as connection from '../src/client/connection'
@@ -39,9 +39,16 @@ describe('adapter creator', () => {
     const config = adapter.configType as ObjectType
     expect(Object.keys(config?.fields)).toEqual(Object.keys(configType.fields))
   })
-  it('should use username+token as the basic auth method', () => {
+  it('should use oauth token as the basic auth method', () => {
     expect(Object.keys(adapter.authenticationMethods.basic.credentialsType.fields)).toEqual(
-      Object.keys(usernamePasswordRESTCredentialsType.fields)
+      Object.keys(oauthClientCredentialsType.fields)
+    )
+  })
+  it('should use username+token as the limited auth method', () => {
+    expect(Object.keys(
+      adapter.authenticationMethods.limited?.credentialsType.fields ?? {}
+    )).toEqual(
+      Object.keys(usernamePasswordCredentialsType.fields)
     )
   })
   it('should return the zuora_billing adapter', () => {

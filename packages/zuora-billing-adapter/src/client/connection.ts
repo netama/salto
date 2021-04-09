@@ -13,34 +13,65 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import qs from 'qs'
+import axios from 'axios'
+import axiosRetry from 'axios-retry'
 import { AccountId } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-components'
-import { Credentials, isUsernamePasswordRESTCredentials, isOAuthAccessTokenCredentials } from '../auth'
+import { Credentials, isOAuthClientCredentials, isUsernamePasswordCredentials } from '../auth'
 
 export const validateCredentials = async (
-  creds: Credentials, _conn: clientUtils.APIConnection,
-): Promise<AccountId> => (
-  // TODON make some request so that we catch 401
-  // TODON just generate the token here and forget about it?
-  // TODO temporary, not correct!
-  isUsernamePasswordRESTCredentials(creds)
-    ? creds.username
-    : 'replace me'
-)
+  creds: Credentials, conn: clientUtils.APIConnection,
+): Promise<AccountId> => {
+  if (isUsernamePasswordCredentials(creds)) {
+    const res = await conn.post('/v1/connections', {})
+    if (res.status !== 200 || !res.data.success) {
+      throw new Error('Authentication failed')
+    }
+  }
+  // the oauth variant was already authenticated when the connection was created
+
+  // default to empty to avoid preventing users from refreshing their credentials in the SaaS.
+  return ''
+}
 
 export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
   clientUtils.axiosConnection({
     retryOptions,
-    authParamsFunc: (creds: Credentials) => ({
-      headers: (isOAuthAccessTokenCredentials(creds)
-        ? {
-          Authorization: `Bearer ${creds.accessToken}`,
+    authParamsFunc: async (creds: Credentials) => {
+      if (isOAuthClientCredentials(creds)) {
+        const httpClient = axios.create({
+          baseURL: creds.baseURL,
+          headers: {
+            'content-type': 'application/x-www-form-urlencoded',
+          },
+        })
+        axiosRetry(httpClient, retryOptions)
+
+        const res = await httpClient.post(
+          '/oauth/token',
+          qs.stringify({
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            client_id: creds.clientId,
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            client_secret: creds.clientSecret,
+            // eslint-disable-next-line @typescript-eslint/camelcase
+            grant_type: 'client_credentials',
+          }),
+        )
+        return {
+          headers: {
+            Authorization: `Bearer ${res.data.access_token}`,
+          },
         }
-        : {
+      }
+      return {
+        headers: {
           apiAccessKeyId: creds.username,
           apiSecretAccessKey: creds.password,
-        }),
-    }),
+        },
+      }
+    },
     baseURLFunc: ({ baseURL }) => baseURL,
     credValidateFunc: validateCredentials,
   })
