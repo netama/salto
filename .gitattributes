@@ -1,0 +1,3 @@
+# do not diff swagger and mock-reply test files
+packages/*-adapter/test/*.yaml binary
+packages/*-adapter/test/*.json binary
