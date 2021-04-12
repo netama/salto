@@ -47,7 +47,7 @@ type AuthenticatedAPIConnection = APIConnection & {
   accountId: AccountId
 }
 
-type RetryOptions = {
+export type RetryOptions = {
   retries: number
   retryDelay?: (retryCount: number, error: AxiosError) => number
 }

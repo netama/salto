@@ -13,12 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import qs from 'qs'
-import axios from 'axios'
-import axiosRetry from 'axios-retry'
 import { AccountId } from '@salto-io/adapter-api'
-import { client as clientUtils } from '@salto-io/adapter-components'
+import { auth as authUtils, client as clientUtils } from '@salto-io/adapter-components'
 import { Credentials, isOAuthClientCredentials, isUsernamePasswordCredentials } from '../auth'
+
+const { oauthClientCredentialsBearerToken } = authUtils
 
 export const validateCredentials = async (
   creds: Credentials, conn: clientUtils.APIConnection,
@@ -40,30 +39,10 @@ export const createConnection: clientUtils.ConnectionCreator<Credentials> = retr
     retryOptions,
     authParamsFunc: async (creds: Credentials) => {
       if (isOAuthClientCredentials(creds)) {
-        const httpClient = axios.create({
-          baseURL: creds.baseURL,
-          headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-          },
+        return oauthClientCredentialsBearerToken({
+          ...creds,
+          retryOptions,
         })
-        axiosRetry(httpClient, retryOptions)
-
-        const res = await httpClient.post(
-          '/oauth/token',
-          qs.stringify({
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            client_id: creds.clientId,
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            client_secret: creds.clientSecret,
-            // eslint-disable-next-line @typescript-eslint/camelcase
-            grant_type: 'client_credentials',
-          }),
-        )
-        return {
-          headers: {
-            Authorization: `Bearer ${res.data.access_token}`,
-          },
-        }
       }
       return {
         headers: {

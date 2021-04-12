@@ -15,6 +15,7 @@
 */
 import _ from 'lodash'
 import { ElemID, ObjectType, BuiltinTypes, InstanceElement } from '@salto-io/adapter-api'
+import { auth as authUtils } from '@salto-io/adapter-components'
 import * as constants from './constants'
 
 const configID = new ElemID(constants.ZUORA_BILLING)
@@ -49,9 +50,7 @@ export const oauthClientCredentialsType = new ObjectType({
   },
 })
 
-export type OAuthClientCredentials = {
-  clientId: string
-  clientSecret: string
+export type OAuthClientCredentials = authUtils.OAuthClientCredentialsArgs & {
   baseURL: string
 }
 
