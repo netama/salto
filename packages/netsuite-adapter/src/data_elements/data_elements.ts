@@ -40,6 +40,7 @@ export const getDataTypes = async (
   types.forEach(type => {
     type.annotationRefTypes.source = new ReferenceExpression(BuiltinTypes.HIDDEN_STRING.elemID)
     type.annotations.source = 'soap'
+    type.path = ['netsuite', 'Types', type.elemID.name]
   })
   return types
 }

@@ -16,7 +16,7 @@
 import {
   FetchResult, isInstanceElement, AdapterOperations, DeployResult, DeployOptions,
   ElemIdGetter, Element, ReadOnlyElementsSource,
-  FetchOptions, Field, BuiltinTypes, CORE_ANNOTATIONS, DeployModifiers, ObjectType,
+  FetchOptions, Field, BuiltinTypes, CORE_ANNOTATIONS, DeployModifiers,
 } from '@salto-io/adapter-api'
 import _ from 'lodash'
 import { collections, values } from '@salto-io/lowerdash'
@@ -37,7 +37,7 @@ import serviceUrls from './filters/service_urls'
 import redundantFields from './filters/remove_redundant_fields'
 import hiddenFields from './filters/hidden_fields'
 import replaceRecordRef from './filters/replace_record_ref'
-import removeUnsupportedTypes from './filters/remove_unsupported_types'
+// import removeUnsupportedTypes from './filters/remove_unsupported_types'
 import { FilterCreator } from './filter'
 import { getConfigFromConfigChanges, NetsuiteConfig, DEFAULT_DEPLOY_REFERENCED_ELEMENTS, DEFAULT_USE_CHANGES_DETECTION } from './config'
 import { andQuery, buildNetsuiteQuery, NetsuiteQuery, NetsuiteQueryParameters, notQuery } from './query'
@@ -49,6 +49,7 @@ import { createElementsSourceIndex } from './elements_source_index/elements_sour
 import { LazyElementsSourceIndex } from './elements_source_index/types'
 import getChangeValidator from './change_validator'
 import { getChangeGroupIdsFunc } from './group_changes'
+import { getDataTypes } from './data_elements/data_elements'
 
 const { makeArray } = collections.array
 const { awu } = collections.asynciterable
@@ -99,7 +100,7 @@ export default class NetsuiteAdapter implements AdapterOperations {
       redundantFields,
       hiddenFields,
       replaceRecordRef,
-      removeUnsupportedTypes,
+      // removeUnsupportedTypes,
     ],
     typesToSkip = [
       INTEGRATION, // The imported xml has no values, especially no SCRIPT_ID, for standard
@@ -161,8 +162,8 @@ export default class NetsuiteAdapter implements AdapterOperations {
 
 
     // TODO: uncomment when dataTypes is ready
-    // const dataTypesPromise = getDataTypes(this.client)
-    const dataTypesPromise: ObjectType[] = []
+    const dataTypesPromise = getDataTypes(this.client)
+    // const dataTypesPromise: ObjectType[] = []
 
     const getCustomObjectsResult = this.client.getCustomObjects(
       Object.keys(customTypes),
