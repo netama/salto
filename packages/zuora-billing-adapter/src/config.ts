@@ -161,7 +161,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: ZuoraApiConfig['types'] = {
   },
   ProductType: {
     transformation: {
-      idFields: ['sku'],
+      idFields: ['name', 'sku'],
       fileNameFields: ['name'],
       fieldTypeOverrides: [
         { fieldName: 'productRatePlans', fieldType: 'list<ProductRatePlanType>' },
