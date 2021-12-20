@@ -432,8 +432,19 @@ export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = {
   },
   business_hours_schedule: {
     transformation: {
-      sourceTypeName: 'business_hours_schedules__schedules',
-      fieldsToHide: FIELDS_TO_HIDE.concat({ fieldName: 'id', fieldType: 'number' }),
+      standaloneFields: [{ fieldName: 'holidays' }],
+      dataField: 'schedules',
+      sourceTypeName: 'business_hours_schedule__schedules',
+    },
+    request: {
+      url: '/business_hours/schedules',
+      recurseInto: [
+        {
+          type: 'business_hours_schedule_holidays',
+          toField: 'holidays',
+          context: [{ name: 'scheduleId', fromField: 'id' }],
+        },
+      ],
     },
     deployRequests: {
       add: {
@@ -1068,9 +1079,12 @@ export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = {
     },
   },
   // eslint-disable-next-line camelcase
-  business_hours_schedules: {
+  business_hours_schedule_holidays: {
     request: {
-      url: '/business_hours/schedules',
+      url: '/business_hours/schedules/{scheduleId}/holidays',
+    },
+    transformation: {
+      dataField: 'holiday',
     },
   },
   // eslint-disable-next-line camelcase
@@ -1199,11 +1213,46 @@ export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = {
   // not included yet: satisfaction_reason (returns 403), sunshine apis
 }
 
-export const DEFAULT_CONFIG: ZendeskConfig = {
+export const DEFAULT_INCLUDE_ENDPOINTS: string[] = [
+  'account_settings',
+  'app_installations',
+  'apps_owned',
+  'automations',
+  'brands',
+  'business_hours_schedules',
+  'custom_roles',
+  'dynamic_content_item',
+  'groups',
+  'locales',
+  'macro_categories',
+  'macros',
+  'macros_actions',
+  'macros_definitions',
+  'monitored_twitter_handles',
+  'oauth_clients',
+  'oauth_global_clients',
+  'organization_fields',
+  'organizations',
+  'resource_collections',
+  'routing_attribute_definitions',
+  'routing_attributes',
+  'sharing_agreements',
+  'sla_policies',
+  'sla_policies_definitions',
+  'support_addresses',
+  'targets',
+  'ticket_fields',
+  'ticket_forms',
+  'trigger_categories',
+  'triggers',
+  'user_fields',
+  'views',
+  'workspaces',
+]
+
+export const DEFAULT_CONFIG = {
   [FETCH_CONFIG]: {
-    includeTypes: [
-      ...Object.keys(_.pickBy(DEFAULT_TYPES, def => def.request !== undefined)),
-    ].sort(),
+    includeTypes: DEFAULT_INCLUDE_ENDPOINTS,
   },
   [API_DEFINITIONS_CONFIG]: {
     typeDefaults: {
