@@ -34,6 +34,7 @@
         { "path": "../lowerdash" },
         { "path": "../netsuite-adapter" },
         { "path": "../salesforce-adapter" },
+        { "path": "../slack-adapter" },
         { "path": "../stripe-adapter" },
         { "path": "../test-utils" },
         { "path": "../workato-adapter" },

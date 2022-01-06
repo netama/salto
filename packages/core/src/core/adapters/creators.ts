@@ -22,6 +22,7 @@ import { adapter as workatoAdapter } from '@salto-io/workato-adapter'
 import { adapter as zendeskSupportAdapter } from '@salto-io/zendesk-support-adapter'
 import { adapter as zuoraBillingAdapter } from '@salto-io/zuora-billing-adapter'
 import { adapter as jiraAdapter } from '@salto-io/jira-adapter'
+import { adapter as slackAdapter } from '@salto-io/slack-adapter'
 import { adapter as stripeAdapter } from '@salto-io/stripe-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
@@ -29,6 +30,7 @@ const adapterCreators: Record<string, Adapter> = {
   hubspot: hubspotAdapter,
   netsuite: netsuiteAdapter,
   workato: workatoAdapter,
+  slack: slackAdapter,
   stripe: stripeAdapter,
   // eslint-disable-next-line camelcase
   zuora_billing: zuoraBillingAdapter,

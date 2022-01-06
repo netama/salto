@@ -18,6 +18,7 @@ Currently, Salto supports the following business applications:
 - [Zendesk Support](https://github.com/salto-io/salto/tree/main/packages/zendesk-support-adapter)
 - [Zuora Billing](https://github.com/salto-io/salto/tree/main/packages/zuora-billing-adapter)
 - [Jira](https://github.com/salto-io/salto/tree/main/packages/jira-adapter)
+- [Slack](https://github.com/salto-io/salto/tree/main/packages/slack-adapter)
 - [Stripe](https://github.com/salto-io/salto/tree/main/packages/stripe-adapter)
 
 Support for other business applications is in the works.

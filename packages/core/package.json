@@ -45,6 +45,7 @@
     "@salto-io/netsuite-adapter": "0.3.8",
     "@salto-io/rocksdb": "5.1.1-salto-18",
     "@salto-io/salesforce-adapter": "0.3.8",
+    "@salto-io/slack-adapter": "0.3.8",
     "@salto-io/stripe-adapter": "0.3.8",
     "@salto-io/workato-adapter": "0.3.8",
     "@salto-io/workspace": "0.3.8",
