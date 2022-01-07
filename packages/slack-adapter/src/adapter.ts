@@ -13,25 +13,23 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType,
-  DeployModifiers, FetchOptions,
+  FetchResult, AdapterOperations, DeployResult, Element, DeployModifiers, FetchOptions,
 } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import SlackClient from './client/client'
-import { SlackConfig, API_DEFINITIONS_CONFIG, FETCH_CONFIG } from './config'
+import { SlackConfig } from './config'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import { SLACK } from './constants'
 import changeValidator from './change_validator'
 import fieldReferencesFilter from './filters/field_references'
 
-const { createPaginator, getWithCursorPagination } = clientUtils
-
-const { generateTypes, getAllInstances } = elementUtils.swagger
 const log = logger(module)
+const { createPaginator, getWithCursorPagination } = clientUtils
+const { findDataField, simpleGetArgs } = elementUtils
+const { getAllElements } = elementUtils.ducktype
 
 export const DEFAULT_FILTERS = [
   // fieldReferencesFilter should run after all elements were created
@@ -45,7 +43,7 @@ export interface SlackAdapterParams {
 }
 
 export default class SlackAdapter implements AdapterOperations {
-  private filtersRunner: Required<Filter>
+  private createFiltersRunner: () => Required<Filter>
   private client: SlackClient
   private paginator: clientUtils.Paginator
   private userConfig: SlackConfig
@@ -57,75 +55,46 @@ export default class SlackAdapter implements AdapterOperations {
   }: SlackAdapterParams) {
     this.userConfig = config
     this.client = client
-    this.paginator = createPaginator({
+    const paginator = createPaginator({
       client: this.client,
-      paginationFuncCreator: () => getWithCursorPagination(),
+      paginationFuncCreator: () => getWithCursorPagination(), // TODON
     })
-    this.filtersRunner = filtersRunner(
+    this.paginator = paginator
+    this.createFiltersRunner = () => filtersRunner(
       {
-        client: this.client,
-        paginator: this.paginator,
+        client,
+        paginator,
         config,
       },
       filterCreators,
     )
   }
 
-  @logDuration('generating types from swagger')
-  private async getAllTypes(): Promise<{
-    allTypes: TypeMap
-    parsedConfigs: Record<string, configUtils.TypeSwaggerConfig>
-  }> {
-    return generateTypes(
-      SLACK,
-      this.userConfig[API_DEFINITIONS_CONFIG]
-    )
-  }
-
-  @logDuration('generating instances from service')
-  private async getInstances(
-    allTypes: TypeMap,
-    parsedConfigs: Record<string, configUtils.TypeSwaggerConfig>
-  ): Promise<InstanceElement[]> {
-    const updatedApiDefinitionsConfig = {
-      ...this.userConfig[API_DEFINITIONS_CONFIG],
-      // user config takes precedence over parsed config
-      types: {
-        ...parsedConfigs,
-        ..._.mapValues(
-          this.userConfig[API_DEFINITIONS_CONFIG].types,
-          (def, typeName) => ({ ...parsedConfigs[typeName], ...def })
-        ),
-      },
-    }
-    return getAllInstances({
+  @logDuration('generating instances and types from service')
+  private async getElements(): Promise<Element[]> {
+    return getAllElements({
+      adapterName: SLACK,
+      types: this.userConfig.apiDefinitions.types,
+      includeTypes: this.userConfig.fetch.includeTypes,
       paginator: this.paginator,
-      objectTypes: _.pickBy(allTypes, isObjectType),
-      apiConfig: updatedApiDefinitionsConfig,
-      fetchConfig: this.userConfig[FETCH_CONFIG],
+      nestedFieldFinder: findDataField,
+      computeGetArgs: simpleGetArgs,
+      typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
     })
   }
 
   /**
-   * Fetch configuration elements in the given slack account.
+   * Fetch configuration elements in the given account.
    * Account credentials were given in the constructor.
    */
   @logDuration('fetching account configuration')
   async fetch({ progressReporter }: FetchOptions): Promise<FetchResult> {
     log.debug('going to fetch slack account configuration..')
-    progressReporter.reportProgress({ message: 'Fetching types' })
-    const { allTypes, parsedConfigs } = await this.getAllTypes()
-    progressReporter.reportProgress({ message: 'Fetching instances' })
-    const instances = await this.getInstances(allTypes, parsedConfigs)
-
-    const elements = [
-      ...Object.values(allTypes),
-      ...instances,
-    ]
-
+    progressReporter.reportProgress({ message: 'Fetching types and instances' })
+    const elements = await this.getElements()
     log.debug('going to run filters on %d fetched elements', elements.length)
     progressReporter.reportProgress({ message: 'Running filters for additional information' })
-    await this.filtersRunner.onFetch(elements)
+    await this.createFiltersRunner().onFetch(elements)
     return { elements }
   }
 

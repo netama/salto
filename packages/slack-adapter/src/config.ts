@@ -16,11 +16,13 @@
 import _ from 'lodash'
 import { ElemID, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils } from '@salto-io/adapter-components'
-import { createMatchingObjectType } from '@salto-io/adapter-utils'
+import { createMatchingObjectType, pathNaclCase, naclCase } from '@salto-io/adapter-utils'
 import { SLACK } from './constants'
 
 const { createClientConfigType } = clientUtils
-const { createUserFetchConfigType, createSwaggerAdapterApiConfigType } = configUtils
+const {
+  createUserFetchConfigType, createDucktypeAdapterApiConfigType, validateDuckTypeFetchConfig,
+} = configUtils
 
 const DEFAULT_ID_FIELDS = ['id']
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
@@ -34,7 +36,7 @@ export const API_DEFINITIONS_CONFIG = 'apiDefinitions'
 export type SlackClientConfig = clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig>
 
 export type SlackFetchConfig = configUtils.UserFetchConfig
-export type SlackApiConfig = configUtils.AdapterSwaggerApiConfig
+export type SlackApiConfig = configUtils.AdapterDuckTypeApiConfig
 
 export type SlackConfig = {
   [CLIENT_CONFIG]?: SlackClientConfig
@@ -42,43 +44,32 @@ export type SlackConfig = {
   [API_DEFINITIONS_CONFIG]: SlackApiConfig
 }
 
-const DEFAULT_TYPE_CUSTOMIZATIONS: SlackApiConfig['types'] = {
-}
-
-export const DEFAULT_API_DEFINITIONS: SlackApiConfig = {
-  swagger: {
-    url: 'https://api.slack.com/specs/openapi/v2/slack_web.json',
-    typeNameOverrides: [
-      { originalName: 'admin_teams_list@v', newName: 'admin_teams_list' },
-      { originalName: 'team_info@v', newName: 'team_info' },
-      { originalName: 'usergroups_list@v', newName: 'usergroups_list' },
-    ],
-  },
-  typeDefaults: {
-    transformation: {
-      idFields: DEFAULT_ID_FIELDS,
-      fieldsToOmit: FIELDS_TO_OMIT,
-    },
-  },
-  types: DEFAULT_TYPE_CUSTOMIZATIONS,
-}
-
-const ALL_SUPPORTED_TYPES = [
-  // we can clean the type names in typeNameOverrides and then use the updated names here
-  'admin_teams_list',
-  'team_info',
-  'usergroups_list',
-  // or we can just keep the old names
-  'emoji_list@v',
+const ALL_SUPPORTED_ENDPOINTS = [
+  'team.preferences.list',
+  'team.info',
+  'emoji.list',
 ]
 
-export const DEFAULT_INCLUDE_TYPES = ALL_SUPPORTED_TYPES
+
+export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = Object.fromEntries(
+  ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
+)
 
 export const DEFAULT_CONFIG: SlackConfig = {
   [FETCH_CONFIG]: {
-    includeTypes: DEFAULT_INCLUDE_TYPES,
+    includeTypes: [
+      ...Object.keys(_.pickBy(DEFAULT_TYPES, def => def.request !== undefined)),
+    ].sort(),
   },
-  [API_DEFINITIONS_CONFIG]: DEFAULT_API_DEFINITIONS,
+  [API_DEFINITIONS_CONFIG]: {
+    typeDefaults: {
+      transformation: {
+        idFields: DEFAULT_ID_FIELDS,
+        fieldsToOmit: FIELDS_TO_OMIT,
+      },
+    },
+    types: DEFAULT_TYPES,
+  },
 }
 
 export const configType = createMatchingObjectType<Partial<SlackConfig>>({
@@ -91,7 +82,7 @@ export const configType = createMatchingObjectType<Partial<SlackConfig>>({
       refType: createUserFetchConfigType(SLACK),
     },
     [API_DEFINITIONS_CONFIG]: {
-      refType: createSwaggerAdapterApiConfigType({
+      refType: createDucktypeAdapterApiConfigType({
         adapter: SLACK,
       }),
     },
@@ -104,4 +95,12 @@ export const configType = createMatchingObjectType<Partial<SlackConfig>>({
 export type FilterContext = {
   [FETCH_CONFIG]: SlackFetchConfig
   [API_DEFINITIONS_CONFIG]: SlackApiConfig
+}
+
+export const validateFetchConfig = (
+  fetchConfigPath: string,
+  userFetchConfig: SlackFetchConfig,
+  adapterApiConfig: configUtils.AdapterApiConfig,
+): void => {
+  validateDuckTypeFetchConfig(fetchConfigPath, userFetchConfig, adapterApiConfig)
 }

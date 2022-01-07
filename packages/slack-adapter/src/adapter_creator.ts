@@ -18,49 +18,42 @@ import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils } from '@salto-io/adapter-components'
-import _ from 'lodash'
 import SlackClient from './client/client'
 import SlackAdapter from './adapter'
 import {
   Credentials, accessTokenCredentialsType,
 } from './auth'
-import { configType, SlackConfig, CLIENT_CONFIG, API_DEFINITIONS_CONFIG,
-  FETCH_CONFIG, DEFAULT_CONFIG, SlackApiConfig } from './config'
+import {
+  configType, SlackConfig, CLIENT_CONFIG, FETCH_CONFIG, DEFAULT_CONFIG, SlackApiConfig,
+  validateFetchConfig,
+} from './config'
 import { createConnection } from './client/connection'
 
 const log = logger(module)
 const { validateCredentials, validateClientConfig } = clientUtils
-const { validateSwaggerApiDefinitionConfig, validateSwaggerFetchConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => ({
   token: config.value.token,
 })
 
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): SlackConfig => {
+  const configValue = config?.value ?? {}
+
   const apiDefinitions = configUtils.mergeWithDefaultConfig(
     DEFAULT_CONFIG.apiDefinitions,
     config?.value.apiDefinitions
   ) as SlackApiConfig
 
-  const fetch = _.defaults(
-    {}, config?.value.fetch, DEFAULT_CONFIG[FETCH_CONFIG],
-  )
-
-  validateClientConfig(CLIENT_CONFIG, config?.value?.client)
-  validateSwaggerApiDefinitionConfig(API_DEFINITIONS_CONFIG, apiDefinitions)
-  validateSwaggerFetchConfig(
-    FETCH_CONFIG,
-    API_DEFINITIONS_CONFIG,
-    fetch,
-    apiDefinitions
-  )
-
   const adapterConfig: { [K in keyof Required<SlackConfig>]: SlackConfig[K] } = {
-    client: config?.value?.client,
-    fetch: config?.value?.fetch,
+    client: configValue.client,
+    fetch: configValue.fetch,
     apiDefinitions,
   }
-  Object.keys(config?.value ?? {})
+
+  validateClientConfig(CLIENT_CONFIG, adapterConfig.client)
+  validateFetchConfig(FETCH_CONFIG, adapterConfig.fetch, apiDefinitions)
+
+  Object.keys(configValue)
     .filter(k => !Object.keys(adapterConfig).includes(k))
     .forEach(k => log.debug('Unknown config property was found: %s', k))
   return adapterConfig
