@@ -24,8 +24,9 @@ const {
   createUserFetchConfigType, createDucktypeAdapterApiConfigType, validateDuckTypeFetchConfig,
 } = configUtils
 
-const DEFAULT_ID_FIELDS = ['id']
+const DEFAULT_ID_FIELDS = ['name']
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
+  { fieldName: 'response_metadata' },
 ]
 
 export const CLIENT_CONFIG = 'client'
@@ -45,14 +46,60 @@ export type SlackConfig = {
 }
 
 const ALL_SUPPORTED_ENDPOINTS = [
-  'team.preferences.list',
-  'team.info',
+  // 'admin.apps.approved.list',
+  // 'admin.apps.requests.list',
+  // 'admin.apps.restricted.list',
+  // 'admin.auth.policy.getEntities',
+  // 'admin.barriers.list',
+  // 'admin.conversations.getConversationPrefs',
+  // 'admin.conversations.getCustomRetention',
+  // 'admin.conversations.getTeams',
+  // 'admin.conversations.ekm.listOriginalConnectedChannelInfo',
+  // 'admin.conversations.restrictAccess.listGroups',
+  // 'admin.emoji.list',
+  // 'admin.inviteRequests.list',
+  // 'admin.inviteRequests.approved.list',
+  // 'admin.inviteRequests.denied.list',
+  // 'admin.teams.admins.list',
+  // 'admin.teams.list',
+  // 'admin.teams.owners.list',
+  // 'admin.teams.settings.info',
+  // 'admin.usergroups.listChannels',
+  // 'admin.users.list',
+  // 'admin.users.session.list',
+  'auth.teams.list',
+  'bots.info',
+  'conversations.list',
   'emoji.list',
+  'team.billableInfo',
+  'team.info',
+  'team.integrationLogs',
+  'team.billing.info',
+  'team.preferences.list',
+  'team.profile.get',
+  'usergroups.list',
+  'users.list',
 ]
 
+const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
+  team_billableInfo__billable_info: {
+    transformation: {
+      hasDynamicFields: true,
+    },
+  },
+  users_list: {
+    transformation: {
+      dataField: 'members',
+    },
+  },
+}
 
-export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = Object.fromEntries(
-  ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
+export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = _.merge(
+  {},
+  Object.fromEntries(
+    ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
+  ),
+  TYPE_ADDITIONAL_CONFIG,
 )
 
 export const DEFAULT_CONFIG: SlackConfig = {
