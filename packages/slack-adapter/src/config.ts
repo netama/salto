@@ -89,7 +89,7 @@ const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
   team_billableInfo__billable_info: {
     transformation: {
       hasDynamicFields: true,
-      isSingleton: true,
+      // isSingleton: true,
     },
   },
   team_preferences_list: {
@@ -102,9 +102,9 @@ const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
       dataField: 'members',
     },
   },
-  usergroups_list: {
+  teams: {
     transformation: {
-      isSingleton: true,
+      sourceTypeName: 'auth_teams_list__teams',
     },
   },
 }

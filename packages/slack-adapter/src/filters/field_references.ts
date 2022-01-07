@@ -18,11 +18,36 @@ import { references as referenceUtils } from '@salto-io/adapter-components'
 import { FilterCreator } from '../filter'
 
 const fieldNameToTypeMappingDefs: referenceUtils.FieldReferenceDefinition<never>[] = [
-  // {
-  //   src: { field: 'product', parentTypes: ['plan', 'price'] },
-  //   serializationStrategy: 'id',
-  //   target: { type: 'product' },
-  // },
+  {
+    src: { field: 'creator', parentTypes: ['conversations_list__channels', 'conversations_list__channels__topic'] },
+    serializationStrategy: 'id',
+    target: { type: 'users_list__members' },
+  },
+  {
+    src: { field: 'created_by', parentTypes: ['usergroups_list__usergroups'] },
+    serializationStrategy: 'id',
+    target: { type: 'users_list__members' },
+  },
+  {
+    src: { field: 'updated_by', parentTypes: ['usergroups_list__usergroups'] },
+    serializationStrategy: 'id',
+    target: { type: 'users_list__members' },
+  },
+  {
+    src: { field: 'team_id', parentTypes: ['users_list__members'] },
+    serializationStrategy: 'id',
+    target: { type: 'teams' },
+  },
+  {
+    src: { field: 'team', parentTypes: ['users_list__members__profile'] },
+    serializationStrategy: 'id',
+    target: { type: 'teams' },
+  },
+  {
+    src: { field: 'shared_team_ids', parentTypes: ['conversations_list__channels'] },
+    serializationStrategy: 'id',
+    target: { type: 'teams' },
+  },
 ]
 
 /**
