@@ -73,7 +73,6 @@ const ALL_SUPPORTED_ENDPOINTS = [
   'emoji.list',
   'team.billableInfo',
   'team.info',
-  'team.integrationLogs',
   'team.billing.info',
   'team.preferences.list',
   'team.profile.get',
@@ -82,9 +81,20 @@ const ALL_SUPPORTED_ENDPOINTS = [
 ]
 
 const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
+  emoji_list__emoji: {
+    transformation: {
+      isSingleton: true,
+    },
+  },
   team_billableInfo__billable_info: {
     transformation: {
       hasDynamicFields: true,
+      isSingleton: true,
+    },
+  },
+  team_preferences_list: {
+    transformation: {
+      isSingleton: true,
     },
   },
   users_list: {
@@ -92,9 +102,14 @@ const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
       dataField: 'members',
     },
   },
+  usergroups_list: {
+    transformation: {
+      isSingleton: true,
+    },
+  },
 }
 
-export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = _.merge(
+export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = _.defaultsDeep(
   {},
   Object.fromEntries(
     ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
