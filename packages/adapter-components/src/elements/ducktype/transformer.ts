@@ -99,7 +99,7 @@ const getEntriesForType = async (
   }
   const entriesValues = await Promise.all(Object.entries((requestsContext ?? { '': undefined }))
     .map(async ([id, requestContext]) =>
-      ({ id, context: requestContext, values: await getEntries(requestContext) })))
+      ({ id, context: requestContext, entries: await getEntries(requestContext) })))
   const transformationConfigByType = _.pickBy(
     _.mapValues(typesConfig, def => def.transformation),
     isDefined,
@@ -110,8 +110,8 @@ const getEntriesForType = async (
   const naclEntries = entriesValues
     .map(e => ({
       ...e,
-      values: e.values.map(
-        values => _.mapKeys(values, (_val, key) => naclCase(key))
+      entries: e.entries.map(
+        vals => _.mapKeys(vals, (_val, key) => naclCase(key))
       ),
     }))
 
@@ -120,7 +120,7 @@ const getEntriesForType = async (
   const { type, nestedTypes } = generateType({
     adapterName,
     name: typeName,
-    entries: naclEntries.flatMap(e => e.values),
+    entries: naclEntries.flatMap(e => e.entries),
     hasDynamicFields: hasDynamicFields === true,
     transformationConfigByType,
     transformationDefaultConfig,
@@ -135,7 +135,7 @@ const getEntriesForType = async (
   const idToInstances = Object.fromEntries((await awu(naclEntries).map(async (entry, index) => {
     if (nestedFieldDetails !== undefined) {
       return [entry.id, await awu(makeArray(
-        entry.values.flatMap(value => value[nestedFieldDetails.field.name])
+        entry.entries.flatMap(value => value[nestedFieldDetails.field.name])
       )).map(
         async (nestedEntry, nesteIndex) => toInstance({
           entry: nestedEntry,
@@ -148,17 +148,19 @@ const getEntriesForType = async (
       ).filter(isDefined).toArray()]
     }
 
-    return [entry.id, [await toInstance({
-      entry,
+    return [entry.id, await awu(entry.entries).map(e => toInstance({
+      entry: e,
       type,
       transformationConfigByType,
       transformationDefaultConfig,
       defaultName: `unnamed_${index}`, // TODO improve
       hasDynamicFields,
-    })].filter(isDefined)]
+    })).filter(isDefined).toArray()]
   }).toArray()) as [string, InstanceElement[]][])
 
-  const instanceElements = Object.values(idToInstances).flat()
+  const instanceElements = Object.values(idToInstances).flat().filter(
+    inst => inst.value !== undefined
+  )
   if (type.isSettings && instanceElements.length > 1) {
     log.warn(`Expected one instance for singleton type: ${type.elemID.name} but received: ${instanceElements.length}`)
     throw new Error(`Could not fetch type ${type.elemID.name}, singleton types should not have more than one instance`)
