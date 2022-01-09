@@ -27,6 +27,7 @@ const {
 const DEFAULT_ID_FIELDS = ['name']
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'response_metadata' },
+  { fieldName: 'ok' },
 ]
 
 export const CLIENT_CONFIG = 'client'
@@ -107,20 +108,43 @@ const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
       sourceTypeName: 'auth_teams_list__teams',
     },
   },
+  usergroups_list: {
+    request: {
+      url: '/usergroups.list',
+      recurseInto: [
+        {
+          type: 'usergroups_users_list',
+          toField: 'details', // TODO change to "users" when can avoid double nesting
+          context: [{ name: 'group_id', fromField: 'id' }],
+          isSingle: true, // TODO not working yet in the ducktype implemenetation
+        },
+      ],
+    },
+  },
+  usergroups_users_list: {
+    request: {
+      url: '/usergroups.users.list?usergroup={group_id}',
+    },
+    // transformation: {
+    //   dataField: 'users',
+    // },
+  },
 }
+
+const ALL_SUPPORTED_ENDPOINTS_DEFAULT_DEF = Object.fromEntries(
+  ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
+)
 
 export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = _.defaultsDeep(
   {},
-  Object.fromEntries(
-    ALL_SUPPORTED_ENDPOINTS.map(e => [pathNaclCase(naclCase(e)), { request: { url: `/${e}` } }])
-  ),
   TYPE_ADDITIONAL_CONFIG,
+  ALL_SUPPORTED_ENDPOINTS_DEFAULT_DEF,
 )
 
 export const DEFAULT_CONFIG: SlackConfig = {
   [FETCH_CONFIG]: {
     includeTypes: [
-      ...Object.keys(_.pickBy(DEFAULT_TYPES, def => def.request !== undefined)),
+      ...Object.keys(ALL_SUPPORTED_ENDPOINTS_DEFAULT_DEF),
     ].sort(),
   },
   [API_DEFINITIONS_CONFIG]: {

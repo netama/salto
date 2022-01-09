@@ -28,7 +28,7 @@ import fieldReferencesFilter from './filters/field_references'
 
 const log = logger(module)
 const { createPaginator, getWithCursorPagination } = clientUtils
-const { findDataField, simpleGetArgs } = elementUtils
+const { findDataField, computeGetArgs } = elementUtils
 const { getAllElements } = elementUtils.ducktype
 
 export const DEFAULT_FILTERS = [
@@ -78,7 +78,7 @@ export default class SlackAdapter implements AdapterOperations {
       includeTypes: this.userConfig.fetch.includeTypes,
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
-      computeGetArgs: simpleGetArgs,
+      computeGetArgs,
       typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
     })
   }
