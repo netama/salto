@@ -34,6 +34,11 @@ const fieldNameToTypeMappingDefs: referenceUtils.FieldReferenceDefinition<never>
     target: { type: 'users_list__members' },
   },
   {
+    src: { field: 'members', parentTypes: ['conversations_list__channels__details'] },
+    serializationStrategy: 'id',
+    target: { type: 'users_list__members' },
+  },
+  {
     src: { field: 'users', parentTypes: ['usergroups_list__usergroups__details'] },
     serializationStrategy: 'id',
     target: { type: 'users_list__members' },

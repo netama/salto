@@ -82,6 +82,27 @@ const ALL_SUPPORTED_ENDPOINTS = [
 ]
 
 const TYPE_ADDITIONAL_CONFIG: Record<string, configUtils.TypeDuckTypeConfig> = {
+  conversations_list: {
+    request: {
+      url: '/conversations.list',
+      recurseInto: [
+        {
+          type: 'conversations_members',
+          toField: 'details', // TODO change to "members" when can avoid double nesting
+          context: [{ name: 'channel_id', fromField: 'id' }],
+          isSingle: true, // TODO not working yet in the ducktype implemenetation
+        },
+      ],
+    },
+  },
+  conversations_members: {
+    request: {
+      url: '/conversations.members?channel={channel_id}',
+    },
+    // transformation: {
+    //   dataField: 'users',
+    // },
+  },
   emoji_list__emoji: {
     transformation: {
       isSingleton: true,
