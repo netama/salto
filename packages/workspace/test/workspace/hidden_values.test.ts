@@ -287,6 +287,45 @@ describe('mergeWithHidden', () => {
       expect(object?.fields?.field?.annotations?.[CORE_ANNOTATIONS.SERVICE_URL]).toBe('someUrl')
     })
   })
+
+  describe('hidden builtin annotation in field', () => {
+    let result: MergeResult
+    beforeEach(async () => {
+      const workspaceObject = new ObjectType({
+        elemID: new ElemID('test', 'type'),
+        fields: {
+          field: {
+            refType: BuiltinTypes.STRING,
+          },
+        },
+      })
+
+      const stateObject = new ObjectType({
+        elemID: new ElemID('test', 'type'),
+        fields: {
+          field: {
+            refType: BuiltinTypes.STRING,
+            annotations: { [CORE_ANNOTATIONS.RESTRICTION]: { enforce_value: true, max_length: 3 } },
+          },
+        },
+      })
+
+
+      result = await mergeWithHidden(
+        awu([workspaceObject]),
+        createInMemoryElementSource([stateObject])
+      )
+    })
+    it('should not have merge errors', async () => {
+      expect(await awu(result.errors.values()).flat().isEmpty()).toBeTruthy()
+    })
+    it('should have the hidden annotation value', async () => {
+      const object = await awu(result.merged.values()).find(isObjectType) as ObjectType
+      expect(object?.fields?.field?.annotations?.[CORE_ANNOTATIONS.RESTRICTION]).toEqual({
+        enforce_value: true, max_length: 3,
+      })
+    })
+  })
 })
 
 describe('handleHiddenChanges', () => {
@@ -404,24 +443,32 @@ describe('handleHiddenChanges', () => {
           },
         },
       })
-      const change: DetailedChange = {
-        id: object.fields.field.elemID.createNestedID(CORE_ANNOTATIONS.SERVICE_URL),
-        action: 'add',
-        data: { after: 'someUrl' },
-      }
+      const changes: DetailedChange[] = [
+        {
+          id: object.fields.field.elemID.createNestedID(CORE_ANNOTATIONS.SERVICE_URL),
+          action: 'modify',
+          data: { before: 'someUrl', after: 'someUrl2' },
+        },
+        {
+          id: object.fields.field.elemID.createNestedID(CORE_ANNOTATIONS.RESTRICTION),
+          action: 'add',
+          data: { after: { enforce_value: true, max_length: 3 } },
+        },
+      ]
       result = await handleHiddenChanges(
-        [change],
+        changes,
         mockState([object]),
         createInMemoryElementSource(),
       )
     })
 
-    it('should not have a visible change', () => {
+    it('should not have visible changes', () => {
       expect(result.visible).toHaveLength(0)
     })
-    it('should have a hidden change', () => {
-      expect(result.hidden).toHaveLength(1)
-      expect(_.get(result.hidden[0].data, 'after')).toEqual('someUrl')
+    it('should have hidden changes', () => {
+      expect(result.hidden).toHaveLength(2)
+      expect(_.get(result.hidden[0].data, 'after')).toEqual('someUrl2')
+      expect(_.get(result.hidden[1].data, 'after')).toEqual({ enforce_value: true, max_length: 3 })
     })
   })
 

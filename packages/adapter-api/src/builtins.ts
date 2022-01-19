@@ -92,6 +92,9 @@ const restrictionType = new ObjectType({
       ),
     },
   },
+  annotations: {
+    [CORE_ANNOTATIONS.HIDDEN_VALUE]: true,
+  },
 })
 
 const dependencyOccurrenceType = new ObjectType({
