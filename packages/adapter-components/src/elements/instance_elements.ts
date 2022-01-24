@@ -44,7 +44,12 @@ export const getInstanceName = (
   instanceValues: Values,
   idFields: string[],
 ): string | undefined => {
-  const nameParts = idFields.map(field => _.get(instanceValues, field))
+  const nameParts = idFields.map(
+    field => {
+      const idField = field.charAt(0) === '&' ? field.substr(1, field.length) : field
+      return _.get(instanceValues, idField)
+    }
+  )
   if (nameParts.includes(undefined)) {
     log.warn(`could not find id for entry - expected id fields ${idFields}, available fields ${Object.keys(instanceValues)}`)
   }
