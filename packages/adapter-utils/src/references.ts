@@ -1,0 +1,67 @@
+/*
+*                      Copyright 2021 Salto Labs Ltd.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with
+* the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+/* tmp file that uses rename inner functions */
+
+import _ from 'lodash'
+import { ElemID, Element, InstanceElement,
+  isReferenceExpression, ReferenceExpression } from '@salto-io/adapter-api'
+import { transformElement, walkOnElement, WalkOnFunc, WALK_NEXT_STEP } from '@salto-io/adapter-utils'
+
+const isReferenceOfElement = <T>(
+  value: T,
+  elemId: ElemID
+): boolean =>
+    isReferenceExpression(value)
+    && (elemId.isEqual(value.elemID) || elemId.isParentOf(value.elemID))
+
+export const getUpdatedReference = (
+  referenceExpression: ReferenceExpression,
+  targetElemId: ElemID
+): ReferenceExpression => new ReferenceExpression(
+  targetElemId.createNestedID(...referenceExpression.elemID.createTopLevelParentID().path),
+  referenceExpression.value,
+  referenceExpression.topLevelParent
+)
+
+export const updateElementReferences = async (
+  element: InstanceElement,
+  sourceElemId: ElemID,
+  targetElemId: ElemID,
+) : Promise<InstanceElement> => {
+  return transformElement({
+    element,
+    transformFunc: ({ value }) => (
+      isReferenceOfElement(value, sourceElemId)
+      ? getUpdatedReference(value, targetElemId)
+      : value
+    ),
+    strict: false,
+  })
+}
+
+export const getReferences = (element: Element, sourceElemId: ElemID): { path: ElemID; value: ReferenceExpression }[] => {
+  const references: { path: ElemID; value: ReferenceExpression }[] = []
+  const func: WalkOnFunc = ({ path, value }) => {
+    if (isReferenceOfElement(value, sourceElemId)) {
+      references.push({ path, value })
+      return WALK_NEXT_STEP.SKIP
+    }
+    return WALK_NEXT_STEP.RECURSE
+  }
+  walkOnElement({ element, func })
+  return references
+}

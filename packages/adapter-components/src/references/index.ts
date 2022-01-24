@@ -26,3 +26,4 @@ export {
   ExtendedReferenceTargetDefinition,
   LookupFunc,
 } from './reference_mapping'
+export { addReferencesToInstanceNames } from './referenced_instance_name'

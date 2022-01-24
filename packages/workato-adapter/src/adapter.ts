@@ -26,6 +26,7 @@ import { WorkatoConfig } from './config'
 import fieldReferencesFilter from './filters/field_references'
 import recipeCrossServiceReferencesFilter from './filters/cross_service/recipe_references'
 import serviceUrlFilter from './filters/service_url'
+import idFieldsReferencesFilter from './filters/referenced_id_fields'
 import { WORKATO } from './constants'
 import changeValidator from './change_validator'
 import { paginate } from './client/pagination'
@@ -39,6 +40,8 @@ export const DEFAULT_FILTERS = [
   fieldReferencesFilter,
   recipeCrossServiceReferencesFilter,
   serviceUrlFilter,
+  // idFieldsReferencesFilter should run after fieldReferencesFilter
+  idFieldsReferencesFilter,
 ]
 
 export interface WorkatoAdapterParams {
