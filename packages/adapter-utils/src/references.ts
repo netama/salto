@@ -1,5 +1,5 @@
 /*
-*                      Copyright 2021 Salto Labs Ltd.
+*                      Copyright 2022 Salto Labs Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with
@@ -16,10 +16,9 @@
 
 /* tmp file that uses rename inner functions */
 
-import _ from 'lodash'
-import { ElemID, Element, InstanceElement,
-  isReferenceExpression, ReferenceExpression } from '@salto-io/adapter-api'
-import { transformElement, walkOnElement, WalkOnFunc, WALK_NEXT_STEP } from '@salto-io/adapter-utils'
+import { ElemID, Element, InstanceElement, isReferenceExpression, ReferenceExpression } from '@salto-io/adapter-api'
+import { transformElement, TransformFunc } from './utils'
+import { WalkOnFunc, WALK_NEXT_STEP, walkOnElement } from './walk_element'
 
 const isReferenceOfElement = <T>(
   value: T,
@@ -37,23 +36,31 @@ export const getUpdatedReference = (
   referenceExpression.topLevelParent
 )
 
+export const createReferencesTransformFunc = (
+  sourceElemId: ElemID,
+  targetElemId: ElemID,
+): TransformFunc => (({ value }) => (
+  isReferenceOfElement(value, sourceElemId)
+    ? getUpdatedReference(value, targetElemId)
+    : value
+))
+
 export const updateElementReferences = async (
   element: InstanceElement,
   sourceElemId: ElemID,
   targetElemId: ElemID,
-) : Promise<InstanceElement> => {
-  return transformElement({
+) : Promise<InstanceElement> => (
+  transformElement({
     element,
-    transformFunc: ({ value }) => (
-      isReferenceOfElement(value, sourceElemId)
-      ? getUpdatedReference(value, targetElemId)
-      : value
-    ),
+    transformFunc: createReferencesTransformFunc(sourceElemId, targetElemId),
     strict: false,
   })
-}
+)
 
-export const getReferences = (element: Element, sourceElemId: ElemID): { path: ElemID; value: ReferenceExpression }[] => {
+export const getReferences = (
+  element: Element,
+  sourceElemId: ElemID,
+): { path: ElemID; value: ReferenceExpression }[] => {
   const references: { path: ElemID; value: ReferenceExpression }[] = []
   const func: WalkOnFunc = ({ path, value }) => {
     if (isReferenceOfElement(value, sourceElemId)) {

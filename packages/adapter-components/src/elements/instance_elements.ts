@@ -23,6 +23,7 @@ import { logger } from '@salto-io/logging'
 import { RECORDS_PATH } from './constants'
 import { TransformationConfig, TransformationDefaultConfig, getConfigWithDefault,
   RecurseIntoCondition, isRecurseIntoConditionByField, AdapterApiConfig } from '../config'
+import { isReferencedIdField } from '../references/referenced_instance_name'
 
 const log = logger(module)
 
@@ -45,8 +46,8 @@ export const getInstanceName = (
   idFields: string[],
 ): string | undefined => {
   const nameParts = idFields.map(
-    field => {
-      const idField = field.charAt(0) === '&' ? field.substr(1, field.length) : field
+    fieldName => {
+      const idField = isReferencedIdField(fieldName) ? fieldName.substr(1) : fieldName
       return _.get(instanceValues, idField)
     }
   )

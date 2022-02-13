@@ -24,7 +24,6 @@ import { RECORDS_PATH } from '../elements/constants'
 const log = logger(module)
 const { updateElementReferences, getReferences, getUpdatedReference } = references
 
-const INSTANCE_ELEMID_TYPE = 'instance'
 const ID_SEPARATOR = '__'
 
 type InstanceIdFields = {
@@ -32,7 +31,7 @@ type InstanceIdFields = {
   idFields: string[]
 }
 
-const isReferencedIdField = (
+export const isReferencedIdField = (
   idField: string
 ): boolean => idField.charAt(0) === '&'
 
@@ -125,7 +124,7 @@ const sortInstancesByReference = (
 }
 
 /*
- * Change instance name for referenced instances names
+ * Change instance name for referenced instance names
  */
 export const addReferencesToInstanceNames = async (
   elements: Element[],
@@ -137,7 +136,7 @@ export const addReferencesToInstanceNames = async (
   ): boolean => idFields.some(field => isReferencedIdField(field))
 
   const instances = elements.filter(isInstanceElement)
-  const instancesToIdFields: InstanceIdFields[] = instances.map(instance => ({
+  const instancesToIdFields = instances.map(instance => ({
     instance,
     idFields: getConfigWithDefault(
       transformationConfigByType[instance.elemID.typeName],
@@ -157,7 +156,7 @@ export const addReferencesToInstanceNames = async (
         const newNameParts = idFields.map(
           field => {
             if (isReferencedIdField(field)) {
-              const fieldValue = _.get(instance.value, field.substr(1, field.length))
+              const fieldValue = _.get(instance.value, field.substr(1))
               if (isReferenceExpression(fieldValue) && isInstanceElement(fieldValue.value)) {
                 return fieldValue.value.elemID.name // TODO: not necessarily the correct name part
               }
@@ -183,7 +182,7 @@ export const addReferencesToInstanceNames = async (
             newNaclName,
           )
 
-        const newElemId = new ElemID(adapter, typeName, INSTANCE_ELEMID_TYPE, newName)
+        const newElemId = new ElemID(adapter, typeName, 'instance', newName)
         const updatedInstance = await updateElementReferences(
           instance,
           instance.elemID,

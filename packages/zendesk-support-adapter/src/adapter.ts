@@ -91,7 +91,7 @@ export const DEFAULT_FILTERS = [
   // unorderedListsFilter should run after fieldReferencesFilter
   unorderedListsFilter,
   // idFieldsReferencesFilter should run after fieldReferencesFilter
-  idFieldsReferencesFilter, // ???? why after???
+  idFieldsReferencesFilter,
   // defaultDeployFilter should be last!
   defaultDeployFilter,
 ]
