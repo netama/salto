@@ -14,6 +14,9 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import { JsonStreamStringify } from 'json-stream-stringify'
+import getStream from 'get-stream'
+import { Readable } from 'stream'
 import { collections, types } from '@salto-io/lowerdash'
 import {
   PrimitiveType, ElemID, Field, Element, ListType, MapType,
@@ -141,11 +144,11 @@ function isSerializedClass(value: any): value is SerializedClass {
     && value[SALTO_CLASS_FIELD] in NameToType
 }
 
-export const serialize = async <T = Element>(
+export const serializeStream = async <T = Element>(
   elements: T[],
   referenceSerializerMode: 'replaceRefWithValue' | 'keepRef' = 'replaceRefWithValue',
   storeStaticFile?: (file: StaticFile) => Promise<void>
-): Promise<string> => {
+): Promise<Readable> => {
   const promises: Promise<void>[] = []
 
   // eslint-disable-next-line @typescript-eslint/no-shadow
@@ -230,8 +233,16 @@ export const serialize = async <T = Element>(
   // We don't use safeJsonStringify to save some time, because we know  we made sure there aren't
   // circles
   // eslint-disable-next-line no-restricted-syntax
-  return JSON.stringify(clonedElements)
+  return new JsonStreamStringify(clonedElements)
 }
+
+export const serialize = async <T = Element>(
+  elements: T[],
+  referenceSerializerMode: 'replaceRefWithValue' | 'keepRef' = 'replaceRefWithValue',
+  storeStaticFile?: (file: StaticFile) => Promise<void>
+): Promise<string> => (
+  getStream(await serializeStream(elements, referenceSerializerMode, storeStaticFile))
+)
 
 export type StaticFileReviver =
   (staticFile: StaticFile) => Promise<StaticFile | InvalidStaticFile>

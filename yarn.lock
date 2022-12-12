@@ -8722,6 +8722,11 @@ json-stable-stringify-without-jsonify@^1.0.1:
   resolved "https://registry.yarnpkg.com/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz#9db7b59496ad3f3cfef30a75142d2d930ad72651"
   integrity sha1-nbe1lJatPzz+8wp1FC0tkwrXJlE=
 
+json-stream-stringify@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/json-stream-stringify/-/json-stream-stringify-3.0.1.tgz#e383df35f9845a400afa5c112b281821dc4ee017"
+  integrity sha512-vuxs3G1ocFDiAQ/SX0okcZbtqXwgj1g71qE9+vrjJ2EkjKQlEFDAcUNRxRU8O+GekV4v5cM2qXP0Wyt/EMDBiQ==
+
 json-stringify-nice@^1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/json-stringify-nice/-/json-stringify-nice-1.1.4.tgz#2c937962b80181d3f317dd39aa323e14f5a60a67"
