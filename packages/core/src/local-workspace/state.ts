@@ -16,6 +16,8 @@
 import { EOL } from 'os'
 import _ from 'lodash'
 import path from 'path'
+import { Readable } from 'stream'
+import getStream from 'get-stream'
 import { Element, ElemID } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { exists, readTextFile, mkdirp, rm, rename, readZipFile, replaceContents, generateZipString } from '@salto-io/file'
@@ -30,7 +32,7 @@ import { version } from '../generated/version.json'
 
 const { awu } = collections.asynciterable
 
-const { serialize, deserialize } = serialization
+const { serializeStream, deserialize } = serialization
 const { toMD5 } = hash
 
 const glob = promisify(origGlob)
@@ -187,12 +189,12 @@ export const localState = (
 
   const inMemState = state.buildInMemState(loadStateData)
 
-  const createStateTextPerAccount = async (): Promise<Record<string, string>> => {
+  const createStateTextPerAccount = async (): Promise<Record<string, Readable>> => {
     const elements = await awu(await inMemState.getAll()).toArray()
     const elementsByAccount = _.groupBy(elements, element => element.elemID.adapter)
-    const accountToElementStrings = await promises.object.mapValuesAsync(
+    const accountToElementStreams = await promises.object.mapValuesAsync(
       elementsByAccount,
-      accountElements => serialize(
+      accountElements => serializeStream( // from here
         _.sortBy(accountElements, element => element.elemID.getFullName())
       ),
     )
@@ -201,9 +203,22 @@ export const localState = (
       await awu((await inMemState.getPathIndex()).entries()).toArray()
     )
     log.debug(`finished dumping state text [#elements=${elements.length}]`)
-    return _.mapValues(accountToElementStrings, (accountElements, account) =>
-      [accountElements || '[]', safeJsonStringify({ [account]: accountToDates[account] } || {}),
-        accountToPathIndex[account] || '[]', version].join(EOL))
+    async function *getStateStream(serializedStream: Readable, account: string): AsyncIterable<string> {
+      let empty = true
+      for await (const chunk of serializedStream) {
+        yield chunk
+        empty = false
+      }
+      if (empty) {
+        yield '[]'
+      }
+      yield ['', safeJsonStringify({ [account]: accountToDates[account] } || {}),
+        accountToPathIndex[account] || '[]', version].join(EOL)
+    }
+    return _.mapValues(accountToElementStreams, (serializedStream, account) => {
+      const iterable = getStateStream(serializedStream, account)
+      return Readable.from(iterable)
+    })
   }
   const getContentAndHash = async (): Promise<ContentsAndHash> => {
     if (contentsAndHash === undefined) {
@@ -211,7 +226,7 @@ export const localState = (
       const contents = await awu(Object.keys(stateTextPerAccount))
         .map(async account => [
           `${currentFilePrefix}.${account}${ZIPPED_STATE_EXTENSION}`,
-          await generateZipString(stateTextPerAccount[account]),
+          await generateZipString(await getStream.buffer(stateTextPerAccount[account])),
         ] as [string, string]).toArray()
       contentsAndHash = {
         contents,
