@@ -168,6 +168,7 @@ zuora_billing {
             fieldName = "pagination"
           },
         ]
+        serviceIdField = "id"
       }
     }
     types = {

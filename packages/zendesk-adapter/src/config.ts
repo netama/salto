@@ -33,16 +33,16 @@ const {
   validateDuckTypeFetchConfig,
 } = configUtils
 
-export const DEFAULT_ID_FIELDS = ['name']
-export const DEFAULT_FILENAME_FIELDS = ['name']
-export const DEFAULT_SERVICE_ID_FIELD = 'id'
-export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
+const DEFAULT_ID_FIELDS = ['name']
+const DEFAULT_FILENAME_FIELDS = ['name']
+const DEFAULT_SERVICE_ID_FIELD = 'id'
+const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'extended_input_schema' },
   { fieldName: 'extended_output_schema' },
   { fieldName: 'url', fieldType: 'string' },
   { fieldName: 'count', fieldType: 'number' },
 ]
-export const FIELDS_TO_HIDE: configUtils.FieldToHideType[] = [
+const FIELDS_TO_HIDE: configUtils.FieldToHideType[] = [
   { fieldName: 'created_at', fieldType: 'string' },
   { fieldName: 'updated_at', fieldType: 'string' },
   { fieldName: 'created_by_id' },

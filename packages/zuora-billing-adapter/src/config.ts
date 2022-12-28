@@ -48,7 +48,8 @@ export type ZuoraConfig = {
 }
 
 const DEFAULT_ID_FIELDS = ['name']
-export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
+const DEFAULT_SERVICE_ID_FIELD = 'id'
+const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'createdBy', fieldType: 'string' },
   { fieldName: 'createdOn', fieldType: 'string' },
   { fieldName: 'updatedBy', fieldType: 'string' },
@@ -775,6 +776,7 @@ export const DEFAULT_API_DEFINITIONS: ZuoraApiConfig = {
     transformation: {
       idFields: DEFAULT_ID_FIELDS,
       fieldsToOmit: FIELDS_TO_OMIT,
+      serviceIdField: DEFAULT_SERVICE_ID_FIELD,
     },
   },
   types: DEFAULT_TYPE_CUSTOMIZATIONS,

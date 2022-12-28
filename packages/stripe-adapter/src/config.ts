@@ -24,7 +24,7 @@ const { createClientConfigType } = clientUtils
 const { createUserFetchConfigType, createSwaggerAdapterApiConfigType } = configUtils
 
 const DEFAULT_ID_FIELDS = ['id']
-export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
+const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'object', fieldType: 'string' },
   { fieldName: 'created', fieldType: 'number' },
   { fieldName: 'updated', fieldType: 'number' },
