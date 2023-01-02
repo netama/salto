@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { logger } from '@salto-io/logging' // TODON remove
 import { collections, types } from '@salto-io/lowerdash'
 import {
   PrimitiveType, ElemID, Field, Element, ListType, MapType,
@@ -51,7 +50,6 @@ import {
 } from '../validator'
 
 const { awu } = collections.asynciterable
-const log = logger(module) // TODON remove?
 
 // There are two issues with naive json stringification:
 //
@@ -231,13 +229,11 @@ export const serializeStream = async <T = Element>(
 
   // We don't use safeJsonStringify to save some time, because we know  we made sure there aren't
   // circles
-  log.info('!!! before JsonStreamStringify')
   async function *getElementStream(): AsyncIterable<string> {
     let first = true
     // eslint-disable-next-line no-restricted-syntax
     yield '['
     for (const elem of clonedElements) {
-      log.info('!!! between getElementStream')
       if (first) {
         first = false
       } else {
@@ -247,7 +243,6 @@ export const serializeStream = async <T = Element>(
       yield JSON.stringify(elem)
     }
     yield ']'
-    log.info('!!! after getElementStream')
   }
   return getElementStream()
 }
@@ -256,10 +251,9 @@ export const serialize = async <T = Element>(
   elements: T[],
   referenceSerializerMode: 'replaceRefWithValue' | 'keepRef' = 'replaceRefWithValue',
   storeStaticFile?: (file: StaticFile) => Promise<void>
-): Promise<string> => {
-  log.info('!!! from serialize')
-  return (await awu(await serializeStream(elements, referenceSerializerMode, storeStaticFile)).toArray()).join('')
-}
+): Promise<string> => (
+  (await awu(await serializeStream(elements, referenceSerializerMode, storeStaticFile)).toArray()).join('')
+)
 
 export type StaticFileReviver =
   (staticFile: StaticFile) => Promise<StaticFile | InvalidStaticFile>
@@ -557,7 +551,7 @@ export const deserializeValidationErrors = async (data: string): Promise<Validat
 }
 
 export const deserialize = async (
-  data: string, // TODON pass in stream?
+  data: string,
   staticFileReviver?: StaticFileReviver,
 ): Promise<Element[]> => {
   const elements = await generalDeserialize<Element>(data, staticFileReviver)

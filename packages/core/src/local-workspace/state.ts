@@ -93,7 +93,7 @@ const parseFromPaths = async (
       pick({ filter: '0' }), // 1st row
       streamArray(),
       async (data: { value: unknown }): Promise<void> => {
-        res.elements.push(...await deserializeParsed([data.value])) // TODON where should this be caught?
+        res.elements.push(...await deserializeParsed([data.value]))
       },
     ])
     const processUpdateDate = (source: Readable): Chain => chain([
@@ -109,7 +109,7 @@ const parseFromPaths = async (
       pick({ filter: '2' }), // 3rd row
       streamArray(),
       async (data: { value: PathEntry }): Promise<void> => {
-        res.pathIndices.push(data.value) // TODON not sure if should flatten or not - check!
+        res.pathIndices.push(data.value) // TODON not sure if should flatten or not - check
       },
     ])
     const processVersions = (source: Readable): Chain => chain([
@@ -200,7 +200,7 @@ export const localState = (
   }
 
   const getHashFromContent = (contents: string[]): string =>
-    toMD5(safeJsonStringify(contents.map(toMD5).sort())) // TODON get hash with streaming?
+    toMD5(safeJsonStringify(contents.map(toMD5).sort())) // TODON (later) get hash with streaming?
 
   const getHash = async (filePaths: string[]): Promise<string> =>
     // TODO fix?
@@ -236,7 +236,7 @@ export const localState = (
 
   // TODON decide if safe enough to "upgrade" all envs (with a fallback for pako - or even keeping it for now?)
   const createStateTextPerAccount = async (): Promise<Record<string, Readable>> => {
-    const elements = await awu(await inMemState.getAll()).toArray() // TODON parallelize this as well?
+    const elements = await awu(await inMemState.getAll()).toArray()
     const elementsByAccount = _.groupBy(elements, element => element.elemID.adapter)
     const accountToElementStreams = await promises.object.mapValuesAsync(
       elementsByAccount,
@@ -269,12 +269,10 @@ export const localState = (
       const contents = await awu(Object.keys(stateTextPerAccount))
         .map(async (account: string): Promise<[string, Buffer]> => [
           `${currentFilePrefix}.${account}${ZIPPED_STATE_EXTENSION}`,
-          await generateZipStringNew(await getStream.buffer(stateTextPerAccount[account])), // TODON pipe
-          // TODON stream to a temp file and write its name (maybe next to the "real" one?
-          // but we'd need to remove it if it remains there, so maybe temp is better)
+          await generateZipStringNew(await getStream.buffer(stateTextPerAccount[account])), // TODON pipe?
         ]).toArray()
       contentsAndHash = {
-        contents, // TODON zipped content - but we can potentially also write this to a temp file and read from it?
+        contents,
         hash: getHashFromContent(contents.map(e => e[1].toString())), // TODON can also do as a side-effect of a stream?
       }
     }

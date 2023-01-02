@@ -14,23 +14,14 @@
 * limitations under the License.
 */
 import fs from 'fs'
-import { Readable, Writable, pipeline } from 'stream'
+import { Readable } from 'stream'
 import { chain } from 'stream-chain'
-import { promisify } from 'util'
-import { createGunzip, createGzip } from 'zlib'
-import { strings } from '@salto-io/lowerdash'
-import { rename } from './file'
-
-const pipe = promisify(pipeline)
+import { createGunzip } from 'zlib'
 
 export const createReadStream = (
   fileName: string,
   encoding?: BufferEncoding,
 ): Readable => fs.createReadStream(fileName, encoding ?? 'utf8')
-
-// createReadStream.notFoundAsUndefined = notFoundAsUndefined(createReadStream) // TODON check if needed
-
-// TODON choose one, clean
 
 export const createGZipReadStream = (
   zipFilename: string,
@@ -39,47 +30,3 @@ export const createGZipReadStream = (
   createReadStream(zipFilename, encoding),
   createGunzip(),
 ])
-
-export const createWriteStream = (
-  fileName: string,
-  encoding?: BufferEncoding,
-): Writable => fs.createWriteStream(fileName, { encoding: encoding ?? 'utf8' })
-
-export const createGZipWriteStream = (
-  zipFilename: string,
-): Writable => chain([
-  createGzip(),
-  createWriteStream(zipFilename),
-])
-
-export const gzipStream = (
-  readStream: Readable,
-  writeStream: Writable,
-): Readable => chain([
-  readStream,
-  createGzip(),
-  writeStream,
-])
-
-export const gunzipStream = (
-  readStream: Readable,
-  writeStream: Writable,
-): Readable => chain([
-  readStream,
-  createGunzip(),
-  writeStream,
-])
-
-export const streamReplaceFile = async (
-  filename: string,
-  contentStream: Readable,
-  writeStreamCreator: (fileName: string, encoding?: BufferEncoding) => Writable,
-  encoding?: BufferEncoding,
-): Promise<void> => {
-  const tempFilename = `${filename}.tmp.${strings.insecureRandomString()}`
-  await pipe(
-    contentStream,
-    writeStreamCreator(tempFilename, encoding),
-  )
-  await rename(tempFilename, filename)
-}

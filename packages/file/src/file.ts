@@ -102,7 +102,7 @@ export const generateZipString = async (contents: string | Buffer):
 export const generateZipStringNew = async (contents: string | Buffer): Promise<Buffer> =>
   gzipSync(contents)
 
-export const writeZipFile = async ( // TODON not in use - remove?
+export const writeZipFile = async (
   zipFilename: string,
   contents: Buffer | string,
 ): Promise<void> => {
