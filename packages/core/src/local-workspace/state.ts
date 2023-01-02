@@ -17,7 +17,7 @@ import { EOL } from 'os'
 import _ from 'lodash'
 import path from 'path'
 import { Readable } from 'stream'
-import Chain, { chain } from 'stream-chain' // TODON make this work better async?
+import Chain, { chain } from 'stream-chain'
 
 import { parser } from 'stream-json/Parser'
 import { pick } from 'stream-json/filters/Pick'
@@ -38,7 +38,6 @@ import { promisify } from 'util'
 import { version } from '../generated/version.json'
 
 const { isDefined } = lowerdashValues
-// TODON see if can use asyncChain - but piping is problematic
 const { awu } = collections.asynciterable
 const { serializeStream, deserializeParsed } = serialization
 const { toMD5 } = hash
@@ -129,27 +128,12 @@ const parseFromPaths = async (
     chain([parseChain, processUpdateDate])
     chain([parseChain, processPathIndices])
     chain([parseChain, processVersions])
-    // TODON improve
-    await new Promise((resolve => {
-      parseChain.on('end', () => resolve(0))
-    }))
+    await getStream(parseChain)
   })
   return res
 }
 
 type ContentsAndHash = { contents: [string, Buffer][]; hash: string }
-
-// TODON move to lowerdash?
-async function *getStreamChunks(serializedStream: Readable): AsyncIterable<string> {
-  let empty = true
-  for await (const chunk of serializedStream) {
-    yield chunk
-    empty = false
-  }
-  if (empty) {
-    yield '[]'
-  }
-}
 
 export const localState = (
   filePrefix: string,
@@ -177,7 +161,6 @@ export const localState = (
     newHash: string
   }): Promise<void> => {
     const res = await parseFromPaths(filePaths)
-    // log.info(_.toString(res)) // TODON
     await stateData.elements.clear()
     await stateData.elements.setAll(res.elements)
     await stateData.pathIndex.clear()
@@ -251,11 +234,9 @@ export const localState = (
 
   const inMemState = state.buildInMemState(loadStateData)
 
-  // TODON only do this in new envs, where ... what?
-  // just make sure some placeholder file is created before fetch for now, and create it based on a FF?
-  // add something in the env config and enable based on a FF?
+  // TODON decide if safe enough to "upgrade" all envs (with a fallback for pako - or even keeping it for now?)
   const createStateTextPerAccount = async (): Promise<Record<string, Readable>> => {
-    const elements = await awu(await inMemState.getAll()).toArray()
+    const elements = await awu(await inMemState.getAll()).toArray() // TODON parallelize this as well?
     const elementsByAccount = _.groupBy(elements, element => element.elemID.adapter)
     const accountToElementStreams = await promises.object.mapValuesAsync(
       elementsByAccount,
@@ -267,15 +248,15 @@ export const localState = (
     const accountToPathIndex = pathIndex.serializePathIndexByAccount( // TODON stream as well?
       await awu((await inMemState.getPathIndex()).entries()).toArray()
     )
-    log.debug(`finished dumping state text [#elements=${elements.length}]`) // TODON need to move to later...
-    async function *getStateStream(serializedStream: Readable, account: string): AsyncIterable<string> {
-      yield* getStreamChunks(serializedStream)
+    async function *getStateStream(serializedStream: AsyncIterable<string>, account: string): AsyncIterable<string> {
+      yield* serializedStream
       yield [
         '',
         safeJsonStringify({ [account]: accountToDates[account] } || {}),
         accountToPathIndex[account] || '[]',
         version,
       ].join(EOL)
+      log.debug(`finished dumping state text [#elements=${elements.length}]`)
     }
     return _.mapValues(accountToElementStreams, (serializedStream, account) => {
       const iterable = getStateStream(serializedStream, account)
@@ -284,7 +265,6 @@ export const localState = (
   }
   const getContentAndHash = async (): Promise<ContentsAndHash> => {
     if (contentsAndHash === undefined) {
-      // TODON stream to a temp file
       const stateTextPerAccount = await createStateTextPerAccount()
       const contents = await awu(Object.keys(stateTextPerAccount))
         .map(async (account: string): Promise<[string, Buffer]> => [
