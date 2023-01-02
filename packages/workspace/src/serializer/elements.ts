@@ -247,8 +247,8 @@ export const serialize = async <T = Element>(
 export type StaticFileReviver =
   (staticFile: StaticFile) => Promise<StaticFile | InvalidStaticFile>
 
-const generalDeserialize = async <T>(
-  data: string,
+const generalDeserializeParsed = async <T>(
+  parsed: unknown[],
   staticFileReviver?: StaticFileReviver
 ): Promise<T[]> => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -501,10 +501,6 @@ const generalDeserialize = async <T>(
     return value
   }
 
-  const parsed = JSON.parse(data)
-  if (!Array.isArray(parsed)) {
-    throw new Error('got non-array JSON data')
-  }
   const elements = parsed.map(restoreClasses)
   if (staticFiles.length > 0) {
     await Promise.all(staticFiles.map(
@@ -514,6 +510,17 @@ const generalDeserialize = async <T>(
     ))
   }
   return elements
+}
+
+const generalDeserialize = async <T>(
+  data: string,
+  staticFileReviver?: StaticFileReviver
+): Promise<T[]> => {
+  const parsed = JSON.parse(data)
+  if (!Array.isArray(parsed)) {
+    throw new Error('got non-array JSON data')
+  }
+  return generalDeserializeParsed(parsed, staticFileReviver)
 }
 
 export const deserializeMergeErrors = async (data: string): Promise<MergeError[]> => {
@@ -533,7 +540,7 @@ export const deserializeValidationErrors = async (data: string): Promise<Validat
 }
 
 export const deserialize = async (
-  data: string,
+  data: string, // TODON pass in stream?
   staticFileReviver?: StaticFileReviver,
 ): Promise<Element[]> => {
   const elements = await generalDeserialize<Element>(data, staticFileReviver)
@@ -552,4 +559,16 @@ export const deserializeSingleElement = async (
     throw new Error('Deserialization failed. should receive single element')
   }
   return elements[0]
+}
+
+export const deserializeParsed = async (
+  parsed: unknown[],
+  staticFileReviver?: StaticFileReviver,
+): Promise<Element[]> => {
+  const elements = await generalDeserializeParsed<Element>(parsed, staticFileReviver)
+
+  if (elements.some(elem => !isElement(elem))) {
+    throw new Error('Deserialization failed. At least one element did not deserialize to an Element')
+  }
+  return elements
 }
