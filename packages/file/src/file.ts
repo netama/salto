@@ -96,17 +96,17 @@ export const readZipFile = async (
 
 readTextFile.notFoundAsUndefined = notFoundAsUndefined(readTextFile)
 
-export const generateZipString = async (contents: string | Buffer):
+export const generatePakoZipString = async (contents: string | Buffer): // TODON rename for clarity...
   Promise<string> => pako.gzip(contents, { to: 'string' })
 
-export const generateZipStringNew = async (contents: string | Buffer): Promise<Buffer> =>
+export const generateGZipStringNew = async (contents: string | Buffer): Promise<Buffer> =>
   gzipSync(contents)
 
-export const writeZipFile = async (
+export const writePakoZipFile = async (
   zipFilename: string,
   contents: Buffer | string,
 ): Promise<void> => {
-  const zipContent = await generateZipString(contents)
+  const zipContent = await generatePakoZipString(contents)
   await writeFile(zipFilename, zipContent)
 }
 

@@ -32,6 +32,7 @@
   "dependencies": {
     "@salto-io/logging": "0.3.29",
     "@salto-io/lowerdash": "0.3.29",
+    "get-stream": "^6.0.1",
     "mkdirp": "^0.5.1",
     "pako": "^1.0.11",
     "rimraf": "^3.0.0",

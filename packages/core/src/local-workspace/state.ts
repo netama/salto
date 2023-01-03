@@ -27,7 +27,7 @@ import { streamValues } from 'stream-json/streamers/StreamValues'
 import getStream from 'get-stream'
 import { Element, ElemID } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
-import { exists, readTextFile, mkdirp, rm, rename, replaceContents, generateZipStringNew, createGZipReadStream } from '@salto-io/file'
+import { exists, readTextFile, mkdirp, rm, rename, replaceContents, generateGZipStringNew, createGZipReadStreamOrPakoStream } from '@salto-io/file'
 import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { serialization, pathIndex, state, remoteMap, staticFiles } from '@salto-io/workspace'
 import { hash, collections, promises, values as lowerdashValues } from '@salto-io/lowerdash'
@@ -86,7 +86,7 @@ const parseFromPaths = async (
     versions: [],
   }
   const streams = (await Promise.all(paths.map(async (p: string) =>
-    ((await exists(p)) ? createGZipReadStream(p) : undefined)))).filter(isDefined) // TODON fallback to pako!
+    ((await exists(p)) ? createGZipReadStreamOrPakoStream(p) : undefined)))).filter(isDefined)
   await awu(streams).forEach(async stream => {
     const processElements = (source: Readable): Chain => chain([
       source,
@@ -234,7 +234,6 @@ export const localState = (
 
   const inMemState = state.buildInMemState(loadStateData)
 
-  // TODON decide if safe enough to "upgrade" all envs (with a fallback for pako - or even keeping it for now?)
   const createStateTextPerAccount = async (): Promise<Record<string, Readable>> => {
     const elements = await awu(await inMemState.getAll()).toArray()
     const elementsByAccount = _.groupBy(elements, element => element.elemID.adapter)
@@ -269,7 +268,7 @@ export const localState = (
       const contents = await awu(Object.keys(stateTextPerAccount))
         .map(async (account: string): Promise<[string, Buffer]> => [
           `${currentFilePrefix}.${account}${ZIPPED_STATE_EXTENSION}`,
-          await generateZipStringNew(await getStream.buffer(stateTextPerAccount[account])), // TODON pipe?
+          await generateGZipStringNew(await getStream.buffer(stateTextPerAccount[account])), // TODON pipe?
         ]).toArray()
       contentsAndHash = {
         contents,
