@@ -52,6 +52,7 @@
     "@salto-io/workspace": "0.3.47",
     "@salto-io/zendesk-adapter": "0.3.47",
     "@salto-io/zuora-billing-adapter": "0.3.47",
+    "@salto-io/generic-adapter": "0.3.47",
     "async-lock": "^1.2.4",
     "axios": "^0.26.1",
     "bottleneck": "^2.19.5",

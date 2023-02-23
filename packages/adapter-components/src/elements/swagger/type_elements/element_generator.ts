@@ -289,6 +289,7 @@ export const generateTypes = async (
   }: AdapterSwaggerApiConfig,
   preParsedDefs?: SchemasAndRefs,
   loadedSwagger?: LoadedSwagger,
+  includeAllTypes?: boolean,
 ): Promise<ParsedTypes> => {
   // TODO SALTO-1252 - persist swagger locally
 
@@ -348,11 +349,13 @@ export const generateTypes = async (
     ...getDependencies(typesToFetch, types),
   ])
 
-  const filteredTypes = await filterTypes(
-    adapterName,
-    Object.values(definedTypes),
-    _.uniq([...extendedSupportedTypes, ...additionalTypesFromConfig]),
-  )
+  const filteredTypes = includeAllTypes
+    ? Object.values(definedTypes)
+    : await filterTypes(
+      adapterName,
+      Object.values(definedTypes),
+      extendedSupportedTypes,
+    )
 
   return {
     allTypes: _.keyBy(filteredTypes, type => type.elemID.name),
