@@ -73,6 +73,10 @@ export type FetchRequestConfig = BaseRequestConfig & {
   dependsOn?: DependsOnConfig[]
   recurseInto?: RecurseIntoConfig[]
   paginationField?: string
+  pagination?: { // TODON better typing + params, convert params to list so easier to override?
+    strategy: string
+    params: Record<string, string>
+  }
 }
 
 export type UrlParams = Record<string, string>
@@ -324,7 +328,7 @@ export const createRequestConfigs = ({
   }
 }
 
-const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string>): string[] => {
+export const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string> = new Set()): string[] => {
   const urlParams = url.match(ARG_PLACEHOLDER_MATCHER)?.map(m => m.slice(1, -1)) ?? []
   return urlParams.filter(p => !dependsOnArgs.has(p))
 }

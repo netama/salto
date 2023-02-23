@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ObjectType, PrimitiveType, ElemID, BuiltinTypes, Field, MapType, ListType, TypeMap } from '@salto-io/adapter-api'
+import { ObjectType, PrimitiveType, ElemID, BuiltinTypes, Field, ListType, TypeMap, CORE_ANNOTATIONS, ReferenceExpression } from '@salto-io/adapter-api'
 import { naclCase, pathNaclCase } from '@salto-io/adapter-utils'
 import { types as lowerdashTypes, values as lowerdashValues } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
@@ -22,7 +22,7 @@ import { TYPES_PATH, SUBTYPES_PATH } from '../../constants'
 import { RequestableTypeSwaggerConfig, AdapterSwaggerApiConfig, TypeSwaggerConfig, TypeSwaggerDefaultConfig } from '../../../config/swagger'
 import {
   getParsedDefs, isReferenceObject, toNormalizedRefName, SchemaObject,
-  extractProperties, ADDITIONAL_PROPERTIES_FIELD, toPrimitiveType, toTypeName, SwaggerRefs,
+  extractProperties, toPrimitiveType, toTypeName, SwaggerRefs,
   SchemaOrReference, SWAGGER_ARRAY, SWAGGER_OBJECT, isArraySchemaObject, SchemasAndRefs,
 } from './swagger_parser'
 import { fixTypes, defineAdditionalTypes, getFieldTypeOverridesTypes } from './type_config_override'
@@ -158,31 +158,14 @@ const typeAdder = ({
     )
 
     if (additionalProperties !== undefined) {
-      if (type.fields[ADDITIONAL_PROPERTIES_FIELD] !== undefined) {
-        log.warn('type %s has both a standard %s field and allows additionalProperties - overriding with an additionalProperties field of type unknown',
-          type.elemID.name, ADDITIONAL_PROPERTIES_FIELD)
-        Object.assign(
-          type.fields,
-          { [ADDITIONAL_PROPERTIES_FIELD]: new Field(
-            type,
-            ADDITIONAL_PROPERTIES_FIELD,
-            new MapType(BuiltinTypes.UNKNOWN),
-          ) },
-        )
-      } else {
-        Object.assign(
-          type.fields,
-          { [ADDITIONAL_PROPERTIES_FIELD]: new Field(
-            type,
-            ADDITIONAL_PROPERTIES_FIELD,
-            new MapType(createNestedType(
-              additionalProperties,
-              // fallback type name when no name is provided in the swagger def
-              `${objName}_${ADDITIONAL_PROPERTIES_FIELD}`,
-            )),
-          ) },
-        )
-      }
+      const additionalPropsType = createNestedType(
+        additionalProperties,
+        // fallback type name when no name is provided in the swagger def
+        `${objName}_additionalProperties`,
+      )
+      type.annotate({
+        [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: new ReferenceExpression(additionalPropsType.elemID),
+      })
     }
 
     if (endpoints !== undefined && endpoints.length > 0) {
@@ -289,6 +272,7 @@ export const generateTypes = async (
   }: AdapterSwaggerApiConfig,
   preParsedDefs?: SchemasAndRefs,
   loadedSwagger?: LoadedSwagger,
+  includeAllTypes?: boolean,
 ): Promise<ParsedTypes> => {
   // TODO SALTO-1252 - persist swagger locally
 
@@ -348,11 +332,13 @@ export const generateTypes = async (
     ...getDependencies(typesToFetch, types),
   ])
 
-  const filteredTypes = await filterTypes(
-    adapterName,
-    Object.values(definedTypes),
-    _.uniq([...extendedSupportedTypes, ...additionalTypesFromConfig]),
-  )
+  const filteredTypes = includeAllTypes
+    ? Object.values(definedTypes)
+    : await filterTypes(
+      adapterName,
+      Object.values(definedTypes),
+      extendedSupportedTypes,
+    )
 
   return {
     allTypes: _.keyBy(filteredTypes, type => type.elemID.name),

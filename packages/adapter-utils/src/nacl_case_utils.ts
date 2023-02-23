@@ -166,7 +166,7 @@ export const invertNaclCase = (name: string): string => {
       : specialCharsMappingList.shift() ?? ''))
 }
 
-const prettifyWord = (str: string): string[] => {
+export const prettifyWord = (str: string): string[] => {
   if (allCapsRegex.test(str)) {
     return [str]
   }

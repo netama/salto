@@ -16,7 +16,7 @@
 import _ from 'lodash'
 import {
   Element, ObjectType, isObjectType, ElemID, InstanceElement,
-  ReferenceExpression, BuiltinTypes, Values,
+  ReferenceExpression, BuiltinTypes,
 } from '@salto-io/adapter-api'
 import { elements as elementUtils } from '@salto-io/adapter-components'
 import { pathNaclCase, naclCase, extendGeneratedDependencies, safeJsonStringify } from '@salto-io/adapter-utils'
@@ -32,9 +32,7 @@ import { isInstanceOfType } from '../element_utils'
 
 const log = logger(module)
 const { isDefined } = lowerdashValues
-const {
-  toPrimitiveType, ADDITIONAL_PROPERTIES_FIELD,
-} = elementUtils.swagger
+const { toPrimitiveType } = elementUtils.swagger
 const { mapValuesAsync } = promises.object
 // Check whether an element is a custom/standard object definition.
 // Only relevant before the object_defs filter is run.
@@ -52,11 +50,6 @@ const typeName = (inst: InstanceElement): string => (
     : `${inst.elemID.name}${CUSTOM_OBJECT_SUFFIX}`
 )
 
-const flattenAdditionalProperties = (val: Values): Values => ({
-  ..._.omit(val, ADDITIONAL_PROPERTIES_FIELD),
-  ...val[ADDITIONAL_PROPERTIES_FIELD],
-})
-
 const createObjectFromInstance = async (inst: InstanceElement): Promise<ObjectType> => {
   const { schema, type } = inst.value
   const {
@@ -67,11 +60,11 @@ const createObjectFromInstance = async (inst: InstanceElement): Promise<ObjectTy
   const obj = new ObjectType({
     elemID: new ElemID(ZUORA_BILLING, typeName(inst)),
     fields: _.mapValues(
-      flattenAdditionalProperties(properties),
+      properties,
       (prop, fieldName) => ({
         refType: toPrimitiveType(prop.type),
         annotations: {
-          ...flattenAdditionalProperties(prop),
+          ...prop,
           [REQUIRED]: requiredFields.has(fieldName),
           [FILTERABLE]: filterableFields.has(fieldName),
         },
@@ -89,7 +82,7 @@ const createObjectFromInstance = async (inst: InstanceElement): Promise<ObjectTy
       [METADATA_TYPE]: isStandardObjectInstance(inst) ? STANDARD_OBJECT : CUSTOM_OBJECT,
       [LABEL]: label,
       [DESCRIPTION]: description,
-      [INTERNAL_ID]: inst.value.additionalProperties?.Id,
+      [INTERNAL_ID]: inst.value.Id,
       [OBJECT_TYPE]: type,
     },
     // id name changes are currently not allowed so it's ok to use the elem id
@@ -122,7 +115,7 @@ const addRelationships = (
       // sort in order to keep relationship fields list stable
       _.sortBy(
         relationships,
-        'object', ({ fields }) => Object.values(fields.additionalProperties ?? {})[0]
+        'object', ({ fields }) => Object.values(fields.additionalProperties ?? {})[0] // TODON understand how to replace
       ).forEach(rel => {
         const {
           cardinality, namespace, object, fields, recordConstraints: constraints,
@@ -135,7 +128,7 @@ const addRelationships = (
         }
         const referencedObjectName = namespace === 'default' ? `${object}${CUSTOM_OBJECT_SUFFIX}` : object
         refObjectNames.add(referencedObjectName)
-        Object.entries(fields.additionalProperties ?? {}).forEach(([src, target]) => {
+        Object.entries(fields.additionalProperties ?? {}).forEach(([src, target]) => { // TODON adjust
           const srcField = obj.fields[src]
           if (srcField === undefined) {
             log.warn('Could not find field %s in object %s, not adding relationship', src, name)

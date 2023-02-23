@@ -27,8 +27,9 @@ import { createCredentialsInstance, createConfigInstance, mockClient, createEmpt
 import { jiraJSMAssetsEntriesFunc, jiraJSMEntriesFunc } from '../src/jsm_utils'
 import { CLOUD_RESOURCE_FIELD } from '../src/filters/automation/cloud_id'
 
-const { getAllElements, getEntriesResponseValues } = elements.ducktype
-const { generateTypes, getAllInstances, loadSwagger } = elements.swagger
+const { getEntriesResponseValues } = elements.ducktype
+const { generateTypes, loadSwagger } = elements.swagger
+const { getAllElements } = elements
 
 jest.mock('@salto-io/adapter-components', () => {
   const actual = jest.requireActual('@salto-io/adapter-components')
@@ -45,7 +46,6 @@ jest.mock('@salto-io/adapter-components', () => {
       swagger: {
         flattenAdditionalProperties: actual.elements.swagger.flattenAdditionalProperties,
         generateTypes: jest.fn().mockImplementation(() => { throw new Error('generateTypes called without a mock') }),
-        getAllInstances: jest.fn().mockImplementation(() => { throw new Error('getAllInstances called without a mock') }),
         loadSwagger: jest.fn().mockImplementation(() => { throw new Error('loadSwagger called without a mock') }),
         addDeploymentAnnotations: jest.fn(),
       },
@@ -54,6 +54,7 @@ jest.mock('@salto-io/adapter-components', () => {
         getAllElements: jest.fn().mockImplementation(() => { throw new Error('getAllElements called without a mock') }),
         getEntriesResponseValues: jest.fn().mockImplementation(() => { throw new Error('getEntriesResponseValues called without a mock') }),
       },
+      getAllElements: jest.fn().mockImplementation(() => { throw new Error('getAllElements called without a mock') }),
     },
   }
 })
@@ -236,8 +237,8 @@ describe('adapter', () => {
 
       (getAllElements as jest.MockedFunction<typeof getAllElements>)
         .mockResolvedValue({ elements: [testInstance2] });
-      (getAllInstances as jest.MockedFunction<typeof getAllInstances>)
-        .mockResolvedValue({ elements: [testInstance] });
+      // (getAllInstances as jest.MockedFunction<typeof getAllInstances>) // TODON broken, need two mocks
+      //   .mockResolvedValue({ elements: [testInstance] });
       (loadSwagger as jest.MockedFunction<typeof loadSwagger>)
         .mockResolvedValue({ document: {}, parser: {} } as elements.swagger.LoadedSwagger)
       mockAxiosAdapter = new MockAdapter(axios)
@@ -276,7 +277,7 @@ describe('adapter', () => {
     })
 
     it('should pass elem id getter to getAllInstances', () => {
-      expect(getAllInstances).toHaveBeenCalledWith(
+      expect(getAllElements).toHaveBeenCalledWith( // TODON
         expect.objectContaining({
           getElemIdFunc: expect.any(Function),
         })
@@ -338,8 +339,8 @@ describe('adapter', () => {
 
         (getAllElements as jest.MockedFunction<typeof getAllElements>)
           .mockResolvedValue({ elements: [testInstance2] });
-        (getAllInstances as jest.MockedFunction<typeof getAllInstances>)
-          .mockResolvedValue({ elements: [testInstance] });
+        // (getAllInstances as jest.MockedFunction<typeof getAllInstances>)
+        //   .mockResolvedValue({ elements: [testInstance] }); // TODON adjust, needs two separate mocks
         (loadSwagger as jest.MockedFunction<typeof loadSwagger>)
           .mockResolvedValue({ document: {}, parser: {} } as elements.swagger.LoadedSwagger)
 
@@ -429,8 +430,9 @@ describe('adapter', () => {
           .mockResolvedValueOnce({ elements: [], errors: [{ message: 'scriptRunnerError', severity: 'Error' }] });
         (getAllElements as jest.MockedFunction<typeof getAllElements>)
           .mockResolvedValueOnce({ elements: [testInstance2], errors: [{ message: 'jsmError', severity: 'Error' }] });
-        (getAllInstances as jest.MockedFunction<typeof getAllInstances>)
-          .mockResolvedValue({ elements: [serviceDeskProjectInstance], errors: [{ message: 'some error', severity: 'Error' }] });
+        // (getAllInstances as jest.MockedFunction<typeof getAllInstances>) // TODON adjust, needs two separate mocks
+        // eslint-disable-next-line max-len
+        //   .mockResolvedValue({ elements: [serviceDeskProjectInstance], errors: [{ message: 'some error', severity: 'Error' }] });
         (loadSwagger as jest.MockedFunction<typeof loadSwagger>)
           .mockResolvedValue({ document: {}, parser: {} } as elements.swagger.LoadedSwagger)
         mockAxiosAdapter = new MockAdapter(axios)

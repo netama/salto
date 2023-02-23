@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { Element, FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType, FetchOptions, DeployOptions, Change, isInstanceChange, ElemIdGetter, ReadOnlyElementsSource, getChangeData, ProgressReporter } from '@salto-io/adapter-api'
+import { FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType, FetchOptions, DeployOptions, Change, isInstanceChange, ElemIdGetter, ReadOnlyElementsSource, getChangeData, ProgressReporter } from '@salto-io/adapter-api'
 import { config as configUtils, elements as elementUtils, client as clientUtils } from '@salto-io/adapter-components'
 import { applyFunctionToChangeData, logDuration, resolveChangeElement, restoreChangeElement } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
@@ -60,13 +60,13 @@ import { getLookUpName } from './reference_mapping'
 
 const { awu } = collections.asynciterable
 
-const { generateTypes, getAllInstances } = elementUtils.swagger
-const { getAllElements } = elementUtils.ducktype
+const { generateTypes } = elementUtils.swagger
+const { getAllElements } = elementUtils
 const { findDataField, computeGetArgs } = elementUtils
 const { createPaginator } = clientUtils
 const log = logger(module)
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   standardRolesFilter,
   deleteFieldsFilter,
   userTypeFilter,
@@ -187,7 +187,7 @@ export default class OktaAdapter implements AdapterOperations {
   private async getSwaggerInstances(
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+  ): Promise<elementUtils.FetchElements> {
     const updatedApiDefinitionsConfig = {
       ...this.userConfig.apiDefinitions,
       types: {
@@ -198,7 +198,8 @@ export default class OktaAdapter implements AdapterOperations {
         ),
       },
     }
-    return getAllInstances({
+    return getAllElements({ // TODON now can get all at once?
+      adapterName: OKTA,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: updatedApiDefinitionsConfig,
@@ -208,7 +209,7 @@ export default class OktaAdapter implements AdapterOperations {
     })
   }
 
-  private async getPrivateApiElements(): Promise<elementUtils.FetchElements<Element[]>> {
+  private async getPrivateApiElements(): Promise<elementUtils.FetchElements> {
     const { privateApiDefinitions } = this.userConfig
     if (this.adminClient === undefined || this.userConfig[CLIENT_CONFIG]?.usePrivateAPI !== true) {
       return { elements: [] }
@@ -221,14 +222,16 @@ export default class OktaAdapter implements AdapterOperations {
 
     return getAllElements({
       adapterName: OKTA,
-      types: privateApiDefinitions.types,
+      apiConfig: {
+        types: privateApiDefinitions.types,
+        typeDefaults: privateApiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: privateApiDefinitions.supportedTypes,
       fetchQuery: this.fetchQuery,
       paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: privateApiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
     })
   }
@@ -236,17 +239,16 @@ export default class OktaAdapter implements AdapterOperations {
   @logDuration('generating instances from service')
   private async getAllElements(
     progressReporter: ProgressReporter
-  ): Promise<elementUtils.FetchElements<Element[]>> {
+  ): Promise<elementUtils.FetchElements> {
     progressReporter.reportProgress({ message: 'Fetching types' })
-    const { allTypes, parsedConfigs } = await this.getSwaggerTypes()
+    const { allTypes, parsedConfigs } = await this.getSwaggerTypes() // TODON move inside
     progressReporter.reportProgress({ message: 'Fetching instances' })
-    const { errors, elements: instances } = await this.getSwaggerInstances(allTypes, parsedConfigs)
+    const { errors, elements: swaggerElements } = await this.getSwaggerInstances(allTypes, parsedConfigs)
 
     const privateApiElements = await this.getPrivateApiElements()
 
     const elements = [
-      ...Object.values(allTypes),
-      ...instances,
+      ...swaggerElements,
       ...privateApiElements.elements,
     ]
     return { elements, errors: (errors ?? []).concat(privateApiElements.errors ?? []) }

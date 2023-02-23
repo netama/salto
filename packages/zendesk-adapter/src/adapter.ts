@@ -171,7 +171,7 @@ const { awu } = collections.asynciterable
 const { concatObjects } = objects
 const SECTIONS_TYPE_NAME = 'sections'
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   ticketStatusCustomStatusDeployFilter,
   ticketFieldFilter,
   userFieldFilter,
@@ -360,7 +360,7 @@ const getGuideElements = async ({
   apiDefinitions: configUtils.AdapterDuckTypeApiConfig
   fetchQuery: elementUtils.query.ElementQuery
   getElemIdFunc?: ElemIdGetter
-}): Promise<elementUtils.FetchElements<Element[]>> => {
+}): Promise<elementUtils.FetchElements> => {
   const transformationDefaultConfig = apiDefinitions.typeDefaults.transformation
   const transformationConfigByType = configUtils.getTransformationConfigByType(apiDefinitions.types)
 
@@ -371,14 +371,16 @@ const getGuideElements = async ({
     log.debug(`Fetching elements for brand ${brandInstance.elemID.name}`)
     return getAllElements({
       adapterName: ZENDESK,
-      types: typesConfigWithNoStandaloneFields,
+      apiConfig: {
+        types: typesConfigWithNoStandaloneFields,
+        typeDefaults: apiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: GUIDE_BRAND_SPECIFIC_TYPES,
       fetchQuery,
       paginator: brandsPaginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: apiDefinitions.typeDefaults,
       getElemIdFunc,
       getEntriesResponseValuesFunc: zendeskGuideEntriesFunc(brandInstance),
     })
@@ -463,6 +465,7 @@ export default class ZendeskAdapter implements AdapterOperations {
     configInstance,
     elementsSource,
   }: ZendeskAdapterParams) {
+    // TODON use in generic adapter creator as well?
     const wrapper = getElemIdFunc ? getElemIdFuncWrapper(getElemIdFunc) : undefined
     this.userConfig = config
     this.configInstance = configInstance
@@ -546,7 +549,10 @@ export default class ZendeskAdapter implements AdapterOperations {
     // Zendesk Support and (if enabled) global Zendesk Guide types
     const defaultSubdomainResult = await getAllElements({
       adapterName: ZENDESK,
-      types: this.userConfig.apiDefinitions.types,
+      apiConfig: {
+        types: this.userConfig.apiDefinitions.types,
+        typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: !isGuideInFetch,
       // tags are "fetched" in a filter
       supportedTypes: _.omit(supportedTypes, 'tag'),
@@ -554,7 +560,6 @@ export default class ZendeskAdapter implements AdapterOperations {
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
       customInstanceFilter: filterOutInactiveInstancesForType(this.userConfig),
     })
@@ -694,7 +699,7 @@ export default class ZendeskAdapter implements AdapterOperations {
       }) : undefined
 
     const fetchErrors = (errors ?? []).concat(result.errors ?? []).concat(localeError ?? [])
-    if (this.logIdsFunc !== undefined) {
+    if (this.logIdsFunc !== undefined) { // TODON use as well?
       this.logIdsFunc()
     }
     return { elements, errors: fetchErrors, updatedConfig }

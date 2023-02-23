@@ -29,7 +29,7 @@ export const toInstance = async (args: InstanceCreationParams & {
 }): Promise<InstanceElement | undefined> => {
   const inst = await toBasicInstance({
     ...args,
-    entry: args.hasDynamicFields ? { value: args.entry } : args.entry,
+    entry: args.hasDynamicFields ? { value: args.entry } : args.entry, // TODON switch to additionalProperties?
   })
   if (_.isEmpty(inst.value)) {
     return undefined

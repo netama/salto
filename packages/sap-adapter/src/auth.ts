@@ -17,7 +17,7 @@ import { ElemID, ObjectType, BuiltinTypes } from '@salto-io/adapter-api'
 import { auth as authUtils } from '@salto-io/adapter-components'
 import * as constants from './constants'
 
-const configID = new ElemID(constants.SAP)
+const configID = new ElemID(constants.ADAPTER_NAME)
 
 export const oauthClientCredentialsType = new ObjectType({
   elemID: configID,

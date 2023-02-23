@@ -136,18 +136,14 @@ export const defaultDeployChange = async (
   fieldsToIgnore?: string[],
   queryParams?: Record<string, string>,
 ): Promise<deployment.ResponseResult> => {
-  const changeToDeploy = await elementUtils.swagger.flattenAdditionalProperties(
-    _.cloneDeep(change)
-  )
-
-  if (isModificationChange(changeToDeploy)) {
+  if (isModificationChange(change)) {
     const valuesBefore = (await deployment.filterIgnoredValues(
-      changeToDeploy.data.before.clone(),
+      change.data.before.clone(),
       fieldsToIgnore ?? [],
       [],
     )).value
     const valuesAfter = (await deployment.filterIgnoredValues(
-      changeToDeploy.data.after.clone(),
+      change.data.after.clone(),
       fieldsToIgnore ?? [],
       [],
     )).value
@@ -160,7 +156,7 @@ export const defaultDeployChange = async (
   const { deployRequests } = apiDefinitions.types[getChangeData(change).elemID.typeName]
   try {
     const response = await deployment.deployChange({
-      change: changeToDeploy,
+      change,
       client,
       endpointDetails: deployRequests,
       fieldsToIgnore,

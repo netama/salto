@@ -32,6 +32,7 @@ import {
   LoginStatus,
   verifyCredentials,
   updateCredentials,
+  getAdapterConfigOptionsType,
 } from '@salto-io/core'
 import { Workspace } from '@salto-io/workspace'
 import { naclCase } from '@salto-io/adapter-utils'
@@ -89,7 +90,7 @@ type LoginParametersArg = {
   loginParameters?: string[]
 }
 
-const LOGIN_PARAMETER_OPTION: KeyedOption<LoginParametersArg> = {
+const LOGIN_PARAMETER_OPTION: KeyedOption<LoginParametersArg> = { // TODON anything we get from here?
   name: 'loginParameters',
   alias: 'p',
   required: false,
@@ -156,6 +157,29 @@ const createConfigFromLoginParameters = (loginParameters: string[]) => (
   }
 )
 
+const createConfigOptionsFromCustomizationParamters = (
+  serviceType: string,
+  configCustomizations?: string[],
+): InstanceElement | undefined => {
+  if (configCustomizations === undefined) {
+    return undefined
+  }
+  const configOptionsType = getAdapterConfigOptionsType(serviceType)
+  if (configOptionsType === undefined) {
+    return undefined
+  }
+  const configValues = Object.fromEntries(configCustomizations.map(entryFromRawLoginParameter)) // TODON rename func
+  const requiredFields = Object.entries(configOptionsType.fields)
+    .filter(([_fieldName, field]) => field.annotations[CORE_ANNOTATIONS.REQUIRED] === true)
+    .map(([fieldName]) => fieldName)
+  const missingLoginParameters = requiredFields
+    .filter(key => _.isUndefined(configValues[key]))
+  if (!_.isEmpty(missingLoginParameters)) {
+    throw new Error(`Missing the following config customization parameters: ${missingLoginParameters}`)
+  }
+  return new InstanceElement(ElemID.CONFIG_NAME, configOptionsType, configValues)
+}
+
 const getLoginInputFlow = async (
   workspace: Workspace,
   authMethods: AdapterAuthentication,
@@ -179,12 +203,16 @@ const getLoginInputFlow = async (
   outputLine(formatLoginUpdated, output)
 }
 
+type ConfCustomizationArgs = {
+  customizationOptions?: string[]
+}
+
 // Add
 type AccountAddArgs = {
     login: boolean
     serviceType: string
     accountName?: string
-} & AuthTypeArgs & EnvArg & LoginParametersArg
+} & AuthTypeArgs & EnvArg & LoginParametersArg & ConfCustomizationArgs
 
 const MAX_ACCOUNT_NAME_LENGTH = 100
 export const addAction: WorkspaceCommandAction<AccountAddArgs> = async ({
@@ -192,7 +220,7 @@ export const addAction: WorkspaceCommandAction<AccountAddArgs> = async ({
   output,
   workspace,
 }): Promise<CliExitCode> => {
-  const { login, serviceType, authType, accountName, loginParameters } = input
+  const { login, serviceType, authType, accountName, loginParameters, customizationOptions } = input
   if (accountName !== undefined) {
     if (naclCase(accountName) !== accountName) {
       errorOutputLine(`Invalid account name: ${accountName}, account name may only include letters, digits or underscores`, output)
@@ -225,8 +253,8 @@ export const addAction: WorkspaceCommandAction<AccountAddArgs> = async ({
     return CliExitCode.UserInputError
   }
 
-  await installAdapter(serviceType)
-  if (login) {
+  await installAdapter(serviceType) // TODON can leverage this for customizations maybe?
+  if (login) { // TODON consider adding without login - so that we can customize?
     const adapterCredentialsTypes = getAdaptersCredentialsTypes([serviceType])[serviceType]
     try {
       await getLoginInputFlow(workspace, adapterCredentialsTypes, output,
@@ -236,8 +264,9 @@ export const addAction: WorkspaceCommandAction<AccountAddArgs> = async ({
       return CliExitCode.AppError
     }
   }
+  const configCustomization = createConfigOptionsFromCustomizationParamters(serviceType, customizationOptions)
 
-  await addAdapter(workspace, serviceType, theAccountName)
+  await addAdapter(workspace, serviceType, theAccountName, configCustomization)
   await workspace.flush()
   outputLine(formatAccountAdded(serviceType), output)
   return CliExitCode.Success
@@ -266,6 +295,13 @@ const accountAddCommandDef: WorkspaceCommandDef<AccountAddArgs> = {
       AUTH_TYPE_OPTION,
       ENVIRONMENT_OPTION,
       LOGIN_PARAMETER_OPTION,
+      {
+        name: 'customizationOptions',
+        required: false,
+        alias: 'q',
+        description: 'Customization parameters in the form of NAME=VALUE. Use in order to customize the adapter config.',
+        type: 'stringsList',
+      },
     ],
     positionalOptions: [
       {
@@ -333,7 +369,7 @@ export const loginAction: WorkspaceCommandAction<AccountLoginArgs> = async ({
   }
   try {
     await getLoginInputFlow(workspace, accountLoginStatus.configTypeOptions,
-      output, authType, accountName, loginParameters)
+      output, authType, accountName, loginParameters) // TODON can read at this point from the element source?
   } catch (e) {
     errorOutputLine(formatLoginToAccountFailed(accountName, e.message), output)
     return CliExitCode.AppError
@@ -343,7 +379,7 @@ export const loginAction: WorkspaceCommandAction<AccountLoginArgs> = async ({
 
 const accountLoginCommandDef: WorkspaceCommandDef<AccountLoginArgs> = {
   properties: {
-    name: 'login',
+    name: 'login', //
     description: 'Login to an application account of an environment.\n\nUse the --login-parameters option for non interactive execution.\n\nFor more information about supported login parameters please visit:\nhttps://github.com/salto-io/salto/blob/main/packages/cli/user_guide.md#non-interactive-execution',
     keyedOptions: [
       AUTH_TYPE_OPTION,

@@ -18,7 +18,7 @@ import _ from 'lodash'
 import * as inquirer from 'inquirer'
 import {
   TypeElement, ObjectType, ElemID, InstanceElement,
-  isPrimitiveType, PrimitiveTypes,
+  isPrimitiveType, PrimitiveTypes, isMapType,
 } from '@salto-io/adapter-api'
 import { FetchChange, PlanItem } from '@salto-io/core'
 import { collections } from '@salto-io/lowerdash'
@@ -149,19 +149,25 @@ export const getApprovedChanges = async (
 
 // TODO: SALTO-770 CLI should mask secret credentials based on adapter definition
 const isPasswordInputType = (fieldName: string): boolean =>
-  ['token', 'password', 'tokenId', 'tokenSecret', 'consumerKey', 'consumerSecret', 'suiteAppTokenId', 'suiteAppTokenSecret', 'suiteAppActivationKey', 'clientSecret'].includes(fieldName)
+  ['token', 'password', 'tokenId', 'tokenSecret', 'consumerKey', 'consumerSecret', 'suiteAppTokenId', 'suiteAppTokenSecret', 'suiteAppActivationKey', 'clientSecret', 'secret'].includes(fieldName)
 
-export const getFieldInputType = (fieldType: TypeElement, fieldName: string): string => {
+export const getFieldInputType = async (fieldType: TypeElement, fieldName: string): Promise<string> => {
+  const returnStringInputType = (): string => (isPasswordInputType(fieldName)
+    ? 'password'
+    : 'input'
+  )
+  if (isMapType(fieldType)) {
+    const innerType = await fieldType.getInnerType()
+    if (isPrimitiveType(innerType) && innerType.primitive === PrimitiveTypes.STRING) {
+      return returnStringInputType()
+    }
+  }
   if (!isPrimitiveType(fieldType) || fieldType.primitive === PrimitiveTypes.UNKNOWN) {
     throw new Error('Only primitive configuration values are supported')
   }
 
   if (fieldType.primitive === PrimitiveTypes.STRING) {
-    if (isPasswordInputType(fieldName)) {
-      return 'password'
-    }
-
-    return 'input'
+    return returnStringInputType()
   }
   if (fieldType.primitive === PrimitiveTypes.NUMBER) {
     return 'number'
@@ -169,18 +175,45 @@ export const getFieldInputType = (fieldType: TypeElement, fieldName: string): st
   return 'confirm'
 }
 
+type Parser = (value: unknown) => Record<string, string>
+const getFieldInputParser = async (fieldType: TypeElement): Promise<Parser | undefined> => {
+  if (isMapType(fieldType)) {
+    const innerType = await fieldType.getInnerType()
+    if (isPrimitiveType(innerType) && innerType.primitive === PrimitiveTypes.STRING) {
+      return value => JSON.parse(String(value || '{}')) // TODON add safeties
+    }
+  }
+  return undefined
+}
+
 export const getCredentialsFromUser = async (credentialsType: ObjectType):
   Promise<InstanceElement> => {
-  const questions = await awu(Object.keys(credentialsType.fields)).map(async fieldName =>
-    ({
-      type: getFieldInputType(await credentialsType.fields[fieldName].getType(), fieldName),
+  const questionsAndParsers = await awu(Object.keys(credentialsType.fields)).map(async fieldName => {
+    const fieldType = await credentialsType.fields[fieldName].getType()
+    return {
+      type: await getFieldInputType(fieldType, fieldName),
       mask: '*',
       name: fieldName,
       message: formatConfigFieldInput(
         fieldName, credentialsType.fields[fieldName].annotations.message,
       ),
-    })).toArray()
-  const values = await inquirer.prompt(questions)
+      parser: await getFieldInputParser(fieldType),
+    }
+  }).toArray()
+  const questions = questionsAndParsers.map(q => _.omit(q, 'parser'))
+  const parsers = Object.fromEntries(questionsAndParsers
+    .filter(({ parser }) => parser !== undefined)
+    .map(({ name, parser }) => [name, parser]))
+  const values = _.mapValues(
+    await inquirer.prompt(questions),
+    (val, name) => {
+      const parser = parsers[name]
+      if (parser !== undefined) {
+        return parser(val)
+      }
+      return val
+    },
+  )
   return new InstanceElement(ElemID.CONFIG_NAME, credentialsType, values)
 }
 

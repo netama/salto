@@ -651,12 +651,13 @@ export const addAdapter = async (
   workspace: Workspace,
   adapterName: string,
   accountName?: string,
+  configCustomization?: InstanceElement
 ): Promise<AdapterAuthentication> => {
   const adapter = getAdapterCreator(adapterName)
   await workspace.addAccount(adapterName, accountName)
   const adapterAccountName = accountName ?? adapterName
   if (_.isUndefined((await workspace.accountConfig(adapterAccountName)))) {
-    const defaultConfig = await getDefaultAdapterConfig(adapterName, adapterAccountName)
+    const defaultConfig = await getDefaultAdapterConfig(adapterName, adapterAccountName, configCustomization)
     if (!_.isUndefined(defaultConfig)) {
       await workspace.updateAccountConfig(adapterName, defaultConfig, adapterAccountName)
     }

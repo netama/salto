@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Element, ObjectType, InstanceElement, ElemID } from '@salto-io/adapter-api'
+import { Element, ObjectType, InstanceElement, ElemID, isInstanceElement } from '@salto-io/adapter-api'
 import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { pathNaclCase } from '@salto-io/adapter-utils'
 import {
@@ -21,7 +21,7 @@ import {
 } from '../constants'
 import { ZuoraApiConfig } from '../config'
 
-const { RECORDS_PATH, swagger } = elementUtils
+const { RECORDS_PATH, getAllElements } = elementUtils
 
 export const getStandardObjectTypeName = (apiDefs: ZuoraApiConfig): string | undefined => (
   Object.keys(apiDefs.types).find(
@@ -53,7 +53,8 @@ export const getStandardObjectElements = async ({
       : undefined,
   })
 
-  const standardObjectInstances = (await swagger.getAllInstances({
+  const standardObjectElements = (await getAllElements({
+    adapterName: ZUORA_BILLING,
     paginator,
     // only need the top-level element
     objectTypes: { [standardObjecWrapperTypeName]: standardObjectWrapperType },
@@ -61,8 +62,9 @@ export const getStandardObjectElements = async ({
     supportedTypes: apiConfig.supportedTypes,
     fetchQuery: {
       isTypeMatch: typeName => typeName === standardObjecWrapperTypeName,
+      isInstanceMatch: () => true, // TODON implement
     },
-  })).elements.map(inst => new InstanceElement(
+  })).elements.filter(isInstanceElement).map(inst => new InstanceElement( // TODON fix
     inst.elemID.name,
     standardObjectDefType,
     inst.value,
@@ -71,5 +73,6 @@ export const getStandardObjectElements = async ({
     inst.annotations,
   ))
 
-  return [standardObjectDefType, ...standardObjectInstances]
+  // return [standardObjectDefType, ...standardObjectInstances]
+  return standardObjectElements
 }
