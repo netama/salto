@@ -58,17 +58,17 @@ export type SAPConfig = {
 }
 
 export const DEFAULT_TYPES: SAPApiConfig['types'] = {
-  groups: {
+  EnergySourceTypes: {
     request: {
-      url: '/api/v2/groups',
+      url: '/EnergySourceTypes', // TODO need to find base url
     },
     transformation: {
       dataField: 'groups',
     },
   },
-  group: {
+  EnergySourceType: {
     transformation: {
-      sourceTypeName: 'groups__groups',
+      sourceTypeName: 'EnergySourceTypes__EnergySourceTypes',
       // fieldsToHide: FIELDS_TO_HIDE.concat({ fieldName: 'id', fieldType: 'number' }),
       // serviceUrl: '/admin/people/team/groups',
       // fieldTypeOverrides: [{ fieldName: 'id', fieldType: 'number' }],
@@ -100,7 +100,7 @@ export const DEFAULT_TYPES: SAPApiConfig['types'] = {
 }
 
 export const SUPPORTED_TYPES = {
-  group: ['groups'],
+  EnergySourceType: ['EnergySourceTypes'],
 }
 
 export const DEFAULT_CONFIG: SAPConfig = {
