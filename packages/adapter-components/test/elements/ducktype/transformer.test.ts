@@ -33,7 +33,7 @@ import { HTTPError, Paginator } from '../../../src/client'
 import { TypeDuckTypeConfig, TypeDuckTypeDefaultsConfig } from '../../../src/config'
 import { simpleGetArgs, returnFullEntry, computeGetArgs } from '../../../src/elements'
 import { findDataField } from '../../../src/elements/field_finder'
-import { createElementQuery } from '../../../src/elements/query'
+import { createElementQuery } from '../../../src/fetch/query'
 import { AdapterFetchError, InvalidSingletonType } from '../../../src/config/shared'
 
 describe('ducktype_transformer', () => {
@@ -753,8 +753,10 @@ describe('ducktype_transformer', () => {
         },
         computeGetArgs: simpleGetArgs,
         nestedFieldFinder: returnFullEntry,
-        types: typesConfig,
-        typeDefaults: typeDefaultConfig,
+        apiConfig: {
+          types: typesConfig,
+          typeDefaults: typeDefaultConfig,
+        },
       })
       const { elements } = res
       expect(elements.map(e => e.elemID.getFullName())).toEqual([
@@ -820,8 +822,10 @@ describe('ducktype_transformer', () => {
         },
         computeGetArgs: simpleGetArgs,
         nestedFieldFinder: returnFullEntry,
-        types: typesConfig,
-        typeDefaults: typeDefaultConfig,
+        apiConfig: {
+          types: typesConfig,
+          typeDefaults: typeDefaultConfig,
+        },
         getEntriesResponseValuesFunc,
         shouldAddRemainingTypes: false,
       })
@@ -862,25 +866,27 @@ describe('ducktype_transformer', () => {
         },
         computeGetArgs: simpleGetArgs,
         nestedFieldFinder: returnFullEntry,
-        types: {
-          folders: {
-            request: {
-              url: '/folders',
-            },
-            transformation: {
-              idFields: ['name'],
-              fieldTypeOverrides: [
-                { fieldName: 'test1', fieldType: typeToOverrideWith },
-                {
-                  fieldName: 'test2',
-                  fieldType: BuiltinTypes.STRING.elemID.getFullName(),
-                  restrictions: { enforce_value: true, values: ['yes', 'no'] },
-                },
-              ],
+        apiConfig: {
+          types: {
+            folders: {
+              request: {
+                url: '/folders',
+              },
+              transformation: {
+                idFields: ['name'],
+                fieldTypeOverrides: [
+                  { fieldName: 'test1', fieldType: typeToOverrideWith },
+                  {
+                    fieldName: 'test2',
+                    fieldType: BuiltinTypes.STRING.elemID.getFullName(),
+                    restrictions: { enforce_value: true, values: ['yes', 'no'] },
+                  },
+                ],
+              },
             },
           },
+          typeDefaults: typeDefaultConfig,
         },
-        typeDefaults: typeDefaultConfig,
         isErrorTurnToConfigSuggestion: error =>
           error instanceof HTTPError && (error.response.status === 403),
       })
@@ -909,17 +915,19 @@ describe('ducktype_transformer', () => {
         },
         computeGetArgs: simpleGetArgs,
         nestedFieldFinder: returnFullEntry,
-        types: {
-          folders: {
-            request: {
-              url: '/folders',
-            },
-            transformation: {
-              idFields: ['name'],
+        apiConfig: {
+          types: {
+            folders: {
+              request: {
+                url: '/folders',
+              },
+              transformation: {
+                idFields: ['name'],
+              },
             },
           },
+          typeDefaults: typeDefaultConfig,
         },
-        typeDefaults: typeDefaultConfig,
       })
       const { errors } = res
       expect(errors).toEqual([{ message: 'singleton err', severity: 'Warning' }])
@@ -945,17 +953,19 @@ describe('ducktype_transformer', () => {
         },
         computeGetArgs: simpleGetArgs,
         nestedFieldFinder: returnFullEntry,
-        types: {
-          folders: {
-            request: {
-              url: '/folders',
-            },
-            transformation: {
-              idFields: ['name'],
+        apiConfig: {
+          types: {
+            folders: {
+              request: {
+                url: '/folders',
+              },
+              transformation: {
+                idFields: ['name'],
+              },
             },
           },
+          typeDefaults: typeDefaultConfig,
         },
-        typeDefaults: typeDefaultConfig,
       })
       const { errors } = res
       expect(errors).toEqual([{ message: 'fetch err', severity }])

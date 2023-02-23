@@ -27,16 +27,14 @@ import {
   isRemovalChange,
   isReferenceExpression,
 } from '@salto-io/adapter-api'
+import { getParents, applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { collections } from '@salto-io/lowerdash'
-import { getParents } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../../filter'
 import { addIdsToChildrenUponAddition, deployChange, deployChanges, deployChangesByGroups } from '../../deployment'
-import { applyforInstanceChangesOfType, getCustomFieldOptionsFromChanges } from '../utils'
+import { getCustomFieldOptionsFromChanges } from '../utils'
 import { API_DEFINITIONS_CONFIG } from '../../config'
-import { CUSTOM_FIELD_OPTIONS_FIELD_NAME } from '../../constants'
-
-export const DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME = 'default_custom_field_option'
+import { CUSTOM_FIELD_OPTIONS_FIELD_NAME, DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../constants'
 
 const log = logger(module)
 
@@ -90,29 +88,30 @@ export const createCustomFieldOptionsFilterCreator = (
     })
   },
   preDeploy: async changes => {
-    await applyforInstanceChangesOfType(
+    await applyInPlaceforInstanceChangesOfType({
       changes,
-      [parentTypeName],
-      (instance: InstanceElement) => {
+      typeNames: [parentTypeName],
+      func: (instance: InstanceElement) => {
         const defaultValue = instance.value[DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME]
         const options = makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
         if (options.length > 0) {
           options.forEach(option => {
+            // pattern? (for moving default from/to boolean)
             option.default = (defaultValue !== undefined) && (option.value === defaultValue)
           })
         }
-        return instance
-      }
-    )
+      },
+    })
     getCustomFieldOptionsFromChanges(parentTypeName, childTypeName, changes).forEach(option => {
+      // another field copy (inside values) - can probably generalize together with other places
       option.name = option.raw_name
     })
   },
-  onDeploy: async changes => {
-    await applyforInstanceChangesOfType(
+  onDeploy: async changes => { // restore? (make sure works, see comments inside)
+    await applyInPlaceforInstanceChangesOfType({
       changes,
-      [parentTypeName],
-      async (instance: InstanceElement) => {
+      typeNames: [parentTypeName],
+      func: async instance => {
         const options = makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
         if (options.length > 0) {
           // replace with the original references - since the current restore logic
@@ -120,20 +119,20 @@ export const createCustomFieldOptionsFilterCreator = (
           const originalInstance = await elementsSource.get(instance.elemID)
           if (originalInstance === undefined) {
             log.error('Could not find original instance for %s, not replacing options', instance.elemID.getFullName())
-            return instance
+            return
           }
           const originalOptions = makeArray(originalInstance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
           if (originalOptions.every(isReferenceExpression)) {
             instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME] = originalOptions
           }
         }
-        return instance
-      }
-    )
+      },
+    })
     getCustomFieldOptionsFromChanges(parentTypeName, childTypeName, changes).forEach(option => {
       delete option.name
     })
   },
+  // TODON see if can turn to pipeline or keep custom
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [relevantChanges, leftoverChanges] = _.partition(
       changes,
@@ -158,6 +157,7 @@ export const createCustomFieldOptionsFilterCreator = (
       // The service does not allow us to have an field with no options - therefore, we need to do
       //  the removal changes last
       const [removalChanges, nonRemovalChanges] = _.partition(childrenChanges, isRemovalChange)
+      // TODON see why needed this way? just to get removals in first?
       const deployResult = await deployChangesByGroups(
         [nonRemovalChanges, removalChanges] as Change<InstanceElement>[][],
         async change => {
@@ -170,7 +170,7 @@ export const createCustomFieldOptionsFilterCreator = (
       parentChanges,
       async change => {
         const response = await deployChange(
-          change, client, config.apiDefinitions, [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME]
+          change, client, config.apiDefinitions,
         )
         return addIdsToChildrenUponAddition({
           response,

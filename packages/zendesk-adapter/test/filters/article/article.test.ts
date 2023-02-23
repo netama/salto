@@ -21,7 +21,7 @@ import {
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
-import { createFilterCreatorParams } from '../../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../../utils'
 import ZendeskClient from '../../../src/client/client'
 import { ARTICLE_ATTACHMENT_TYPE_NAME, ARTICLE_TYPE_NAME, BRAND_TYPE_NAME, USER_SEGMENT_TYPE_NAME, ZENDESK } from '../../../src/constants'
 import filterCreator from '../../../src/filters/article/article'
@@ -36,7 +36,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -272,11 +272,10 @@ describe('article filter', () => {
       everyoneUserSegmentInstance,
       notInlineArticleAttachmentInstance,
     ])
-    const brandIdToClient = { [brandInstance.value.id]: client }
     filter = filterCreator(createFilterCreatorParams({
       client,
       elementsSource,
-      brandIdToClient,
+      brandIdToClient: brandId => (brandId.toString() === brandInstance.value.id ? client : undefined),
       config: {
         ...DEFAULT_CONFIG,
         [FETCH_CONFIG]: {
@@ -550,14 +549,15 @@ describe('article filter', () => {
     })
     it('should pass the correct params to deployChange on create', async () => {
       const id = 2
-      mockDeployChange.mockImplementation(async () => ({ workspace: { id } }))
+      mockDeployChange.mockImplementation(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: articleInstance } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: articleInstance } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['translations', 'attachments'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -573,15 +573,16 @@ describe('article filter', () => {
       clonedArticleBefore.value.id = id
       clonedArticleAfter.value.id = id
       clonedArticleAfter.value.title = 'newTitle!'
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation(() => ({}))
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedArticleBefore, after: clonedArticleAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedArticleBefore, after: clonedArticleAfter } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['translations', 'attachments'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -599,7 +600,7 @@ describe('article filter', () => {
       const id = 2
       const clonedArticle = articleInstance.clone()
       clonedArticle.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation(() => ({}))
       const res = await filter.deploy([{ action: 'remove', data: { before: clonedArticle } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(0)
       expect(res.leftoverChanges).toHaveLength(1)
@@ -608,16 +609,15 @@ describe('article filter', () => {
     })
 
     it('should return error if deployChange failed', async () => {
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
+      mockDeployChange.mockImplementation(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([{ action: 'add', data: { after: articleInstance } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: articleInstance } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['translations', 'attachments'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)
@@ -632,8 +632,7 @@ describe('article filter', () => {
       clonedArticle.value.attachments = [
         new ReferenceExpression(clonedAttachment.elemID, clonedAttachment),
       ]
-      const id = 2
-      mockDeployChange.mockImplementation(async () => ({ workspace: { id } }))
+      mockDeployChange.mockImplementation(createMockDefaultDeployChangeAddId(333333))
       await filter.preDeploy([
         { action: 'add', data: { after: clonedArticle } },
         { action: 'add', data: { after: clonedAttachment } },
@@ -685,7 +684,7 @@ describe('article filter', () => {
         }
       )
       const id = 2
-      mockDeployChange.mockImplementation(async () => ({ workspace: { id } }))
+      mockDeployChange.mockImplementation(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([
         { action: 'modify', data: { before: clonedArticle, after: clonedArticle } },
       ])

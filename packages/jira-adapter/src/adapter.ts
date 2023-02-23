@@ -173,11 +173,9 @@ import { hasSoftwareProject } from './utils'
 import { getWorkspaceId } from './workspace_id'
 import { JSM_ASSETS_DUCKTYPE_SUPPORTED_TYPES } from './config/api_config'
 
-const { getAllElements } = elementUtils.ducktype
-const { findDataField, computeGetArgs } = elementUtils
+const { findDataField, computeGetArgs, getAllElements } = elementUtils
 const {
   generateTypes,
-  getAllInstances,
   loadSwagger,
   addDeploymentAnnotations,
 } = elementUtils.swagger
@@ -188,7 +186,7 @@ const { query: queryFilter, hideTypes: hideTypesFilter, ...otherCommonFilters } 
 const { toArrayAsync } = collections.asynciterable
 const { makeArray } = collections.array
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   accountInfoFilter,
   storeUsersFilter,
   changeJSMElementsFieldFilter,
@@ -363,7 +361,7 @@ export const DEFAULT_FILTERS = [
   defaultInstancesDeployFilter,
 ]
 
-export interface JiraAdapterParams {
+export interface JiraAdapterParams { // TODON only exported for testing purposes - can export from shared function!
   filterCreators?: FilterCreator[]
   client: JiraClient
   scriptRunnerClient: ScriptRunnerClient
@@ -377,6 +375,7 @@ type AdapterSwaggers = {
   platform: elementUtils.swagger.LoadedSwagger
   jira: elementUtils.swagger.LoadedSwagger
 }
+// TODON turn into a creator as well??? pass in list of filters, list of change validators, client, etc
 export default class JiraAdapter implements AdapterOperations {
   private createFiltersRunner: () => Required<Filter>
   private client: JiraClient
@@ -462,7 +461,7 @@ export default class JiraAdapter implements AdapterOperations {
     const apiDefinitions = getApiDefinitions(this.userConfig.apiDefinitions)
     // Note - this is a temporary way of handling multiple swagger defs in the same adapter
     // this will be replaced by built-in infrastructure support for multiple swagger defs
-    // in the configuration
+    // in the configuration // TODON available now
     const results = await Promise.all(
       Object.keys(swaggers).map(
         key => generateTypes(
@@ -477,11 +476,11 @@ export default class JiraAdapter implements AdapterOperations {
   }
 
   @logDuration('generating swagger instances from service')
-  private async getSwaggerInstances(
+  private async getSwaggerElements(
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
     supportedTypes: Record<string, string[]>
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+  ): Promise<elementUtils.FetchElements> {
     const updatedApiDefinitionsConfig = {
       ...this.userConfig.apiDefinitions,
       types: {
@@ -492,7 +491,8 @@ export default class JiraAdapter implements AdapterOperations {
         ),
       },
     }
-    return getAllInstances({
+    return getAllElements({
+      adapterName: JIRA,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: updatedApiDefinitionsConfig,
@@ -503,7 +503,7 @@ export default class JiraAdapter implements AdapterOperations {
   }
 
   @logDuration('generating scriptRunner instances and types from service')
-  private async getScriptRunnerElements(): Promise<elementUtils.FetchElements<Element[]>> {
+  private async getScriptRunnerElements(): Promise<elementUtils.FetchElements> {
     const { scriptRunnerApiDefinitions } = this.userConfig
     // scriptRunnerApiDefinitions is currently undefined for DC
     if (this.scriptRunnerClient === undefined
@@ -513,27 +513,29 @@ export default class JiraAdapter implements AdapterOperations {
     }
 
     const paginator = createPaginator({
-      client: this.scriptRunnerClient,
+      client: this.scriptRunnerClient, // TODON separate client
       paginationFuncCreator: paginate,
     })
 
     return getAllElements({
       adapterName: JIRA,
-      types: scriptRunnerApiDefinitions.types,
+      apiConfig: {
+        types: scriptRunnerApiDefinitions.types,
+        typeDefaults: scriptRunnerApiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: scriptRunnerApiDefinitions.supportedTypes,
       fetchQuery: this.fetchQuery,
       paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: scriptRunnerApiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
     })
   }
 
   @logDuration('generating JSM assets instances and types from service')
   private async getJSMAssetsElements():
-  Promise<elementUtils.FetchElements<Element[]>> {
+  Promise<elementUtils.FetchElements> {
     const { jsmApiDefinitions } = this.userConfig
     // jsmApiDefinitions is currently undefined for DC
     if (this.client === undefined
@@ -547,17 +549,19 @@ export default class JiraAdapter implements AdapterOperations {
     if (workspaceId === undefined) {
       return { elements: [] }
     }
-    const workspaceContext = { workspaceId }
+    const workspaceContext = { workspaceId } // TODON use as example of context?
     return getAllElements({
       adapterName: JIRA,
-      types: jsmApiDefinitions.types,
+      apiConfig: {
+        types: jsmApiDefinitions.types,
+        typeDefaults: jsmApiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: JSM_ASSETS_DUCKTYPE_SUPPORTED_TYPES,
       fetchQuery: this.fetchQuery,
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: jsmApiDefinitions.typeDefaults,
       additionalRequestContext: workspaceContext,
       getElemIdFunc: this.getElemIdFunc,
       getEntriesResponseValuesFunc: jiraJSMAssetsEntriesFunc(),
@@ -566,7 +570,7 @@ export default class JiraAdapter implements AdapterOperations {
 
   @logDuration('generating JSM instances and types from service')
   private async getJSMElements(swaggerResponseElements: InstanceElement[]):
-  Promise<elementUtils.FetchElements<Element[]>> {
+  Promise<elementUtils.FetchElements> {
     const { jsmApiDefinitions } = this.userConfig
     // jsmApiDefinitions is currently undefined for DC
     if (this.client === undefined
@@ -607,20 +611,23 @@ export default class JiraAdapter implements AdapterOperations {
       log.debug(`Fetching elements for project ${projectInstance.elemID.name}`)
       return getAllElements({
         adapterName: JIRA,
-        types: jsmApiDefinitions.types,
+        apiConfig: {
+          types: jsmApiDefinitions.types,
+          typeDefaults: jsmApiDefinitions.typeDefaults,
+        },
         shouldAddRemainingTypes: false,
         supportedTypes: jsmApiDefinitions.supportedTypes,
         fetchQuery: this.fetchQuery,
         paginator: this.paginator,
         nestedFieldFinder: findDataField,
         computeGetArgs,
-        typeDefaults: jsmApiDefinitions.typeDefaults,
         getElemIdFunc: this.getElemIdFunc,
         additionalRequestContext: serviceDeskProjRecord,
         getEntriesResponseValuesFunc: jiraJSMEntriesFunc(projectInstance),
       })
     }))
 
+    // TODON won't be needed in new infra? make sure
     /* Remove all the duplicate types and create map from type to it's instances  */
     const typeNameToJSMInstances = _.groupBy(
       fetchResultWithDuplicateTypes.flatMap(result => result.elements).filter(isInstanceElement),
@@ -653,7 +660,7 @@ export default class JiraAdapter implements AdapterOperations {
   private async getAllJiraElements(
     progressReporter: ProgressReporter,
     swaggers: AdapterSwaggers
-  ): Promise<elementUtils.FetchElements<Element[]>> {
+  ): Promise<elementUtils.FetchElements> {
     log.debug('going to fetch jira account configuration..')
     progressReporter.reportProgress({ message: 'Fetching types' })
     const { allTypes: swaggerTypes, parsedConfigs } = await this.getAllTypes(swaggers)
@@ -662,14 +669,15 @@ export default class JiraAdapter implements AdapterOperations {
     const supportedTypes = shouldOmitBoardSupportedType ? _.omit(userConfigSupportedTypes, 'Board') : userConfigSupportedTypes
     progressReporter.reportProgress({ message: 'Fetching instances' })
     const [swaggerResponse, scriptRunnerElements] = await Promise.all([
-      this.getSwaggerInstances(swaggerTypes, parsedConfigs, supportedTypes),
+      this.getSwaggerElements(swaggerTypes, parsedConfigs, supportedTypes),
       this.getScriptRunnerElements(),
     ])
 
-    const jsmElements = await this.getJSMElements(swaggerResponse.elements)
+    const jsmElements = await this.getJSMElements(swaggerResponse.elements.filter(isInstanceElement))
     const jsmAssetsElements = await this.getJSMAssetsElements()
+
     const elements: Element[] = [
-      ...Object.values(swaggerTypes),
+      // ...Object.values(swaggerTypes),
       ...swaggerResponse.elements,
       ...scriptRunnerElements.elements,
       ...jsmElements.elements,
@@ -684,6 +692,7 @@ export default class JiraAdapter implements AdapterOperations {
   }
 
   @logDuration('fetching account configuration')
+  // TODON boilerplate should use shared config including improvements to the components
   async fetch({ progressReporter }: FetchOptions): Promise<FetchResult> {
     const swaggers = await this.generateSwaggers()
     const { elements, errors, configChanges } = await this.getAllJiraElements(progressReporter, swaggers)
@@ -692,7 +701,7 @@ export default class JiraAdapter implements AdapterOperations {
     progressReporter.reportProgress({ message: 'Running filters for additional information' })
     const filterResult = await this.createFiltersRunner().onFetch(elements) || {}
 
-    const updatedConfig = this.configInstance && configChanges
+    const updatedConfig = this.configInstance && configChanges // TODON can remove old migration code
       ? configUtils.getUpdatedCofigFromConfigChanges({
         configChanges,
         currentConfig: this.configInstance,
@@ -700,12 +709,12 @@ export default class JiraAdapter implements AdapterOperations {
       }) : undefined
     // This needs to happen after the onFetch since some filters
     // may add fields that deployment annotation should be added to
-    await addDeploymentAnnotations(
+    await addDeploymentAnnotations( // TODON see if want to include everywhere or not
       elements.filter(isObjectType),
       Object.values(swaggers),
       this.userConfig.apiDefinitions,
     )
-    if (this.logIdsFunc !== undefined) {
+    if (this.logIdsFunc !== undefined) { // TODON see if want to add to adapter-creator?
       this.logIdsFunc()
     }
     return { elements, errors: (errors ?? []).concat(filterResult.errors ?? []), updatedConfig }

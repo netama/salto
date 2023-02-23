@@ -28,6 +28,9 @@ describe('client_pagination', () => {
   describe('getMinSinceIdPagination', () => {
     const client: MockInterface<clientUtils.HTTPReadClientInterface> = {
       getSinglePage: mockFunction<clientUtils.HTTPReadClientInterface['getSinglePage']>(),
+      get: mockFunction<clientUtils.HTTPReadClientInterface['get']>(),
+      head: mockFunction<clientUtils.HTTPReadClientInterface['head']>(),
+      options: mockFunction<clientUtils.HTTPReadClientInterface['options']>(),
       getPageSize: mockFunction<clientUtils.HTTPReadClientInterface['getPageSize']>(),
     }
     beforeEach(() => {

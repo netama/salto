@@ -33,7 +33,7 @@ const log = logger(module)
 const ORG_ENDPOINT_TO_FILTER = 'organizations/'
 const OMIT_REPLACEMENT = '<OMITTED>'
 
-type LogsFilterConfig = {
+export type LogsFilterConfig = {
   allowOrganizationNames?: boolean
 }
 
@@ -110,6 +110,12 @@ export default class ZendeskClient extends clientUtils.AdapterHTTPClient<
       }
       throw e
     }
+  }
+
+  public async get(
+    args: clientUtils.ClientBaseParams,
+  ): Promise<clientUtils.Response<clientUtils.ResponseValue | clientUtils.ResponseValue[]>> {
+    return this.getSinglePage(args)
   }
 
   public async ensureLoggedIn(): Promise<void> {

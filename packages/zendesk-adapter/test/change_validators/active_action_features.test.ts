@@ -16,6 +16,7 @@
 import { ElemID, InstanceElement, ObjectType, toChange } from '@salto-io/adapter-api'
 import { elementSource } from '@salto-io/workspace'
 import {
+  ACCOUNT_SETTING_TYPE_NAME,
   AUTOMATION_TYPE_NAME,
   CUSTOM_TICKET_STATUS_ACTION,
   DEFLECTION_ACTION,
@@ -23,7 +24,6 @@ import {
   TRIGGER_TYPE_NAME,
   ZENDESK,
 } from '../../src/constants'
-import { ACCOUNT_SETTING_TYPE_NAME } from '../../src/filters/account_settings'
 import { activeActionFeaturesValidator } from '../../src/change_validators'
 import {
   CUSTOM_TICKET_STATUS_ZENDESK_FIELD,

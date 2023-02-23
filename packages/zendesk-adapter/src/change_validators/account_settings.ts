@@ -15,7 +15,7 @@
 */
 import { ChangeValidator, getChangeData, InstanceElement,
   isInstanceChange, isModificationChange, Value } from '@salto-io/adapter-api'
-import { ACCOUNT_SETTING_TYPE_NAME } from '../filters/account_settings'
+import { ACCOUNT_SETTING_TYPE_NAME } from '../constants'
 
 const getTagField = (instance: InstanceElement): Value | undefined =>
   instance.value.routing?.autorouting_tag

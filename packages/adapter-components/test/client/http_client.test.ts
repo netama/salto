@@ -126,6 +126,8 @@ describe('client_http_client', () => {
           put: mockFunction<APIConnection['put']>(),
           patch: mockFunction<APIConnection['patch']>(),
           delete: mockFunction<APIConnection['delete']>(),
+          head: mockFunction<APIConnection['delete']>(),
+          options: mockFunction<APIConnection['delete']>(),
           accountInfo: {
             accountId: 'ACCOUNT_ID',
             accountType: 'Sandbox',

@@ -26,9 +26,9 @@ import {
   DEFLECTION_ACTION,
   MACRO_TYPE_NAME,
   TRIGGER_TYPE_NAME,
+  ACCOUNT_SETTING_TYPE_NAME,
   ZENDESK,
 } from '../constants'
-import { ACCOUNT_SETTING_TYPE_NAME } from '../filters/account_settings'
 
 const log = logger(module)
 

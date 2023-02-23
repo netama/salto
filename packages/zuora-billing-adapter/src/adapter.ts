@@ -15,8 +15,8 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType,
-  DeployModifiers, Element, FetchOptions,
+  FetchResult, AdapterOperations, DeployResult, TypeMap, isObjectType,
+  DeployModifiers, Element, FetchOptions, isInstanceElement,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
@@ -40,12 +40,13 @@ import { getStandardObjectElements, getStandardObjectTypeName } from './transfor
 import { paginate } from './client/pagination'
 
 const { createPaginator } = clientUtils
-const { generateTypes, getAllInstances } = elementUtils.swagger
+const { getAllElements } = elementUtils
+const { generateTypes } = elementUtils.swagger
 const log = logger(module)
 
 const { hideTypes: hideTypesFilter, ...otherCommonFilters } = commonFilters
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   // hideTypes should run before creating custom objects, so that it doesn't hide them
   hideTypesFilter,
   // objectDefsFilter should run before everything else
@@ -131,17 +132,21 @@ export default class ZuoraAdapter implements AdapterOperations {
     }
 
     const apiDefs = this.apiDefinitions(parsedConfigs)
-    const settingsOpInfoInstances = await getAllInstances({
+    const settingsOpInfoInstances = await getAllElements({
+      adapterName: ZUORA_BILLING,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: apiDefs,
       supportedTypes: { ...SUPPORTED_TYPES, [LIST_ALL_SETTINGS_TYPE]: [LIST_ALL_SETTINGS_TYPE] },
-      fetchQuery: { isTypeMatch: typeName => typeName === LIST_ALL_SETTINGS_TYPE },
+      fetchQuery: {
+        isTypeMatch: typeName => typeName === LIST_ALL_SETTINGS_TYPE,
+        isInstanceMatch: () => true, // TODON fix
+      },
     })
     if (_.isEmpty(settingsOpInfoInstances.elements)) {
       throw new Error('could not find any settings definitions - remove settingsFetchTypes and fetch again')
     }
-    return generateBillingSettingsTypes(settingsOpInfoInstances.elements, apiDefs)
+    return generateBillingSettingsTypes(settingsOpInfoInstances.elements.filter(isInstanceElement), apiDefs) // TODON
   }
 
   @logDuration('generating type and instances for standard objects')
@@ -174,11 +179,12 @@ export default class ZuoraAdapter implements AdapterOperations {
   private async getInstances(
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+  ): Promise<elementUtils.FetchElements> {
     // standard objects are not included in the swagger and need special handling - done in a filter
     const standardObjectTypeName = getStandardObjectTypeName(this.apiDefinitions(parsedConfigs))
 
-    return getAllInstances({
+    return getAllElements({
+      adapterName: ZUORA_BILLING,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: this.apiDefinitions(parsedConfigs),
@@ -186,6 +192,7 @@ export default class ZuoraAdapter implements AdapterOperations {
       fetchQuery: {
         isTypeMatch: typeName => typeName !== standardObjectTypeName
           && this.fetchQuery.isTypeMatch(typeName),
+        isInstanceMatch: () => true, // TODON fix
       },
     })
   }

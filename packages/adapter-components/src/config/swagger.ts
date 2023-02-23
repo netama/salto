@@ -15,10 +15,12 @@
 */
 import _ from 'lodash'
 import { ObjectType, ElemID, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType, ActionName } from '@salto-io/adapter-api'
+import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { types, collections, values as lowerDashValues } from '@salto-io/lowerdash'
-import { AdapterApiConfig, createAdapterApiConfigType, TypeConfig, TypeDefaultsConfig, UserFetchConfig, validateSupportedTypes } from './shared'
+import { AdapterApiConfig, createAdapterApiConfigType, TypeConfig, TypeDefaultsConfig, validateSupportedTypes } from './shared'
 import { validateRequestConfig } from './request'
 import { createTransformationConfigTypes, getTransformationConfigByType, TransformationConfig, TransformationDefaultConfig, validateTransoformationConfig } from './transformation'
+import { UserFetchConfig } from '../definitions/user'
 
 const { isDefined } = lowerDashValues
 const { findDuplicates } = collections.array
@@ -45,6 +47,18 @@ export type SwaggerDefinitionBaseConfig = {
   typeNameOverrides?: TypeNameOverrideConfig[]
   // define new types that are cloned from existing types
   additionalTypes?: AdditionalTypeConfig[]
+
+  // TODON add full support for both
+  // prefix for all types and subtypes
+  prefix?: string // TODON implement when defining types!
+  // avoid importing parts of the swagger (in order to avoid conflicts)
+  // filter?: RegExp
+
+  // when true, the sources are only used for finding the endpoints but types are generated from responses
+  // endpointsOnly?: boolean // TODON or: alwaysDuckType?
+
+  // the endpoints will be loaded into the default client (when missing, the default client)
+  // client?: string // TODON
 }
 
 export type TypeSwaggerConfig = TypeConfig
@@ -82,22 +96,22 @@ export const createTypeNameOverrideConfigType = (
   },
 })
 
-const createSwaggerDefinitionsBaseConfigType = (
+export const createSwaggerDefinitionsBaseConfigType = (
   adapter: string,
 ): ObjectType => {
-  const additionalTypeConfig = new ObjectType({
+  const additionalTypeConfig = createMatchingObjectType<AdditionalTypeConfig>({
     elemID: new ElemID(adapter, 'additionalTypeConfig'),
     fields: {
       typeName: {
         refType: BuiltinTypes.STRING,
         annotations: {
-          [CORE_ANNOTATIONS.REQUIRED]: true,
+          _required: true,
         },
       },
       cloneFrom: {
         refType: BuiltinTypes.STRING,
         annotations: {
-          [CORE_ANNOTATIONS.REQUIRED]: true,
+          _required: true,
         },
       },
     },
@@ -106,17 +120,23 @@ const createSwaggerDefinitionsBaseConfigType = (
     },
   })
 
-  const baseConfigType = new ObjectType({
+  const baseConfigType = createMatchingObjectType<SwaggerDefinitionBaseConfig>({
     elemID: new ElemID(adapter, 'swaggerDefinitionBaseConfig'),
     fields: {
       url: {
         refType: BuiltinTypes.STRING,
+        annotations: {
+          _required: true,
+        },
       },
       typeNameOverrides: {
         refType: new ListType(createTypeNameOverrideConfigType(adapter)),
       },
       additionalTypes: {
         refType: new ListType(additionalTypeConfig),
+      },
+      prefix: {
+        refType: BuiltinTypes.STRING,
       },
     },
     annotations: {

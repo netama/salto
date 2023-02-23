@@ -13,26 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 import {
   ObjectType,
   ElemID,
   BuiltinTypes,
-  MapType,
   InstanceElement,
   ListType,
   ReferenceExpression,
 } from '@salto-io/adapter-api'
-import { elements as elementsUtils } from '@salto-io/adapter-components'
 import { ISSUE_TYPE_SCHEMA_NAME, JIRA } from '../src/constants'
-
-const { ADDITIONAL_PROPERTIES_FIELD } = elementsUtils.swagger
 
 const boardLocationType = new ObjectType({
   elemID: new ElemID(JIRA, 'Board_location'),
   fields: {
     projectId: { refType: BuiltinTypes.NUMBER },
-    [ADDITIONAL_PROPERTIES_FIELD]: { refType: new MapType(BuiltinTypes.UNKNOWN) },
   },
 })
 
@@ -95,9 +89,7 @@ export const mockInstances = {
       self: 'https://test.atlassian.net/rest/agile/1.0/board/1',
       location: {
         projectId: 10000,
-        [ADDITIONAL_PROPERTIES_FIELD]: {
-          self: 'https://ori-salto-test.atlassian.net/rest/api/2/project/10000',
-        },
+        self: 'https://ori-salto-test.atlassian.net/rest/api/2/project/10000',
       },
     }
   ),

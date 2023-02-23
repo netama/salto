@@ -17,11 +17,16 @@ import _ from 'lodash'
 import {
   ObjectType, ElemID, BuiltinTypes, Values, MapType, PrimitiveType, ListType, isObjectType,
   FieldDefinition,
+  isListType,
 } from '@salto-io/adapter-api'
 import { pathNaclCase, naclCase } from '@salto-io/adapter-utils'
+import { logger } from '@salto-io/logging'
 import { DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig, getConfigWithDefault } from '../../config'
 import { TYPES_PATH, SUBTYPES_PATH } from '../constants'
 import { fixFieldTypes, hideFields, markServiceIdField } from '../type_elements'
+import { ARRAY_ITEMS_FIELD } from '../swagger/type_elements/swagger_parser'
+
+const log = logger(module)
 
 const ID_SEPARATOR = '__'
 
@@ -154,6 +159,24 @@ const generateTypeRenameConfig = (
   )
 )
 
+const isItemsOnlyObjectType = (type: ObjectType): boolean => (
+  _.isEqual(Object.keys(type.fields), [ARRAY_ITEMS_FIELD])
+)
+
+const normalizeType = (type: ObjectType): ObjectType => {
+  if (type !== undefined && isItemsOnlyObjectType(type)) {
+    const itemsType = type.fields.items.getTypeSync()
+    if (isListType(itemsType)) {
+      const innerType = itemsType.getInnerTypeSync()
+      if (isObjectType(innerType)) {
+        return innerType
+      }
+    }
+  }
+  return type
+}
+
+
 /**
  * Generate a synthetic type based on the list of all entries found for this type:
  * The type's fields are a superset of the fields that are found in at least one entry.
@@ -177,6 +200,7 @@ export const generateType = ({
   typeNameOverrideConfig,
   isSubType = false,
   isUnknownEntry,
+  objectTypes,
 }: {
   adapterName: string
   name: string
@@ -187,7 +211,14 @@ export const generateType = ({
   typeNameOverrideConfig?: Record<string, string>
   isSubType?: boolean
   isUnknownEntry?: (value: unknown) => boolean
+  objectTypes?: Record<string, ObjectType>
 }): ObjectTypeWithNestedTypes => {
+  const definedType = objectTypes?.[name]
+  if (definedType !== undefined) {
+    log.debug('found type %s for adapter %s in pre-generated object types, returning as-is', name, adapterName)
+    const type = normalizeType(definedType)
+    return { type, nestedTypes: [] }
+  }
   const typeRenameConfig = typeNameOverrideConfig ?? generateTypeRenameConfig(
     transformationConfigByType
   )
@@ -210,7 +241,7 @@ export const generateType = ({
     return typeWithNested.type
   }
 
-  const fields: Record<string, FieldDefinition> = hasDynamicFields
+  const fields: Record<string, FieldDefinition> = hasDynamicFields // TODON use additionalProperties
     ? {
       value: {
         refType: new MapType(addNestedType(generateNestedType({

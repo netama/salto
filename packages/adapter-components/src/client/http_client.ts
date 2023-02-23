@@ -51,16 +51,20 @@ export type ClientDataParams = ClientBaseParams & {
 
 export type ClientParams = ClientBaseParams | ClientDataParams
 
-export interface HTTPReadClientInterface {
-  getSinglePage(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
+export interface HTTPReadClientInterface<TAdditionalArgs = {}> {
+  // TODON eliminate, align get() to just be another command
+  getSinglePage(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  get(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  head(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  options(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
   getPageSize(): number
 }
 
-export interface HTTPWriteClientInterface {
-  post(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  put(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  delete(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  patch(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
+export interface HTTPWriteClientInterface<TAdditionalArgs = {}> {
+  post(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  put(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  delete(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  patch(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
 }
 
 export type HttpMethodToClientParams = {
@@ -69,6 +73,8 @@ export type HttpMethodToClientParams = {
   put: ClientDataParams
   patch: ClientDataParams
   delete: ClientDataParams
+  head: ClientBaseParams
+  options: ClientBaseParams
 }
 
 type MethodsWithDataParam = 'put' | 'post' | 'patch'
@@ -168,7 +174,18 @@ export abstract class AdapterHTTPClient<
   @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
   @logDecorator(['url', 'queryParams'])
   @requiresLogin()
-  public async getSinglePage(params: ClientBaseParams):
+  public async getSinglePage(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('get', params)
+  }
+
+  /**
+   * Get a single response
+   */
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async get(params: ClientBaseParams): // TODON rename to just get?
     Promise<Response<ResponseValue | ResponseValue[]>> {
     return this.sendRequest('get', params)
   }
@@ -203,6 +220,22 @@ export abstract class AdapterHTTPClient<
   public async patch(params: ClientDataParams):
     Promise<Response<ResponseValue | ResponseValue[]>> {
     return this.sendRequest('patch', params)
+  }
+
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async head(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('head', params)
+  }
+
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async options(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('options', params)
   }
 
   protected async sendRequest<T extends keyof HttpMethodToClientParams>(

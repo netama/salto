@@ -38,11 +38,11 @@ import {
   resolveChangeElement, safeJsonStringify, pathNaclCase, references, inspectValue,
 } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { elements as elementsUtils } from '@salto-io/adapter-components'
+import { elements as elementsUtils, deployment as deploymentUtils } from '@salto-io/adapter-components'
 import { values, collections } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
 import { ZENDESK, MACRO_TYPE_NAME } from '../constants'
-import { addId, deployChange, deployChanges } from '../deployment'
+import { deployChange, deployChanges } from '../deployment'
 import { getZendeskError } from '../errors'
 import { lookupFunc } from './field_references'
 import ZendeskClient from '../client/client'
@@ -257,6 +257,7 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
       errors,
     }
   },
+  // pattern - file uploads (share with article attachments, app logos, brand logos, okta brand logos?)
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [relevantChanges, leftoverChanges] = _.partition(
       changes,
@@ -306,14 +307,16 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
           return
         }
         const instance = getChangeData(change)
-        const response = await addAttachment(client, instance)
-        addId({
-          change,
-          apiDefinitions: config.apiDefinitions,
-          response: response.data,
-          dataField: MACRO_ATTACHMENT_DATA_FIELD,
-          addAlsoOnModification: true,
-        })
+        const response = await addAttachment(client, instance) // TODON generalize to other attachment flows
+        if (!Array.isArray(response.data)) {
+          deploymentUtils.assignServiceId({ // add id
+            change,
+            apiDefinitions: config.apiDefinitions,
+            response: response.data,
+            dataField: MACRO_ATTACHMENT_DATA_FIELD,
+            addAlsoOnModification: true,
+          })
+        }
         childFullNameToInstance[instance.elemID.getFullName()] = instance
       }
     )

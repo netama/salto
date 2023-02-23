@@ -14,12 +14,12 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ElemID, ObjectType, BuiltinTypes, FieldDefinition, ListType, MapType, Field, CORE_ANNOTATIONS, ActionName,
+import { ElemID, ObjectType, BuiltinTypes, FieldDefinition, ListType, MapType, CORE_ANNOTATIONS, ActionName,
   SeverityLevel } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import type { TransformationConfig, TransformationDefaultConfig } from './transformation'
 import { createRequestConfigs, DeploymentRequestsByAction, FetchRequestConfig, FetchRequestDefaultConfig, getConfigTypeName } from './request'
-import { ValidatorsActivationConfig } from '../deployment/change_validators'
+import { UserFetchConfig } from '../definitions/user'
 
 export const DEPLOYER_FALLBACK_VALUE = '##DEPLOYER##'
 
@@ -32,7 +32,7 @@ export class AdapterFetchError extends Error {
 }
 
 export type TypeConfig<T extends TransformationConfig = TransformationConfig, A extends string = ActionName> = {
-  request?: FetchRequestConfig
+  request?: FetchRequestConfig // | FetchRequestConfig[] // TODON
   deployRequests?: DeploymentRequestsByAction<A>
   transformation?: T
 }
@@ -53,26 +53,6 @@ export type AdapterApiConfig<
   typeDefaults: TypeDefaultsConfig<TD>
   types: Record<string, TypeConfig<T, A>>
   supportedTypes: Record<string, string[]>
-}
-
-export type DefaultFetchCriteria = {
-  name?: string
-}
-
-type FetchEntry<T extends Record<string, unknown> | undefined> = {
-  type: string
-  criteria?: T
-}
-
-export type UserFetchConfig<T extends Record<string, unknown> | undefined = DefaultFetchCriteria> = {
-  include: FetchEntry<T>[]
-  exclude: FetchEntry<T>[]
-  hideTypes?: boolean
-  asyncPagination?: boolean
-}
-
-export type UserDeployConfig = {
-  changeValidators?: ValidatorsActivationConfig
 }
 
 export type DefaultMissingUserFallbackConfig = {
@@ -157,86 +137,11 @@ export const createAdapterApiConfigType = ({
   return adapterApiConfigType
 }
 
-export const createUserFetchConfigType = (
-  adapter: string,
-  additionalFields?: Record<string, FieldDefinition>,
-  fetchCriteriaType?: ObjectType,
-): ObjectType => {
-  const defaultFetchCriteriaType = createMatchingObjectType<DefaultFetchCriteria>({
-    elemID: new ElemID(adapter, 'FetchFilters'),
-    fields: {
-      name: { refType: BuiltinTypes.STRING },
-    },
-    annotations: {
-      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
-    },
-  })
-  const fetchEntryType = createMatchingObjectType<FetchEntry<DefaultFetchCriteria>>({
-    elemID: new ElemID(adapter, 'FetchEntry'),
-    fields: {
-      type: {
-        refType: BuiltinTypes.STRING,
-        annotations: { _required: true },
-      },
-      criteria: {
-        refType: defaultFetchCriteriaType,
-      },
-    },
-    annotations: {
-      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
-    },
-  })
-
-  if (fetchCriteriaType !== undefined) {
-    fetchEntryType.fields.criteria = new Field(fetchEntryType, 'criteria', fetchCriteriaType)
-  }
-
-  return createMatchingObjectType<UserFetchConfig>({
-    elemID: new ElemID(adapter, 'userFetchConfig'),
-    fields: {
-      include: {
-        refType: new ListType(fetchEntryType),
-        annotations: { _required: true },
-      },
-      exclude: {
-        refType: new ListType(fetchEntryType),
-        annotations: { _required: true },
-      },
-      hideTypes: { refType: BuiltinTypes.BOOLEAN },
-      asyncPagination: { refType: BuiltinTypes.BOOLEAN },
-      ...additionalFields,
-    },
-    annotations: {
-      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
-    },
-  })
-}
-
-export const createUserDeployConfigType = (
-  adapter: string,
-  changeValidatorsType: ObjectType,
-  additionalFields?: Record<string, FieldDefinition>,
-): ObjectType => (
-  createMatchingObjectType<UserDeployConfig>({
-    elemID: new ElemID(adapter, 'userDeployConfig'),
-    fields: {
-      // Record<string, boolean> type check doesn't pass for refType of ObjectType
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      changeValidators: { refType: changeValidatorsType },
-      ...additionalFields,
-    },
-    annotations: {
-      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
-    },
-  })
-)
-
 export const defaultMissingUserFallbackField = { defaultMissingUserFallback: { refType: BuiltinTypes.STRING } }
 
 export const getConfigWithDefault = <
-  T extends TransformationConfig | FetchRequestConfig | undefined,
-  S extends TransformationDefaultConfig | FetchRequestDefaultConfig
+  T extends TransformationConfig | FetchRequestConfig | TypeConfig | undefined,
+  S extends TransformationDefaultConfig | FetchRequestDefaultConfig | TypeDefaultsConfig
 >(
     typeSpecificConfig: T,
     defaultConfig: S,

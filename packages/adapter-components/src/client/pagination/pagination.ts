@@ -14,12 +14,14 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import objectHash from 'object-hash'
 import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { collections } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import { HTTPReadClientInterface } from '../http_client'
 import { traverseRequestsAsync } from './pagination_async'
 import { GetAllItemsFunc, PageEntriesExtractor, PaginationFunc, PaginationFuncCreator, Paginator, computeRecursiveArgs } from './common'
+import { defaultPathChecker } from '../../fetch/request/pagination'
 
 const { makeArray } = collections.array
 const log = logger(module)
@@ -42,7 +44,7 @@ export const traverseRequests: (
 
   while (requestQueryArgs.length > 0) {
     const additionalArgs = requestQueryArgs.pop() as Record<string, string>
-    const serializedArgs = safeJsonStringify(additionalArgs)
+    const serializedArgs = objectHash(additionalArgs) // TODON see if needed after consolidating
     if (usedParams.has(serializedArgs)) {
       // eslint-disable-next-line no-continue
       continue
@@ -61,11 +63,14 @@ export const traverseRequests: (
       break
     }
 
-    const entries = (
-      (!Array.isArray(response.data) && Array.isArray(response.data.items))
-        ? response.data.items
-        : makeArray(response.data)
-    ).flatMap(extractPageEntries)
+    // TODON check if breaks anything, move heursitic elsewhere
+    // (the original doesn't work for swagger since the type should be swapped)
+    const entries = makeArray(response.data).flatMap(extractPageEntries)
+    // const entries = (
+    //   (!Array.isArray(response.data) && Array.isArray(response.data.items))
+    //     ? response.data.items
+    //     : makeArray(response.data)
+    // ).flatMap(extractPageEntries)
 
     // checking original entries and not the ones that passed the custom extractor, because even if all entries are
     // filtered out we should still continue querying
@@ -102,9 +107,8 @@ export const traverseRequests: (
  */
 export const getWithItemOffsetPagination = ({
   firstIndex,
-  pageSizeArgName
-  ,
-} : {
+  pageSizeArgName,
+}: {
   firstIndex: number
   pageSizeArgName: string | undefined
 }): PaginationFunc => {
@@ -208,33 +212,24 @@ export const getWithOffsetAndLimit = (): PaginationFunc => {
 }
 
 /**
- * Path checker for ensuring the next url's path is under the same endpoint as the one configured.
- * Can be customized when the next url returned has different formatting, e.g. has a longer prefix
- * (such as /api/v1/product vs /product).
- * @return true if the configured endpoint can be used to get the next path, false otherwise.
- */
-export type PathCheckerFunc = (endpointPath: string, nextPath: string) => boolean
-export const defaultPathChecker: PathCheckerFunc = (
-  endpointPath,
-  nextPath
-) => (endpointPath === nextPath)
-
-/**
  * Make paginated requests using the specified paginationField, assuming the next page is specified
  * as either a full URL or just the path and query prameters.
  * Only supports next pages under the same endpoint (and uses the same host).
  */
-export const getWithCursorPagination = (pathChecker = defaultPathChecker): PaginationFunc => {
+// TODON adjust input format
+export const getWithCursorPagination = (
+  pathChecker = defaultPathChecker, defaultPaginationField?: string,
+): PaginationFunc => {
   const nextPageCursorPages: PaginationFunc = ({
     responseData, getParams, currentParams,
   }) => {
-    const { paginationField, url } = getParams
+    const { url } = getParams
+    const paginationField = getParams.paginationField ?? defaultPaginationField
     if (paginationField !== undefined) {
       const nextPagePath = _.get(responseData, paginationField)
       if (_.isString(nextPagePath)) {
         const nextPage = new URL(nextPagePath, 'http://localhost')
         if (!pathChecker(url, nextPage.pathname)) {
-          log.error('unexpected next page received for endpoint %s params %o: %s', url, currentParams, nextPage.pathname)
           throw new Error(`unexpected next page received for endpoint ${url}: ${nextPage.pathname}`)
         }
         return [{
@@ -247,6 +242,8 @@ export const getWithCursorPagination = (pathChecker = defaultPathChecker): Pagin
   }
   return nextPageCursorPages
 }
+
+export const noPagination = (): PaginationFunc => () => []
 
 /**
  * Wrap a pagination function for use by the adapter

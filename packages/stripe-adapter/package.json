@@ -32,6 +32,7 @@
   "dependencies": {
     "@salto-io/adapter-api": "0.3.53",
     "@salto-io/adapter-components": "0.3.53",
+    "@salto-io/adapter-creator": "0.3.53",
     "@salto-io/adapter-utils": "0.3.53",
     "@salto-io/logging": "0.3.53",
     "@salto-io/lowerdash": "0.3.53",
@@ -41,6 +42,7 @@
   },
   "devDependencies": {
     "@salto-io/e2e-credentials-store": "0.3.53",
+    "@salto-io/workspace": "0.3.53",
     "@types/jest": "^27.4.0",
     "@types/lodash": "^4.14.168",
     "@typescript-eslint/eslint-plugin": "4.22.1",

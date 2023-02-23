@@ -19,7 +19,7 @@ import {
   CORE_ANNOTATIONS, ReferenceExpression, ListType, BuiltinTypes, getChangeData, ModificationChange,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId } from '../utils'
 import ZendeskClient from '../../src/client/client'
 import { ZENDESK, MACRO_TYPE_NAME } from '../../src/constants'
 import filterCreator, { ATTACHMENTS_FIELD_NAME, MACRO_ATTACHMENT_TYPE_NAME } from '../../src/filters/macro_attachments'
@@ -31,7 +31,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -317,7 +317,7 @@ describe('macro attachment filter', () => {
     it('should pass the correct params to deployChange and client on create', async () => {
       const clonedMacro = macroInstance.clone()
       const clonedAttachment = attachmentInstance.clone()
-      mockDeployChange.mockImplementation(async () => ({ macro: { id: macroId } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(macroId))
       mockPost = jest.spyOn(client, 'post')
       mockPost.mockResolvedValueOnce({
         status: 201,
@@ -348,8 +348,9 @@ describe('macro attachment filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: resolvedClonedMacro } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -384,7 +385,7 @@ describe('macro attachment filter', () => {
       const clonedAfterAttachment = clonedAttachment.clone()
       clonedAfterAttachment.value.filename = `${clonedAfterAttachment.value.filename}-edited`
 
-      mockDeployChange.mockImplementation(async () => ({ macro: { id: macroId } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(macroId))
       mockPost = jest.spyOn(client, 'post')
       mockPost.mockResolvedValueOnce({
         status: 201,
@@ -415,8 +416,9 @@ describe('macro attachment filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: resolvedClonedBeforeMacro, after: resolvedClonedAfterMacro } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -457,7 +459,7 @@ describe('macro attachment filter', () => {
       const clonedAfterAttachment = clonedAttachment.clone()
       clonedAfterAttachment.value.filename = `${clonedAfterAttachment.value.filename}-edited`
 
-      mockDeployChange.mockImplementation(async () => ({ macro: { id: macroId } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(macroId))
       mockPost = jest.spyOn(client, 'post')
       mockPost.mockResolvedValueOnce({
         status: 201,
@@ -487,8 +489,9 @@ describe('macro attachment filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: resolvedClonedBeforeMacro, after: resolvedClonedAfterMacro } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -521,7 +524,7 @@ describe('macro attachment filter', () => {
       clonedAttachment.annotations[CORE_ANNOTATIONS.PARENT] = [
         new ReferenceExpression(clonedMacro.elemID, clonedMacro),
       ]
-      mockDeployChange.mockImplementation(async () => ({ macro: { id: macroId } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(macroId))
       mockPost = jest.spyOn(client, 'post')
       mockPost.mockResolvedValueOnce({ status: 200 })
       const res = await filter.deploy([
@@ -535,8 +538,9 @@ describe('macro attachment filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'remove', data: { before: resolvedClonedMacro } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -553,7 +557,7 @@ describe('macro attachment filter', () => {
     it('should not deploy parent if the deployment of the child failed', async () => {
       const clonedMacro = macroInstance.clone()
       const clonedAttachment = attachmentInstance.clone()
-      mockDeployChange.mockImplementation(async () => ({ macro: { id: macroId } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(macroId))
       mockPost = jest.spyOn(client, 'post')
       mockPost.mockImplementationOnce(() => { throw new Error('err') })
       const res = await filter.deploy([

@@ -25,7 +25,8 @@ import { createCredentialsInstance, createConfigInstance } from './utils'
 import { oauthAccessTokenCredentialsType } from '../src/auth'
 
 
-const { generateTypes, getAllInstances } = elements.swagger
+const { generateTypes } = elements.swagger
+const { getAllElements } = elements
 
 jest.mock('@salto-io/adapter-components', () => {
   const actual = jest.requireActual('@salto-io/adapter-components')
@@ -39,10 +40,10 @@ jest.mock('@salto-io/adapter-components', () => {
     },
     elements: {
       ...actual.elements,
+      getAllElements: jest.fn().mockImplementation(() => { throw new Error('getAllElements called without a mock') }),
       swagger: {
         flattenAdditionalProperties: actual.elements.swagger.flattenAdditionalProperties,
         generateTypes: jest.fn().mockImplementation(() => { throw new Error('generateTypes called without a mock') }),
-        getAllInstances: jest.fn().mockImplementation(() => { throw new Error('getAllInstances called without a mock') }),
         addDeploymentAnnotations: jest.fn(),
       },
     },
@@ -99,8 +100,8 @@ describe('Okta adapter', () => {
           allTypes: { OktaTest: oktaTestType },
           parsedConfigs: { OktaTest: { request: { url: 'okta' } } },
         });
-      (getAllInstances as jest.MockedFunction<typeof getAllInstances>)
-        .mockResolvedValue({ elements: [testInstance] })
+      (getAllElements as jest.MockedFunction<typeof getAllElements>)
+        .mockResolvedValue({ elements: [oktaTestType, testInstance] })
       mockAxiosAdapter = new MockAdapter(axios)
       // mock as there are gets of users during fetch
       mockAxiosAdapter.onGet().reply(200, { })

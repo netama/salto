@@ -32,7 +32,6 @@ import {
   GUIDE_SUPPORTED_TYPES,
   DEPLOY_CONFIG,
 } from './config'
-import ZendeskClient from './client/client'
 import { createConnection, instanceUrl } from './client/connection'
 import { configCreator } from './config_creator'
 import { customReferenceHandlers } from './custom_references'
@@ -133,24 +132,19 @@ const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined):
 
 export const adapter: Adapter = {
   operations: context => {
-    // This can be removed once all the workspaces configs were migrated
-    const updatedConfig = configUtils.configMigrations.migrateDeprecatedIncludeList(
-      // Creating new instance is required because the type is not resolved in context.config
-      new InstanceElement(
-        ElemID.CONFIG_NAME,
-        configType,
-        context.config?.value
-      ),
-      DEFAULT_CONFIG,
-    )
-    const config = adapterConfigFromConfig(updatedConfig?.config[0] ?? context.config)
+    const config = adapterConfigFromConfig(new InstanceElement(
+      ElemID.CONFIG_NAME,
+      configType,
+      context.config?.value
+    ) ?? context.config)
     const credentials = credentialsFromConfig(context.credentials)
     const adapterOperations = new ZendeskAdapter({
-      client: new ZendeskClient({
-        credentials,
-        config: config[CLIENT_CONFIG],
-        allowOrganizationNames: config[FETCH_CONFIG].resolveOrganizationIDs,
-      }),
+      // TODON no need to pass in - it can create its own inside
+      // client: new ZendeskClient({
+      //   credentials,
+      //   config: config[CLIENT_CONFIG],
+      //   allowOrganizationNames: config[FETCH_CONFIG].resolveOrganizationIDs,
+      // }),
       credentials,
       config,
       getElemIdFunc: context.getElemIdFunc,
@@ -164,7 +158,7 @@ export const adapter: Adapter = {
         const fetchRes = await adapterOperations.fetch(args)
         return {
           ...fetchRes,
-          updatedConfig: fetchRes.updatedConfig ?? updatedConfig,
+          // updatedConfig: fetchRes.updatedConfig ?? updatedConfig,
         }
       },
       deployModifiers: adapterOperations.deployModifiers,

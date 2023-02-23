@@ -32,8 +32,6 @@ export type SwaggerRefs = Pick<SwaggerParser.$Refs, 'get'>
 
 export type SchemaOrReference = ReferenceObject | SchemaObject
 
-// field to use for swagger additionalProperties
-export const ADDITIONAL_PROPERTIES_FIELD = 'additionalProperties'
 export const ARRAY_ITEMS_FIELD = 'items'
 
 export const SWAGGER_OBJECT = 'object'

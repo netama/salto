@@ -16,15 +16,20 @@
 import * as ducktype from './ducktype'
 import * as swagger from './swagger'
 import * as soap from './soap'
-import * as query from './query'
-import { computeGetArgs, simpleGetArgs, createUrl, replaceUrlParams } from './request_parameters'
+import * as query from '../fetch/query'
+import { computeGetArgs, simpleGetArgs, createUrl, replaceUrlParams } from '../fetch/resource/request_parameters'
 import { RECORDS_PATH, TYPES_PATH, SUBTYPES_PATH, SETTINGS_NESTED_PATH } from './constants'
 import { findDataField, returnFullEntry, FindNestedFieldFunc } from './field_finder'
 import { filterTypes } from './type_elements'
-import { getInstanceName, generateInstanceNameFromConfig, createServiceIds, removeNullValues, toBasicInstance, removeNullValuesTransformFunc } from './instance_elements'
+import { getInstanceName, generateInstanceNameFromConfig, removeNullValues, removeNullValuesTransformFunc, toBasicInstance } from './instance_elements'
 import { FetchElements } from './element_getter'
+import { findUnresolvedArgs } from '../config/request' // TODON move / replace
+import { createServiceIDs as createServiceIds } from '../fetch/element/id_utils' // TODON move / replace
+
+const { getAllElements } = ducktype
 
 export {
+  getAllElements,
   ducktype,
   swagger,
   soap,
@@ -42,4 +47,5 @@ export {
   query,
   FetchElements,
   toBasicInstance,
+  findUnresolvedArgs,
 }

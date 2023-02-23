@@ -26,7 +26,7 @@ import { logger } from '@salto-io/logging'
 import { detailedCompare } from '@salto-io/adapter-utils'
 import { FilterCreator } from '../filter'
 import { FETCH_CONFIG, isGuideEnabled } from '../config'
-import { GUIDE_LANGUAGE_SETTINGS_TYPE_NAME, GUIDE_SETTINGS_TYPE_NAME } from '../constants'
+import { DEFAULT_LOCALE, GUIDE_LANGUAGE_SETTINGS_TYPE_NAME, GUIDE_SETTINGS_TYPE_NAME } from '../constants'
 import { getZendeskError } from '../errors'
 import { deployChange, deployChanges } from '../deployment'
 import { getBrandsForGuide } from './utils'
@@ -36,15 +36,16 @@ const { awu } = collections.asynciterable
 const { isDefined } = lowerDashValues
 
 export const DEFAULT_LOCALE_API = '/hc/api/internal/default_locale'
-const DEFAULT_LOCALE = 'default_locale'
 
 /**
  On fetch - Add 'default_locale' field for guide_settings from an url request
  On deploy - send and api request to update the default language if it was changed
  */
-const filterCreator: FilterCreator = ({ config, client, brandIdToClient = {} }) => ({
+const filterCreator: FilterCreator = ({ config, client,
+  brandIdToClient = () => undefined /* TODON */ }) => ({
   name: 'guideDefaultLanguage',
   onFetch: async elements => {
+    // TODON move to a separate list of filters / conditions on the filter list (if intertwined and order matters)?
     if (!isGuideEnabled(config[FETCH_CONFIG])) {
       return
     }
@@ -58,10 +59,10 @@ const filterCreator: FilterCreator = ({ config, client, brandIdToClient = {} }) 
     const brandsLanguageInfo = await awu(brands).map(async brand => {
       const brandId = brand.value.id
       try {
-        const res = await brandIdToClient[brandId].getSinglePage({ url: DEFAULT_LOCALE_API })
+        const res = await brandIdToClient(brandId)?.getSinglePage({ url: DEFAULT_LOCALE_API })
         return {
           brandName: brand.elemID.name,
-          defaultLocale: res.data.toString(),
+          defaultLocale: res?.data.toString(),
           settings: guideSettings.find(settings => settings.value.brand === brandId),
           languageSettings: guideLanguageSettings.filter(settings => settings.value.brand === brandId),
         }
@@ -100,8 +101,15 @@ const filterCreator: FilterCreator = ({ config, client, brandIdToClient = {} }) 
 
       if (defaultChanged) {
         try {
+          // two endpoints / customization for specific field (1st is more generic?
+          // if we can pick / omit with a pipeline)
           await client.put({
             url: DEFAULT_LOCALE_API,
+            // another case of picking a value (and deploying as another field name?) - but for a special url
+            // can view this as an additional deploy step, or as a reversible conversion from fetch
+            // to deploy that puts a singleton as a field...
+            // or - just keep custom until we see more cases
+            // alternative: routing a specific field (or set of fields) to another endpoint?
             data: { locale: getChangeData(change).value[DEFAULT_LOCALE] },
           })
 
@@ -119,7 +127,7 @@ const filterCreator: FilterCreator = ({ config, client, brandIdToClient = {} }) 
       return deployChanges(
         [change],
         // Deploying with the default_locale field does nothing, but we ignore it for safety
-        async c => { await deployChange(c, client, config.apiDefinitions, [DEFAULT_LOCALE]) }
+        async c => { await deployChange(c, client, config.apiDefinitions) } // TODON does nothing, keeping for above
       )
     }).toArray()
 

@@ -13,14 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ElemID, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
-import { createMatchingObjectType } from '@salto-io/adapter-utils'
-import { client as clientUtils, config as configUtils, elements } from '@salto-io/adapter-components'
-import _ from 'lodash'
-import { STRIPE } from './constants'
-
-const { createClientConfigType } = clientUtils
-const { createUserFetchConfigType, createSwaggerAdapterApiConfigType } = configUtils
+import { config as configUtils, elements } from '@salto-io/adapter-components'
+import { Config } from '@salto-io/adapter-creator'
 
 const DEFAULT_ID_FIELDS = ['id']
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
@@ -28,22 +22,6 @@ export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'created', fieldType: 'number' },
   { fieldName: 'updated', fieldType: 'number' },
 ]
-
-export const CLIENT_CONFIG = 'client'
-export const FETCH_CONFIG = 'fetch'
-
-export const API_DEFINITIONS_CONFIG = 'apiDefinitions'
-
-export type StripeClientConfig = clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig>
-
-export type StripeFetchConfig = configUtils.UserFetchConfig
-export type StripeApiConfig = configUtils.AdapterSwaggerApiConfig
-
-export type StripeConfig = {
-  [CLIENT_CONFIG]?: StripeClientConfig
-  [FETCH_CONFIG]: StripeFetchConfig
-  [API_DEFINITIONS_CONFIG]: StripeApiConfig
-}
 
 export const ALL_SUPPORTED_TYPES = {
   country_spec: ['country_specs'],
@@ -54,7 +32,7 @@ export const ALL_SUPPORTED_TYPES = {
   webhook_endpoint: ['webhook_endpoints'],
 }
 
-const DEFAULT_TYPE_CUSTOMIZATIONS: StripeApiConfig['types'] = {
+const DEFAULT_TYPE_CUSTOMIZATIONS: configUtils.AdapterApiConfig['types'] = {
   coupon: {
     transformation: {
       idFields: ['name', 'duration', 'id'],
@@ -104,61 +82,49 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: StripeApiConfig['types'] = {
   },
 }
 
-export const DEFAULT_API_DEFINITIONS: StripeApiConfig = {
-  swagger: {
-    url: 'https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.yaml',
-    typeNameOverrides: [
-      { originalName: 'v1__country_specs', newName: 'country_specs' },
-      { originalName: 'v1__coupons', newName: 'coupons' },
-      { originalName: 'v1__prices', newName: 'prices' },
-      { originalName: 'v1__products', newName: 'products' },
-      { originalName: 'v1__reporting__report_types', newName: 'reporting__report_types' },
-      { originalName: 'v1__tax_rates', newName: 'tax_rates' },
-      { originalName: 'v1__webhook_endpoints', newName: 'webhook_endpoints' },
-    ],
-  },
-  typeDefaults: {
-    transformation: {
-      idFields: DEFAULT_ID_FIELDS,
-      fieldsToOmit: FIELDS_TO_OMIT,
-      // TODO: change this to true for SALTO-3885.
-      nestStandaloneInstances: false,
-    },
-  },
-  types: DEFAULT_TYPE_CUSTOMIZATIONS,
-  supportedTypes: ALL_SUPPORTED_TYPES,
-}
-
-export const DEFAULT_CONFIG: StripeConfig = {
-  [FETCH_CONFIG]: {
+export const DEFAULT_CONFIG: Config = {
+  client: {}, // TODON
+  fetch: {
     ...elements.query.INCLUDE_ALL_CONFIG,
     hideTypes: true,
   },
-  [API_DEFINITIONS_CONFIG]: DEFAULT_API_DEFINITIONS,
-}
-
-export const configType = createMatchingObjectType<Partial<StripeConfig>>({
-  elemID: new ElemID(STRIPE),
-  fields: {
-    [CLIENT_CONFIG]: {
-      refType: createClientConfigType(STRIPE),
+  apiComponents: {
+    sources: {
+      swagger: [
+        {
+          url: 'https://raw.githubusercontent.com/stripe/openapi/master/openapi/spec3.yaml',
+          typeNameOverrides: [
+            { originalName: 'v1__country_specs', newName: 'country_specs' },
+            { originalName: 'v1__coupons', newName: 'coupons' },
+            { originalName: 'v1__prices', newName: 'prices' },
+            { originalName: 'v1__products', newName: 'products' },
+            { originalName: 'v1__reporting__report_types', newName: 'reporting__report_types' },
+            { originalName: 'v1__tax_rates', newName: 'tax_rates' },
+            { originalName: 'v1__webhook_endpoints', newName: 'webhook_endpoints' },
+          ],
+        },
+      ],
     },
-    [FETCH_CONFIG]: {
-      refType: createUserFetchConfigType(STRIPE),
-    },
-    [API_DEFINITIONS_CONFIG]: {
-      refType: createSwaggerAdapterApiConfigType({
-        adapter: STRIPE,
-      }),
+    definitions: {
+      typeDefaults: {
+        transformation: {
+          idFields: DEFAULT_ID_FIELDS,
+          fieldsToOmit: FIELDS_TO_OMIT,
+          // TODO: change this to true for SALTO-3885.
+          nestStandaloneInstances: false,
+        },
+      },
+      types: DEFAULT_TYPE_CUSTOMIZATIONS,
+      supportedTypes: ALL_SUPPORTED_TYPES,
     },
   },
-  annotations: {
-    [CORE_ANNOTATIONS.DEFAULT]: _.omit(DEFAULT_CONFIG, API_DEFINITIONS_CONFIG, `${FETCH_CONFIG}.hideTypes`),
-    [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
+  references: {
+    rules: [
+      {
+        src: { field: 'product', parentTypes: ['plan', 'price'] },
+        serializationStrategy: 'id',
+        target: { type: 'product' },
+      },
+    ],
   },
-})
-
-export type FilterContext = {
-  [FETCH_CONFIG]: StripeFetchConfig
-  [API_DEFINITIONS_CONFIG]: StripeApiConfig
 }

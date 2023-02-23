@@ -13,13 +13,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { client as clientUtils } from '@salto-io/adapter-components'
+import { client as clientUtils, fetch as fetchUtils } from '@salto-io/adapter-components'
+
+// TODON remove - no longer needed, keeping for build
 
 const { getWithCursorPagination } = clientUtils
 
-const pathChecker: clientUtils.PathCheckerFunc = (current, next) => (
+// TODON move?
+export const pathChecker: fetchUtils.request.pagination.PathCheckerFunc = (current, next) => (
   next === `${current}.json` || next === `${current}`
 )
 export const paginate: clientUtils.PaginationFuncCreator = () => (
-  getWithCursorPagination(pathChecker)
+  getWithCursorPagination(pathChecker, 'next_page') // TODON remove (added the extra arg)
 )

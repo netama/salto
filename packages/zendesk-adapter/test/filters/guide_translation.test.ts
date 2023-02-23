@@ -23,7 +23,7 @@ import {
 } from '@salto-io/adapter-api'
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
 import filterCreator from '../../src/filters/guide_translation'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../utils'
 import {
   ARTICLE_TRANSLATION_TYPE_NAME,
   ARTICLE_TYPE_NAME,
@@ -39,7 +39,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -145,7 +145,7 @@ describe('guide translation filter', () => {
 
   describe('deploy', () => {
     it('should deploy added default article translation as modification', async () => {
-      mockDeployChange.mockImplementation(async () => ({ translation: { id: 3 } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(3))
       const res = await filter.deploy([
         { action: 'add', data: { after: heArticleTranslationInstance } },
       ])
@@ -153,7 +153,9 @@ describe('guide translation filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: heArticleTranslationInstance, after: heArticleTranslationInstance } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -162,7 +164,7 @@ describe('guide translation filter', () => {
         .toEqual([{ action: 'add', data: { after: heArticleTranslationInstance } }])
     })
     it('should not deploy added default article translation if there is an error', async () => {
-      mockDeployChange.mockImplementation(async () => { throw new Error('err') })
+      mockDeployChange.mockImplementationOnce(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([
         { action: 'add', data: { after: heArticleTranslationInstance } },
       ])
@@ -170,7 +172,9 @@ describe('guide translation filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: heArticleTranslationInstance, after: heArticleTranslationInstance } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)

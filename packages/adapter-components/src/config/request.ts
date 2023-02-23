@@ -16,11 +16,10 @@
 import { ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, MapType, ListType, ActionName, createRestriction } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
-import { collections } from '@salto-io/lowerdash'
+import { collections, types } from '@salto-io/lowerdash'
+import { ARG_PLACEHOLDER_MATCHER } from '../fetch/utils'
 
 const { findDuplicates } = collections.array
-
-export const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
 
 export const getConfigTypeName = (prefix: string, typeName: string): string =>
   (_.isEmpty(prefix) ? typeName : prefix.concat('_', typeName))
@@ -54,7 +53,7 @@ type RecurseIntoContext = {
   fromField: string
 }
 
-type RecurseIntoConfig = {
+export type RecurseIntoConfig = {
   toField: string
   type: string
   isSingle?: boolean
@@ -66,6 +65,8 @@ type RecurseIntoConfig = {
 type BaseRequestConfig = {
   url: string
   queryParams?: Record<string, string>
+  // default 'get', TODON add warning for non-get fetch
+  method?: 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head'
 }
 
 export type FetchRequestConfig = BaseRequestConfig & {
@@ -73,19 +74,27 @@ export type FetchRequestConfig = BaseRequestConfig & {
   dependsOn?: DependsOnConfig[]
   recurseInto?: RecurseIntoConfig[]
   paginationField?: string
+  pagination?: { // TODON better typing + params, convert params to list so easier to override?
+    strategy: string
+    params: Record<string, string>
+  }
 }
 
 export type UrlParams = Record<string, string>
 
-export type DeployRequestConfig = BaseRequestConfig & {
+export type DeployRequestConfig = types.PickyRequired<BaseRequestConfig, 'method'> & {
   urlParamsToFields?: UrlParams
   deployAsField?: string
-  method: 'post' | 'put' | 'delete' | 'patch'
   fieldsToIgnore?: string[]
   omitRequestBody?: boolean
+  // TODON generalize and use as context for next request?
+  // TODON maybe need functions as well?
+  responseFieldsToExtract?: string[]
 }
 
-export type DeploymentRequestsByAction<A extends string = ActionName> = Partial<Record<A, DeployRequestConfig>>
+// TODON finish converting to array
+export type DeploymentRequestsByAction<A extends string = ActionName> = Partial<
+  Record<A, DeployRequestConfig>> // | DeployRequestConfig[]>>
 
 export type FetchRequestDefaultConfig = Partial<Omit<FetchRequestConfig, 'url'>>
 
@@ -324,7 +333,8 @@ export const createRequestConfigs = ({
   }
 }
 
-const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string>): string[] => {
+// TODON move
+export const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string> = new Set()): string[] => {
   const urlParams = url.match(ARG_PLACEHOLDER_MATCHER)?.map(m => m.slice(1, -1)) ?? []
   return urlParams.filter(p => !dependsOnArgs.has(p))
 }

@@ -26,7 +26,7 @@ import { logger } from '@salto-io/logging'
 import FormData from 'form-data'
 import { collections } from '@salto-io/lowerdash'
 import ZendeskClient from '../client/client'
-import { BRAND_LOGO_TYPE_NAME, BRAND_TYPE_NAME, ZENDESK } from '../constants'
+import { BRAND_LOGO_TYPE_NAME, BRAND_TYPE_NAME, LOGO_FIELD, ZENDESK } from '../constants'
 import { getZendeskError } from '../errors'
 import { FilterCreator } from '../filter'
 
@@ -34,8 +34,6 @@ const log = logger(module)
 const { awu } = collections.asynciterable
 
 const { RECORDS_PATH, SUBTYPES_PATH, TYPES_PATH } = elementsUtils
-
-export const LOGO_FIELD = 'logo'
 
 const RESULT_MAXIMUM_OUTPUT_SIZE = 100
 const NUMBER_OF_DEPLOY_RETRIES = 5
@@ -230,6 +228,7 @@ const filterCreator: FilterCreator = ({ client }) => ({
           && isStaticFile(logoInstance.value.content)
           ? await logoInstance.value.content.getContent()
           : undefined
+        // TODON can generalize? (with some customizations in the form potentially)
         const deployResult = await deployBrandLogo(client, logoInstance, fileContent)
         return deployResult === undefined ? change : deployResult
       })

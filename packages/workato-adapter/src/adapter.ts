@@ -39,7 +39,7 @@ const { createPaginator } = clientUtils
 const { returnFullEntry, simpleGetArgs } = elementUtils
 const { getAllElements } = elementUtils.ducktype
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   addRootFolderFilter,
   jiraProjectIssueTypeFilter,
   // fieldReferencesFilter should run after all element manipulations are done
@@ -103,13 +103,15 @@ export default class WorkatoAdapter implements AdapterOperations {
   private async getElements(): Promise<ReturnType<typeof getAllElements>> {
     return getAllElements({
       adapterName: WORKATO,
-      types: this.userConfig.apiDefinitions.types,
+      apiConfig: {
+        types: this.userConfig.apiDefinitions.types,
+        typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
+      },
       supportedTypes: this.userConfig.apiDefinitions.supportedTypes,
       fetchQuery: this.fetchQuery,
       paginator: this.paginator,
       nestedFieldFinder: returnFullEntry,
       computeGetArgs: simpleGetArgs,
-      typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
     })
   }

@@ -14,8 +14,7 @@
 * limitations under the License.
 */
 import { ElemID, InstanceElement, ObjectType, toChange } from '@salto-io/adapter-api'
-import { ZENDESK } from '../../src/constants'
-import { ACCOUNT_SETTING_TYPE_NAME } from '../../src/filters/account_settings'
+import { ACCOUNT_SETTING_TYPE_NAME, ZENDESK } from '../../src/constants'
 import { featureActivationValidator } from '../../src/change_validators'
 
 describe('featureActivationValidator', () => {

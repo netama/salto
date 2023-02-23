@@ -36,10 +36,8 @@ describe('userSchemaFilter', () => {
       id: 123,
       name: 'A',
       _links: {
-        additionalProperties: {
-          schema: {
-            href: 'https://okta.com/api/v1/meta/schemas/user/A123',
-          },
+        schema: { // TODON related to another fix, don't merge without it
+          href: 'https://okta.com/api/v1/meta/schemas/user/A123',
         },
       },
       default: false,
@@ -52,10 +50,8 @@ describe('userSchemaFilter', () => {
       id: 234,
       name: 'B',
       _links: {
-        additionalProperties: {
-          schema: {
-            href: 'https://okta.com/api/v1/meta/schemas/user/B123',
-          },
+        schema: { // TODON related to another fix, don't merge without it
+          href: 'https://okta.com/api/v1/meta/schemas/user/B123',
         },
       },
       default: false,
@@ -68,10 +64,8 @@ describe('userSchemaFilter', () => {
       id: 345,
       name: 'C',
       _links: {
-        additionalProperties: {
-          schema: {
-            href: 'https://okta.com/api/v1/meta/schemas/user/C123',
-          },
+        schema: { // TODON related to another fix, don't merge without it
+          href: 'https://okta.com/api/v1/meta/schemas/user/C123',
         },
       },
       default: true,

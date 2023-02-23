@@ -44,6 +44,7 @@ const isOptionsTypeInstance = (instance: InstanceElement):
   return false
 }
 
+// TODON example - if we can also _read_ the swagger at this point this can be really good
 export const getConfig = async (
   options?: InstanceElement
 ): Promise<InstanceElement> => {

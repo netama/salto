@@ -19,10 +19,10 @@ import { ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS,
 import { types, values, collections } from '@salto-io/lowerdash'
 import { getConfigWithDefault, TypeConfig, TypeDefaultsConfig } from './shared'
 import { getConfigTypeName } from './request'
+import { NameMappingOptions } from '../definitions'
 
 const { findDuplicates } = collections.array
 
-export const DATA_FIELD_ENTIRE_OBJECT = '.'
 export const FIELD_REFERENCE_PREFIX = '&'
 
 export type StandaloneFieldConfigType = {
@@ -40,7 +40,6 @@ export type FieldTypeOverrideType = {
   fieldType: string
   restrictions?: RestrictionAnnotationType
 }
-export type NameMappingOptions = 'lowercase' | 'uppercase'
 
 export type TransformationConfig = {
   // explicitly set types for fields that are not generated correctly
@@ -73,6 +72,10 @@ export type TransformationConfig = {
   nameMapping?: NameMappingOptions
   // if provided and true, types that are standalone fields will nest their instances under parent instances folders.
   nestStandaloneInstances?: boolean
+  // TODON moved from ducktype - make sure they work
+  // types that contain a single object with dynamic keys (map type)
+  hasDynamicFields?: boolean
+  sourceTypeName?: string
 }
 
 export type TransformationDefaultConfig = types.PickyRequired<Partial<Omit<TransformationConfig, 'isSingleton'>>, 'idFields'>

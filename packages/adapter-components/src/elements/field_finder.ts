@@ -25,7 +25,8 @@ import {
 } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { collections } from '@salto-io/lowerdash'
-import { FieldToOmitType, DATA_FIELD_ENTIRE_OBJECT } from '../config/transformation'
+import { FieldToOmitType } from '../config/transformation'
+import { DATA_FIELD_ENTIRE_OBJECT } from '../definitions'
 
 const { awu } = collections.asynciterable
 const log = logger(module)
@@ -51,7 +52,7 @@ export const returnFullEntry: FindNestedFieldFunc = async () => undefined
  * If more than one potential field is found, or if no field matches the requirements,
  * returns undefined to signal that the full entry should be used.
  */
-export const findDataField: FindNestedFieldFunc = async (type, fieldsToIgnore, dataField) => {
+export const findDataField: FindNestedFieldFunc = async (type, fieldsToIgnore, dataField) => { // TODON avoid doing
   if (dataField === DATA_FIELD_ENTIRE_OBJECT) {
     return undefined
   }
@@ -67,6 +68,7 @@ export const findDataField: FindNestedFieldFunc = async (type, fieldsToIgnore, d
     || (isListType(fieldType) && isObjectTypeDeep(await fieldType.getInnerType()))
   )
 
+  // TODON should output config change suggestions when dataField not explicitly specified? (or just log...)
   const potentialFields = (
     dataField !== undefined && type.fields[dataField] !== undefined
       ? [type.fields[dataField]]

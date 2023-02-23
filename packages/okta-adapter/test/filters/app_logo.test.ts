@@ -67,7 +67,7 @@ describe('app logo filter', () => {
       })
     })
     it('should create AppLogo type and AppLogo instance', async () => {
-      const elements = [appType, appInstance].map(e => e.clone())
+      const elements = [appType, appLogoType, appInstance].map(e => e.clone())
       await filter.onFetch(elements)
       expect(elements.map(e => e.elemID.getFullName()).sort())
         .toEqual([
@@ -78,7 +78,7 @@ describe('app logo filter', () => {
         ])
     })
     it('check that AppLogo instance is created properly', async () => {
-      const elements = [appType, appInstance].map(e => e.clone())
+      const elements = [appType, appLogoType, appInstance].map(e => e.clone())
       await filter.onFetch(elements)
       const instances = elements.filter(isInstanceElement)
       const logo = instances.find(e => e.elemID.typeName === APP_LOGO_TYPE_NAME)
@@ -94,7 +94,7 @@ describe('app logo filter', () => {
     it('should not create AppLogo instance if file type is forbiden and should create error', async () => {
       const clonedAppInstance = appInstance.clone()
       clonedAppInstance.value[LINKS_FIELD].logo[0].type = 'image/svg+xml'
-      const elements = [appType, clonedAppInstance]
+      const elements = [appType, appLogoType, clonedAppInstance]
       const res = await filter.onFetch(elements) as FilterResult
       const instances = elements.filter(isInstanceElement)
       const logo = instances.find(e => e.elemID.typeName === APP_LOGO_TYPE_NAME)

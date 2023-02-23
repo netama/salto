@@ -15,13 +15,13 @@
 */
 import _ from 'lodash'
 import {
-  Change, getChangeData, InstanceElement, isAdditionChange, isModificationChange, isRemovalChange,
+  Change, getChangeData, InstanceElement, isAdditionChange, isInstanceChange, isModificationChange, isRemovalChange,
 } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { collections, values } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
 import { addIdsToChildrenUponAddition, deployChange, deployChanges, deployChangesByGroups } from '../deployment'
 import { API_DEFINITIONS_CONFIG } from '../config'
-import { applyforInstanceChangesOfType } from './utils'
 import { DYNAMIC_CONTENT_ITEM_TYPE_NAME } from '../constants'
 
 export const VARIANTS_FIELD_NAME = 'variants'
@@ -31,36 +31,36 @@ const { makeArray } = collections.array
 
 const filterCreator: FilterCreator = ({ config, client }) => ({
   name: 'dynamicContentFilter',
-  preDeploy: async (changes: Change<InstanceElement>[]) => {
+  preDeploy: async changes => {
     const localeIdToVariant = Object.fromEntries(changes
+      .filter(isInstanceChange)
       .filter(
         change => getChangeData(change).elemID.typeName === DYNAMIC_CONTENT_ITEM_VARIANT_TYPE_NAME
       )
       .map(getChangeData)
       .map(variant => [variant.value.locale_id, variant.value]))
-    await applyforInstanceChangesOfType(
-      changes.filter(isAdditionChange),
-      [DYNAMIC_CONTENT_ITEM_TYPE_NAME],
-      (instance: InstanceElement) => {
+    await applyInPlaceforInstanceChangesOfType({
+      changes,
+      changeGuard: isAdditionChange,
+      typeNames: [DYNAMIC_CONTENT_ITEM_TYPE_NAME],
+      func: (instance: InstanceElement) => {
+        // TODON another diff logic? with some customizations - ignoring order diffs?
         instance.value[VARIANTS_FIELD_NAME] = makeArray(instance.value[VARIANTS_FIELD_NAME])
           .map(variant => localeIdToVariant[variant])
           .filter(values.isDefined)
-        return instance
-      }
-    )
+      },
+    })
   },
-  onDeploy: async (changes: Change<InstanceElement>[]) => {
-    await applyforInstanceChangesOfType(
-      changes.filter(isAdditionChange),
-      [DYNAMIC_CONTENT_ITEM_TYPE_NAME],
-      (instance: InstanceElement) => {
-        instance.value[VARIANTS_FIELD_NAME] = makeArray(instance.value[VARIANTS_FIELD_NAME])
-          .map(variant => variant.locale_id)
-          .filter(values.isDefined)
-        return instance
-      }
-    )
-  },
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    changeGuard: isAdditionChange,
+    typeNames: [DYNAMIC_CONTENT_ITEM_TYPE_NAME],
+    func: (instance: InstanceElement) => { // reverse (up to converting to array? but probably ok)
+      instance.value[VARIANTS_FIELD_NAME] = makeArray(instance.value[VARIANTS_FIELD_NAME])
+        .map(variant => variant.locale_id)
+        .filter(values.isDefined)
+    },
+  }),
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [relevantChanges, leftoverChanges] = _.partition(
       changes,
@@ -73,7 +73,7 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
     )
     if (itemChanges.length === 0 || itemChanges.every(isModificationChange)) {
       // The service does not allow us to have an item with no variant - therefore, we need to do
-      //  the removal changes last
+      //  the removal changes last // TODON make addition-before-removal a pattern / config choice?
       const [removalChanges, nonRemovalChanges] = _.partition(relevantChanges, isRemovalChange)
       const deployResult = await deployChangesByGroups(
         [nonRemovalChanges, removalChanges] as Change<InstanceElement>[][],

@@ -19,9 +19,9 @@ import {
   Element, ElemID,
   getChangeData,
   InstanceElement,
-  isInstanceChange,
   isInstanceElement, ObjectType,
 } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { elements as elementsUtils } from '@salto-io/adapter-components'
 import { logger } from '@salto-io/logging'
@@ -42,8 +42,8 @@ const log = logger(module)
  * since end_user_label and agent_label must be in deploy and only the raw fields appear in the nacl, the values of the
  * non-raw fields need to be updated to have the same value of the raw fields.
  */
-const alignNonRawWithRaw = (change: Change<InstanceElement>): void => {
-  const { value } = getChangeData(change)
+const alignNonRawWithRaw = (inst: InstanceElement): void => {
+  const { value } = inst
   value.end_user_label = value.raw_end_user_label
   value.agent_label = value.raw_agent_label
   value.description = value.raw_description
@@ -95,12 +95,12 @@ const filterCreator: FilterCreator = ({ client, config }) => ({
     )
     elements.push(defaultCustomStatusesType, defaultCustomStatusesInstance)
   },
-  preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(change => getChangeData(change).elemID.typeName === CUSTOM_STATUS_TYPE_NAME)
-      .filter(isInstanceChange)
-      .forEach(alignNonRawWithRaw)
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON missing onDeploy for this one?
+    changes,
+    typeNames: [CUSTOM_STATUS_TYPE_NAME],
+    // copy / move fields (in this case copy) - TODON aggregate as one pre-deploy filter for all of these?
+    func: alignNonRawWithRaw,
+  }),
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [customStatusChanges, firstLeftoverChanges] = _.partition(
       changes,

@@ -94,6 +94,8 @@ const adapterConfigFromConfig = (
   return fullConfig
 }
 
+// TODON the part that needs to be exported - turn into a function and have the rest hard-coded???
+// but import each on its own
 export const adapter: Adapter = {
   operations: context => {
     const isDataCenter = Boolean(context.credentials.value.isDataCenter)

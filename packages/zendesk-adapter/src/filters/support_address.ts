@@ -14,12 +14,8 @@
 * limitations under the License.
 */
 import {
-  Change,
   Element,
-  getChangeData,
   InstanceElement,
-  isAdditionOrModificationChange,
-  isInstanceChange,
   isInstanceElement,
   isReferenceExpression, isTemplateExpression,
   ReferenceExpression,
@@ -27,7 +23,7 @@ import {
   TemplatePart,
 } from '@salto-io/adapter-api'
 import _ from 'lodash'
-import { extractTemplate } from '@salto-io/adapter-utils'
+import { applyInPlaceforInstanceChangesOfType, extractTemplate } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../filter'
 import { BRAND_TYPE_NAME, SUPPORT_ADDRESS_TYPE_NAME } from '../constants'
@@ -86,9 +82,7 @@ const turnEmailToTemplateExpression = ({
 const replaceIfReferenceExpression = (part: TemplatePart): string =>
   (isReferenceExpression(part) ? part.value : part)
 
-const templateToEmail = (change: Change<InstanceElement>, deployTemplateMapping: Record<string, TemplateExpression>)
-  : void => {
-  const inst = getChangeData(change)
+const templateToEmail = (inst: InstanceElement, deployTemplateMapping: Record<string, TemplateExpression>): void => {
   const { email } = inst.value
   deployTemplateMapping[inst.elemID.getFullName()] = email
   if (isTemplateExpression(email)) {
@@ -141,22 +135,18 @@ const filterCreator: FilterCreator = () => {
         })
       })
     },
-    preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-      changes
-        .filter(change => getChangeData(change).elemID.typeName === SUPPORT_ADDRESS_TYPE_NAME)
-        .filter(isInstanceChange)
-        .forEach(change => templateToEmail(change, deployTemplateMapping))
-    },
-    onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-      changes
-        .filter(isAdditionOrModificationChange)
-        .filter(isInstanceChange)
-        .filter(change => getChangeData(change).elemID.typeName === SUPPORT_ADDRESS_TYPE_NAME)
-        .map(getChangeData)
-        .forEach(inst => {
-          inst.value.email = deployTemplateMapping[inst.elemID.getFullName()]
-        })
-    },
+    preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+      changes,
+      typeNames: [SUPPORT_ADDRESS_TYPE_NAME],
+      func: change => templateToEmail(change, deployTemplateMapping),
+    }),
+    onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON one-way, can skip
+      changes,
+      typeNames: [SUPPORT_ADDRESS_TYPE_NAME],
+      func: inst => {
+        inst.value.email = deployTemplateMapping[inst.elemID.getFullName()]
+      },
+    }),
   })
 }
 

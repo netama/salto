@@ -15,20 +15,20 @@
 */
 
 import { collections } from '@salto-io/lowerdash'
-import { ObjectType, ElemID, BuiltinTypes, ListType, MapType, InstanceElement, ReferenceExpression } from '@salto-io/adapter-api'
+import { ObjectType, ElemID, BuiltinTypes, ListType, InstanceElement, Element, ReferenceExpression, isInstanceElement } from '@salto-io/adapter-api'
 import { mockFunction } from '@salto-io/test-utils'
-import { getAllInstances } from '../../../src/elements/swagger'
+import { getAllElements } from '../../../src/elements'
 import { returnFullEntry } from '../../../src/elements/field_finder'
 import { HTTPError, Paginator } from '../../../src/client'
-import { simpleGetArgs } from '../../../src/elements/request_parameters'
-import { createElementQuery } from '../../../src/elements/query'
+import { simpleGetArgs } from '../../../src/fetch/resource/request_parameters'
+import { createElementQuery } from '../../../src/fetch/query'
 
 const { toAsyncIterable } = collections.asynciterable
 
 const ADAPTER_NAME = 'myAdapter'
 
 describe('swagger_instance_elements', () => {
-  describe('getAllInstances', () => {
+  describe('getAllElements', () => {
     let mockPaginator: jest.MockedFunction<Paginator>
 
     const generateObjectTypes = (): Record<string, ObjectType> => {
@@ -36,9 +36,9 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'Owner'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN,
         },
       })
       const Food = new ObjectType({
@@ -55,7 +55,9 @@ describe('swagger_instance_elements', () => {
           name: { refType: BuiltinTypes.STRING },
           owners: { refType: new ListType(Owner) },
           primaryOwner: { refType: Owner },
-          additionalProperties: { refType: new MapType(Food) },
+        },
+        annotations: {
+          _additional_properties: Food,
         },
       })
       const Status = new ObjectType({
@@ -159,7 +161,8 @@ describe('swagger_instance_elements', () => {
 
     it('should return an error on 403 or 401', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -210,7 +213,8 @@ describe('swagger_instance_elements', () => {
     })
     it('should return instances corresponding to the HTTP response and the type', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -282,17 +286,13 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
           primaryOwner: { name: 'primary' },
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -300,7 +300,8 @@ describe('swagger_instance_elements', () => {
 
     it('should use the request defaults', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -359,7 +360,8 @@ describe('swagger_instance_elements', () => {
 
     it('should not extract standalone fields', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -433,7 +435,8 @@ describe('swagger_instance_elements', () => {
     })
     it('should extract standalone fields', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -518,10 +521,8 @@ describe('swagger_instance_elements', () => {
         objectTypes.Owner,
         {
           name: 'o1',
-          additionalProperties: {
-            bla: 'BLA',
-            x: { nested: 'value' },
-          },
+          bla: 'BLA',
+          x: { nested: 'value' },
         },
         // path has no effect on equality
         [],
@@ -555,10 +556,8 @@ describe('swagger_instance_elements', () => {
             new ReferenceExpression(dogO1Inst.elemID),
           ],
           primaryOwner: new ReferenceExpression(primaryOInst.elemID),
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         // path has no effect on equality
         [],
@@ -567,7 +566,8 @@ describe('swagger_instance_elements', () => {
 
     it('should not extract standalone fields that are not object types or lists of object types', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -593,7 +593,7 @@ describe('swagger_instance_elements', () => {
               },
               transformation: {
                 standaloneFields: [
-                  { fieldName: 'additionalProperties' },
+                  { fieldName: 'additionalProperties' }, // TODON? check what should happen
                   { fieldName: 'name' },
                 ],
               },
@@ -626,7 +626,8 @@ describe('swagger_instance_elements', () => {
 
     it('should omit fieldsToOmit from instances', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -696,16 +697,12 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -713,7 +710,8 @@ describe('swagger_instance_elements', () => {
 
     it('should return nested instances when nestedFieldFinder returns a specific field\'s details', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -781,10 +779,8 @@ describe('swagger_instance_elements', () => {
         objectTypes.Owner,
         {
           name: 'o1',
-          additionalProperties: {
-            bla: 'BLA',
-            x: { nested: 'value' },
-          },
+          bla: 'BLA',
+          x: { nested: 'value' },
         },
         [ADAPTER_NAME, 'Records', 'Owner', 'o1'],
       ))).toBeTruthy()
@@ -792,7 +788,8 @@ describe('swagger_instance_elements', () => {
 
     it('should fail gracefully if data field is not an object type', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -882,7 +879,8 @@ describe('swagger_instance_elements', () => {
           },
         ].flatMap(extractPageEntries)
       })
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -932,17 +930,13 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
           primaryOwner: { name: 'primary' },
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -953,17 +947,15 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'CustomObjectDefinition'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN, // TODON just true?
         },
       })
       const CustomObjectDefinitionMapping = new ObjectType({
         elemID: new ElemID(ADAPTER_NAME, 'CustomObjectDefinitionMapping'),
-        fields: {
-          additionalProperties: {
-            refType: new MapType(CustomObjectDefinition),
-          },
+        annotations: {
+          _additional_properties: CustomObjectDefinition,
         },
       })
       const AllCustomObjects = new ObjectType({
@@ -1003,7 +995,8 @@ describe('swagger_instance_elements', () => {
           },
         ].flatMap(extractPageEntries)
       })
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1049,9 +1042,7 @@ describe('swagger_instance_elements', () => {
         objectTypes.CustomObjectDefinition,
         {
           name: 'Pet',
-          additionalProperties: {
-            something: 'else',
-          },
+          something: 'else',
         },
         [ADAPTER_NAME, 'CustomObjectDefinition', 'Owner', 'Pet'],
       ))).toBeTruthy()
@@ -1075,7 +1066,8 @@ describe('swagger_instance_elements', () => {
           }
         }
       )
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1119,10 +1111,8 @@ describe('swagger_instance_elements', () => {
           primaryOwner: [
             {
               name: 'o3',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
         },
@@ -1146,7 +1136,8 @@ describe('swagger_instance_elements', () => {
           }
         }
       )
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1189,10 +1180,8 @@ describe('swagger_instance_elements', () => {
           name: 'def',
           owners: {
             name: 'o3',
-            additionalProperties: {
-              bla: 'BLA',
-              x: { nested: 'value' },
-            },
+            bla: 'BLA',
+            x: { nested: 'value' },
           },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'mouse'],
@@ -1200,8 +1189,8 @@ describe('swagger_instance_elements', () => {
     })
 
     describe('with types that require recursing', () => {
-      let instances: InstanceElement[]
-      let getAllInstancesParams: Parameters<typeof getAllInstances>[0]
+      let elements: Element[]
+      let getAllElementsParams: Parameters<typeof getAllElements>[0]
       beforeEach(async () => {
         mockPaginator.mockImplementation(({ url }) => {
           if (url === '/pet') {
@@ -1231,7 +1220,8 @@ describe('swagger_instance_elements', () => {
 
         const objectTypes = generateObjectTypes()
 
-        getAllInstancesParams = {
+        getAllElementsParams = {
+          adapterName: 'salto',
           paginator: mockPaginator,
           apiConfig: {
             typeDefaults: {
@@ -1314,7 +1304,7 @@ describe('swagger_instance_elements', () => {
           },
         }
 
-        instances = (await getAllInstances(getAllInstancesParams)).elements
+        elements = (await getAllElements(getAllElementsParams)).elements
       })
       it('should get inner types recursively for instances that match the condition', () => {
         expect(mockPaginator).toHaveBeenCalledWith(expect.objectContaining({ url: '/pet/dog/owner' }), expect.anything())
@@ -1334,6 +1324,7 @@ describe('swagger_instance_elements', () => {
         )
       })
       it('should return nested value list in the instance when isSingle is falsy and single item when isSingle=true', () => {
+        const instances = elements.filter(isInstanceElement)
         expect(instances).toHaveLength(3)
         const [dog, cat, fish] = instances
         expect(dog.value).toHaveProperty(
@@ -1341,17 +1332,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1359,8 +1346,8 @@ describe('swagger_instance_elements', () => {
         expect(fish.value).toHaveProperty(
           'owners',
           [
-            { name: 'o1', additionalProperties: { info: { numOfPets: 2 } } },
-            { name: 'o2', additionalProperties: { info: { numOfPets: 2 } } },
+            { name: 'o1', info: { numOfPets: 2 } },
+            { name: 'o2', info: { numOfPets: 2 } },
           ]
         )
       })
@@ -1395,8 +1382,8 @@ describe('swagger_instance_elements', () => {
           return toAsyncIterable([[]])
         })
 
-        instances = (await getAllInstances(getAllInstancesParams)).elements
-
+        elements = (await getAllElements(getAllElementsParams)).elements
+        const instances = elements.filter(isInstanceElement)
         expect(instances).toHaveLength(2)
         const [dog, cat] = instances
         expect(dog.value).toHaveProperty(
@@ -1404,17 +1391,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1422,8 +1405,8 @@ describe('swagger_instance_elements', () => {
       })
 
       it('should return instances if failed to get their inner values and skipOnError is true', async () => {
-        if (getAllInstancesParams.apiConfig.types.Pet.request?.recurseInto?.[0] !== undefined) {
-          getAllInstancesParams.apiConfig.types.Pet.request.recurseInto[0].skipOnError = true
+        if (getAllElementsParams.apiConfig.types.Pet.request?.recurseInto?.[0] !== undefined) {
+          getAllElementsParams.apiConfig.types.Pet.request.recurseInto[0].skipOnError = true
         }
 
         mockPaginator.mockImplementation(({ url }) => {
@@ -1455,8 +1438,8 @@ describe('swagger_instance_elements', () => {
           return toAsyncIterable([[]])
         })
 
-        instances = (await getAllInstances(getAllInstancesParams)).elements
-
+        elements = (await getAllElements(getAllElementsParams)).elements
+        const instances = elements.filter(isInstanceElement)
         expect(instances).toHaveLength(3)
         const [dog, cat, fish] = instances
         expect(dog.value).toHaveProperty(
@@ -1464,17 +1447,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1485,7 +1464,8 @@ describe('swagger_instance_elements', () => {
 
     it('should fail if type is missing from config', async () => {
       const objectTypes = generateObjectTypes()
-      await expect(() => getAllInstances({
+      await expect(() => getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1512,7 +1492,8 @@ describe('swagger_instance_elements', () => {
     })
     it('should fail if type is missing from object types', async () => {
       const objectTypes = generateObjectTypes()
-      await expect(() => getAllInstances({
+      await expect(() => getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1539,7 +1520,8 @@ describe('swagger_instance_elements', () => {
     })
     it('should fail if type does not have request details', async () => {
       const objectTypes = generateObjectTypes()
-      await expect(() => getAllInstances({
+      await expect(() => getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1567,7 +1549,8 @@ describe('swagger_instance_elements', () => {
 
     it('should convert name and filename if nameMapping exists', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1637,9 +1620,9 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'Owner'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN, // TODON just true?
         },
         isSettings: true,
       })
@@ -1687,7 +1670,8 @@ describe('swagger_instance_elements', () => {
 
     it('should have the correct instance name as a singleton types', async () => {
       const objectTypes = generateObjectTypes()
-      const res = await getAllInstances({
+      const res = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1734,7 +1718,8 @@ describe('swagger_instance_elements', () => {
     })
     it('should return fetch error if singleton type have more than one instance', async () => {
       const objectTypes = generateObjectTypes()
-      const result = await getAllInstances({
+      const result = await getAllElements({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {

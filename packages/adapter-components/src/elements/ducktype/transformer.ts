@@ -14,24 +14,25 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { Element, InstanceElement, isObjectType, Values, ObjectType, ElemIdGetter, SaltoError } from '@salto-io/adapter-api'
+import { Element, InstanceElement, isObjectType, Values, ObjectType, ElemIdGetter, SaltoError, isType, isInstanceElement } from '@salto-io/adapter-api'
 import { naclCase } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { Paginator, ResponseValue, ClientGetWithPaginationParams } from '../../client'
 import { generateType } from './type_elements'
 import { toInstance } from './instance_elements'
-import { TypeConfig, getConfigWithDefault, getTransformationConfigByType } from '../../config'
-import { FindNestedFieldFunc } from '../field_finder'
+import { getConfigWithDefault, getTransformationConfigByType } from '../../config'
+import { FindNestedFieldFunc, findDataField } from '../field_finder'
 import { TypeDuckTypeDefaultsConfig, TypeDuckTypeConfig, DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig } from '../../config/ducktype'
-import { ComputeGetArgsFunc } from '../request_parameters'
+import { computeGetArgs as defaultComputeGetArgs, ComputeGetArgsFunc, MissingContextError } from '../../fetch/resource/request_parameters'
 import { FetchElements, getElementsWithContext } from '../element_getter'
 import { extractStandaloneFields } from './standalone_field_extractor'
 import { shouldRecurseIntoEntry } from '../instance_elements'
 import { addRemainingTypes } from './add_remaining_types'
-import { ElementQuery } from '../query'
-import { AdapterFetchError, InvalidSingletonType } from '../../config/shared'
+import { ElementQuery } from '../../fetch/query'
+import { AdapterApiConfig, AdapterFetchError, InvalidSingletonType } from '../../config/shared'
 import { ConfigChangeSuggestion, TYPE_TO_EXCLUDE } from '../../config/config_change'
+import { ARRAY_ITEMS_FIELD } from '../swagger/type_elements/swagger_parser'
 
 const { makeArray } = collections.array
 const { toArrayAsync, awu } = collections.asynciterable
@@ -60,6 +61,7 @@ type GetEntriesParams = {
   getElemIdFunc?: ElemIdGetter
   getEntriesResponseValuesFunc?: EntriesRequester
   reversedSupportedTypes: Record<string, string[]>
+  objectTypes?: Record<string, ObjectType>
 }
 
 type Entries = {
@@ -82,6 +84,22 @@ export const getUniqueConfigSuggestions = (
   configSuggestions: ConfigChangeSuggestion[]
 ): ConfigChangeSuggestion[] => (_.uniqBy(configSuggestions, suggestion => `${suggestion.type}-${suggestion.value}-${suggestion.reason}`))
 
+
+const isItemsOnlyObjectType = (type: ObjectType): boolean => (
+  _.isEqual(Object.keys(type.fields), [ARRAY_ITEMS_FIELD])
+)
+
+const getNestedEntries = (
+  entry: Values,
+  fieldName: string,
+  type: ObjectType,
+): Values[] => {
+  if (fieldName === ARRAY_ITEMS_FIELD && entry[fieldName] === undefined && isItemsOnlyObjectType(type)) {
+    return makeArray(entry)
+  }
+  return makeArray(entry[fieldName])
+}
+
 /**
  * Creates new type based on instances values,
  * then creates new instances pointing the new type
@@ -92,12 +110,14 @@ export const getNewElementsFromInstances = ({
   instances,
   transformationConfigByType,
   transformationDefaultConfig,
+  objectTypes,
 }: {
   adapterName: string
   typeName: string
   instances: InstanceElement[]
   transformationConfigByType: Record<string, DuckTypeTransformationConfig>
   transformationDefaultConfig: DuckTypeTransformationDefaultConfig
+  objectTypes?: Record<string, ObjectType>
 }): Entries => {
   const { hasDynamicFields } = getConfigWithDefault(transformationConfigByType[typeName], transformationDefaultConfig)
 
@@ -108,6 +128,7 @@ export const getNewElementsFromInstances = ({
     hasDynamicFields: hasDynamicFields === true,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
   return {
     instances: instances.map(inst => new InstanceElement(
@@ -124,7 +145,7 @@ const getEntriesForType = async (
   const {
     typeName, paginator, typesConfig, typeDefaultConfig, contextElements,
     requestContext, nestedFieldFinder, computeGetArgs, adapterName, getElemIdFunc,
-    getEntriesResponseValuesFunc, reversedSupportedTypes,
+    getEntriesResponseValuesFunc, reversedSupportedTypes, objectTypes,
   } = params
   const typeConfig = typesConfig[typeName]
   if (typeConfig === undefined) {
@@ -156,6 +177,7 @@ const getEntriesForType = async (
   }
   const entriesValues = (await getEntries(requestContext))
     // escape "field" names that contain '.'
+    // TODON do this recursively on values! adjust object types as well? (+ de-esacpe on deploy)
     .map(values => _.mapKeys(values, (_val, key) => naclCase(key)))
 
   const transformationConfigByType = getTransformationConfigByType(typesConfig)
@@ -163,13 +185,16 @@ const getEntriesForType = async (
 
   // types with dynamic fields will be associated with the dynamic_keys type
 
-  const { type, nestedTypes } = generateType({
+  // TODON make _this_ part aware of the swagger? and reuse nested types
+  // TODON also make it easy to override / add more args here based on the response? but less critical...
+  const { type, nestedTypes } = generateType({ // TODON first look in swagger? or just replace at the end?
     adapterName,
     name: typeName,
     entries: entriesValues,
     hasDynamicFields: hasDynamicFields === true,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
   // find the field and type containing the actual instances
   const nestedFieldDetails = await nestedFieldFinder(type, fieldsToOmit, dataField)
@@ -180,13 +205,14 @@ const getEntriesForType = async (
 
   const instances = await awu(entriesValues).flatMap(async (entry, index) => {
     if (nestedFieldDetails !== undefined) {
-      return awu(makeArray(entry[nestedFieldDetails.field.name])).map(
+      const nestedEntries = getNestedEntries(entry, nestedFieldDetails.field.name, type) // TODON needed for swagger
+      return awu(nestedEntries).map(
         (nestedEntry, nesteIndex) => {
           if (!isObjectType(nestedFieldDetails.type)) {
             log.error(`for typeName ${typeName} in adapter ${adapterName} nestedFieldDetails.type is not objectType returning undefined`)
             return undefined
           }
-          return toInstance({
+          return toInstance({ // TDOON step 2
             entry: nestedEntry,
             type: nestedFieldDetails.type,
             transformationConfigByType,
@@ -216,8 +242,7 @@ const getEntriesForType = async (
   }
 
   const { recurseInto } = requestWithDefaults
-  const getExtraFieldValues = async (instance: InstanceElement):
-  Promise<Record<string, Entries>> => Object.fromEntries(
+  const getExtraFieldValues = async (instance: InstanceElement): Promise<Record<string, Entries>> => Object.fromEntries(
     (await Promise.all(
       (recurseInto ?? [])
         .filter(({ conditions }) => shouldRecurseIntoEntry(
@@ -229,6 +254,7 @@ const getEntriesForType = async (
               contextDef => [contextDef.name, _.get(instance.value, contextDef.fromField)]
             )
           )
+          // TODON avoid crashing if fails on sub-element (copy from swagger)
           const nestedEntries = (await getEntriesForType({
             ...params,
             typeName: nested.type,
@@ -260,6 +286,7 @@ const getEntriesForType = async (
     instances,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
 
   return {
@@ -287,6 +314,7 @@ export const getTypeAndInstances = async ({
   reversedSupportedTypes,
   customInstanceFilter,
   additionalRequestContext,
+  objectTypes,
 }: {
   adapterName: string
   typeName: string
@@ -301,8 +329,9 @@ export const getTypeAndInstances = async ({
   reversedSupportedTypes: Record<string, string[]>
   customInstanceFilter?: (instances: InstanceElement[]) => InstanceElement[]
   additionalRequestContext?: Record<string, unknown>
+  objectTypes?: Record<string, ObjectType> // TODON rename?
 }): Promise<Element[]> => {
-  const entries = await getEntriesForType({
+  const entries = await getEntriesForType({ // should be shared...
     adapterName,
     paginator,
     typeName,
@@ -315,14 +344,15 @@ export const getTypeAndInstances = async ({
     getEntriesResponseValuesFunc,
     reversedSupportedTypes,
     requestContext: additionalRequestContext,
+    objectTypes,
   })
   const { type, nestedTypes, instances } = entries
   const filteredInstances = customInstanceFilter !== undefined ? customInstanceFilter(instances) : instances
   const elements = [type, ...nestedTypes, ...filteredInstances]
   const transformationConfigByType = getTransformationConfigByType(typesConfig)
 
-  // We currently don't support extracting standalone fields from the types we recursed into
-  await extractStandaloneFields({
+  // We currently don't support extracting standalone fields from the types we recursed into // TODON fix
+  await extractStandaloneFields({ // check for consistency
     adapterName,
     elements,
     transformationConfigByType,
@@ -344,33 +374,36 @@ export const getAllElements = async ({
   adapterName,
   fetchQuery,
   supportedTypes,
-  types,
+  apiConfig,
+  objectTypes,
   shouldAddRemainingTypes = true,
   paginator,
-  nestedFieldFinder,
-  computeGetArgs,
-  typeDefaults,
+  nestedFieldFinder = findDataField,
+  computeGetArgs = defaultComputeGetArgs,
   getElemIdFunc,
   getEntriesResponseValuesFunc,
   isErrorTurnToConfigSuggestion,
   customInstanceFilter,
   additionalRequestContext,
+  // TODON support multiple clients / base urls as part of the config
 }: {
   adapterName: string
   fetchQuery: ElementQuery
   supportedTypes: Record<string, string[]>
-  types: Record<string, TypeConfig>
+  apiConfig: Pick<AdapterApiConfig, 'types' | 'typeDefaults'>
+  objectTypes?: Record<string, ObjectType>
   shouldAddRemainingTypes?: boolean
   paginator: Paginator
-  nestedFieldFinder: FindNestedFieldFunc
-  computeGetArgs: ComputeGetArgsFunc
-  typeDefaults: TypeDuckTypeDefaultsConfig
+  nestedFieldFinder?: FindNestedFieldFunc
+  computeGetArgs?: ComputeGetArgsFunc
   getElemIdFunc?: ElemIdGetter
   getEntriesResponseValuesFunc?: EntriesRequester
   isErrorTurnToConfigSuggestion?: (error: Error) => boolean
   customInstanceFilter?: (instances: InstanceElement[]) => InstanceElement[]
   additionalRequestContext? : Record<string, unknown>
-}): Promise<FetchElements<Element[]>> => {
+}): Promise<FetchElements> => {
+  const { types, typeDefaults } = apiConfig
+  // TODON shouldn't these be all? except edge cases / special cases just for consistency?
   const supportedTypesWithEndpoints = _.mapValues(
     supportedTypes,
     typeNames => typeNames.filter(typeName => types[typeName].request?.url !== undefined)
@@ -403,12 +436,14 @@ export const getAllElements = async ({
     supportedTypes: supportedTypesWithEndpoints,
     types,
     typeElementGetter: async args => {
-      try {
+      try { // TODON move all this wrapping inside?
         return {
-          elements: (await getTypeAndInstances({ ...elementGenerationParams, ...args, customInstanceFilter })),
+          elements: (await getTypeAndInstances({
+            ...elementGenerationParams, ...args, customInstanceFilter, objectTypes,
+          })),
           errors: [],
         }
-      } catch (e) {
+      } catch (e) { // TODON use
         if (isErrorTurnToConfigSuggestion?.(e)
           && (reversedSupportedTypes[args.typeName] !== undefined)) {
           const typesToExclude = reversedSupportedTypes[args.typeName]
@@ -420,6 +455,10 @@ export const getAllElements = async ({
             })
           })
           return { elements: [], errors: [] }
+        }
+        if (e.response?.status === 404) {
+          log.warn('Resource %s:%s returned 404: %s', adapterName, args.typeName, e)
+          return { elements: [] }
         }
         if (e.response?.status === 403 || e.response?.status === 401) {
           const newError: SaltoError = {
@@ -434,15 +473,23 @@ export const getAllElements = async ({
         if (e instanceof AdapterFetchError) {
           return { elements: [], errors: [{ message: e.message, severity: e.severity }] }
         }
+        if (e instanceof MissingContextError) {
+          log.warn('Resource %s:%s missing context: %s', adapterName, args.typeName, e)
+          return { elements: [] }
+        }
         throw e
       }
     },
   })
-  const objectTypes = Object.fromEntries(
-    elements.filter(isObjectType).map(e => [e.elemID.name, e])
-  )
+  // TODON make sure we remove orphan subtypes
+  const newObjectTypes = Object.fromEntries(elements
+    .filter(isType)
+    .filter(e => objectTypes?.[e.elemID.name] === undefined)
+    .map(e => [e.elemID.name, e]))
   const instancesAndTypes = [
-    ...Object.values(objectTypes), ...elements.filter(e => !isObjectType(e)),
+    ...Object.values(objectTypes ?? {}),
+    ...Object.values(newObjectTypes),
+    ...elements.filter(e => isInstanceElement(e)),
   ]
   if (shouldAddRemainingTypes) {
     addRemainingTypes({

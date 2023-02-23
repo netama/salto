@@ -17,7 +17,7 @@ import _ from 'lodash'
 import { isObjectType, Element } from '@salto-io/adapter-api'
 import { naclCase } from '@salto-io/adapter-utils'
 import { generateType, toNestedTypeName } from './type_elements'
-import { DATA_FIELD_ENTIRE_OBJECT } from '../../config/transformation'
+import { DATA_FIELD_ENTIRE_OBJECT } from '../../definitions'
 import { getTransformationConfigByType, TypeDuckTypeConfig, TypeDuckTypeDefaultsConfig } from '../../config'
 
 /**

@@ -17,13 +17,13 @@ import _ from 'lodash'
 import { Element, SaltoError } from '@salto-io/adapter-api'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { TypeConfig, ConfigChangeSuggestion } from '../config'
-import { ElementQuery } from './query'
+import { ElementQuery } from '../fetch/query'
 
 
 const { isDefined } = lowerdashValues
 
-export type FetchElements<T> = {
-  elements: T
+export type FetchElements = {
+  elements: Element[]
   errors?: SaltoError[]
   configChanges?: ConfigChangeSuggestion[]
 }
@@ -43,12 +43,17 @@ export const getDependencies = (
     .filter(isDefined)
 
 
+export type TypeElementGetter<E extends Element> = (args: {
+  typeName: string
+  contextElements?: Record<string, E[]>
+}) => Promise<FetchElements>
+
 /**
  * Helper for fetch orchestration - concurrently fetch elements for the types specified in the
  * configuration, allowing one level of dependencies between the type's endpoints based on the
  * dependsOn field.
  */
-export const getElementsWithContext = async <E extends Element>({
+export const getElementsWithContext = async ({ // shared? but uses a different typeElementGetter
   fetchQuery,
   supportedTypes,
   types,
@@ -57,11 +62,8 @@ export const getElementsWithContext = async <E extends Element>({
   fetchQuery: Pick<ElementQuery, 'isTypeMatch'>
   supportedTypes: Record<string, string[]>
   types: Record<string, TypeConfig>
-  typeElementGetter: (args: {
-    typeName: string
-    contextElements?: Record<string, E[]>
-  }) => Promise<FetchElements<E[]>>
-}): Promise<FetchElements<E[]>> => {
+  typeElementGetter: TypeElementGetter<Element>
+}): Promise<FetchElements> => {
   const includeTypes = _(supportedTypes)
     .entries()
     .filter(([typeName]) => fetchQuery.isTypeMatch(typeName))
@@ -81,7 +83,7 @@ export const getElementsWithContext = async <E extends Element>({
   const additionalContextTypes: string[] = getDependencies([...dependentEndpoints], types)
     .filter(typeName => !independentEndpoints.has(typeName))
 
-  const contextElements: Record<string, FetchElements<E[]> & {
+  const contextElements: Record<string, FetchElements & {
     // if the type is only fetched as context for another type, do not persist it
     persistInstances: boolean
   }> = Object.fromEntries(await Promise.all(

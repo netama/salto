@@ -85,7 +85,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: ZuoraApiConfig['types'] = {
   },
   Linkage: {
     transformation: {
-      // defining explicitly to avoid nesting under additionalProperties
+      // defining explicitly to avoid nesting under additionalProperties // TODON can remove these?
       fieldTypeOverrides: [
         { fieldName: 'internal_group', fieldType: 'string' },
       ],
@@ -385,7 +385,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: ZuoraApiConfig['types'] = {
       ],
     },
   },
-  // this type has only 'additionalProperties',
+  // this type has only 'additionalProperties', // TODON can avoid now???
   // but because we want to replace 'segmentName' with a reference it can't be nested
   [`${SETTINGS_TYPE_PREFIX}RuleDetail`]: {
     transformation: {

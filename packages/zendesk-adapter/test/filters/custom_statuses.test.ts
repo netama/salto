@@ -16,7 +16,7 @@
 import { elements as elementsUtils, filterUtils } from '@salto-io/adapter-components'
 import { BuiltinTypes, ElemID, InstanceElement, ObjectType, toChange } from '@salto-io/adapter-api'
 import filterCreator from '../../src/filters/custom_statuses'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId } from '../utils'
 import {
   CUSTOM_STATUS_TYPE_NAME,
   DEFAULT_CUSTOM_STATUSES_TYPE_NAME, HOLD_CATEGORY, OPEN_CATEGORY,
@@ -35,7 +35,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -198,13 +198,15 @@ describe('custom statuses filter', () => {
   })
   describe('deploy', () => {
     it('should deploy addition of custom_status', async () => {
-      mockDeployChange.mockImplementation(async () => ({ custom_statuses: solved.value }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(solved.value.id))
       const res = await filter.deploy([{ action: 'add', data: { after: solved } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: solved } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -227,7 +229,7 @@ describe('custom statuses filter', () => {
       })
       const clonedDefault = defaultCustomStatusesInstance.clone()
       clonedDefault.value.solved = 4
-      mockDeployChange.mockImplementation(async () => ({ custom_statuses: solved.value }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(solved.value.id))
       const res = await filter.deploy([
         { action: 'modify', data: { before: solved, after: solved } },
         { action: 'modify', data: { before: defaultCustomStatusesInstance, after: clonedDefault } },
@@ -236,7 +238,9 @@ describe('custom statuses filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: solved, after: solved } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(mockPut).toHaveBeenCalledTimes(1)
       expect(mockPut).toHaveBeenCalledWith({
