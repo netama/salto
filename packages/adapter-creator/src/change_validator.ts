@@ -13,22 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Element } from '@salto-io/adapter-api'
-import { references as referenceUtils } from '@salto-io/adapter-components'
-import { FilterCreator } from '../filter'
+import { ChangeValidator } from '@salto-io/adapter-api'
+import { deployment } from '@salto-io/adapter-components'
 
-const fieldNameToTypeMappingDefs: referenceUtils.FieldReferenceDefinition<never>[] = [
-]
+const { deployNotSupportedValidator, getDefaultChangeValidators, createChangeValidator } = deployment.changeValidators
 
-/**
- * Convert field values into references, based on predefined rules.
- *
- */
-const filter: FilterCreator = () => ({
-  name: 'fieldReferencesFilter',
-  onFetch: async (elements: Element[]) => {
-    await referenceUtils.addReferences({ elements, defs: fieldNameToTypeMappingDefs })
-  },
-})
+// TODON not sure if should be here or in adapter-components???
+const validators: Record<string, ChangeValidator> = {
+  ...getDefaultChangeValidators(),
+  deployNotSupported: deployNotSupportedValidator, // TODON replace by config-specific logic
+}
 
-export default filter
+export default createChangeValidator({ validators })

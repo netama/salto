@@ -1,5 +1,5 @@
 /*
-*                      Copyright 2023 Salto Labs Ltd.
+*                      Copyright 2020 Salto Labs Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with
@@ -13,12 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { filterUtils } from '@salto-io/adapter-components'
-import SAPClient from './client/client'
-import { FilterContext } from './config'
+const deepMerge = require('../../build_utils/deep_merge')
 
-export const { filtersRunner } = filterUtils
+module.exports = deepMerge(
+  require('../../eslintrc.js'),
+  require('../../eslint/adapter-api.rules.js'),
+  {
+    parserOptions: {
+      tsconfigRootDir: __dirname,
+    },
+  },
+)
 
-export type Filter = filterUtils.Filter
-
-export type FilterCreator = filterUtils.FilterCreator<SAPClient, FilterContext>

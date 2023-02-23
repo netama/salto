@@ -13,14 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ChangeValidator } from '@salto-io/adapter-api'
-import { deployment } from '@salto-io/adapter-components'
 
-const { deployNotSupportedValidator, getDefaultChangeValidators, createChangeValidator } = deployment.changeValidators
-
-const validators: Record<string, ChangeValidator> = {
-  ...getDefaultChangeValidators(),
-  deployNotSupported: deployNotSupportedValidator,
-}
-
-export default createChangeValidator({ validators })
+export { createAdapter } from './src/adapter_creator'
+export { AdapterImpl } from './src/adapter/adapter'
+export { Config, createConfigType } from './src/config' // TODON move elsewhere?
+export { createCommonFilters } from './src/filters'

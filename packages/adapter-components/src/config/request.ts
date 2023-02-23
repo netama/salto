@@ -73,6 +73,10 @@ export type FetchRequestConfig = BaseRequestConfig & {
   dependsOn?: DependsOnConfig[]
   recurseInto?: RecurseIntoConfig[]
   paginationField?: string
+  pagination?: { // TODON better typing + params, convert params to list so easier to override?
+    strategy: string
+    params: Record<string, string>
+  }
 }
 
 export type UrlParams = Record<string, string>
