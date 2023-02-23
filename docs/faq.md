@@ -15,7 +15,6 @@ Salto consists of 3 main components:
 Currently, Salto supports the following services:
 
 - [Salesforce](../packages/salesforce-adapter)
-- [SAP](../packages/sap-adapter)
 - [NetSuite](../packages/netsuite-adapter)
 - [HubSpot](../packages/hubspot-adapter)
 - [Workato](../packages/workato-adapter)
@@ -24,6 +23,7 @@ Currently, Salto supports the following services:
 - [Jira](../packages/jira-adapter)
 - [Stripe](../packages/stripe-adapter)
 - [Okta](../packages/okta-adapter)
+- [SAP](../packages/sap-adapter)
 
 Support for other services is in the works.
 

@@ -15,7 +15,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ObjectType, ElemID, ListType, TypeElement, BuiltinTypes, MapType } from '@salto-io/adapter-api'
+import { ObjectType, ElemID, ListType, TypeElement, BuiltinTypes, MapType, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
 import { generateTypes, toPrimitiveType } from '../../../src/elements/swagger'
 import { RequestableTypeSwaggerConfig } from '../../../src/config'
 
@@ -92,7 +92,6 @@ describe('swagger_type_elements', () => {
         const pet = allTypes.Pet as ObjectType
         expect(pet).toBeInstanceOf(ObjectType)
         expect(_.mapValues(pet.fields, f => f.refType.elemID.getFullName())).toEqual({
-          additionalProperties: 'Map<unknown>',
           category: 'myAdapter.Category',
           id: 'number',
           name: 'serviceid',
@@ -100,6 +99,7 @@ describe('swagger_type_elements', () => {
           status: 'string',
           tags: 'List<myAdapter.Tag>',
         })
+        expect(pet.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]?.elemID.getFullName()).toEqual('unknown')
 
         // array response type
         const petArray = allTypes.pet__findByStatus
@@ -128,9 +128,8 @@ describe('swagger_type_elements', () => {
           middleName: 'string',
           // ref to UserAdditional2 in swagger
           middleName2: 'string',
-          // additional properties
-          additionalProperties: 'Map<myAdapter.Order>',
         })
+        expect(user.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]?.elemID.getFullName()).toEqual('myAdapter.Order')
 
         // additionalProperties explicit property combined with enabled additionalProperties
         // should be undefined
@@ -140,8 +139,8 @@ describe('swagger_type_elements', () => {
           brand: 'string',
           id: 'number',
           storage: 'List<string>',
-          additionalProperties: 'Map<unknown>',
         })
+        expect(food.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]?.elemID.getFullName()).toEqual('unknown')
 
         return { allTypes, parsedConfigs }
       }
@@ -181,11 +180,11 @@ describe('swagger_type_elements', () => {
         const location = allTypes.Location as ObjectType
         expect(location).toBeInstanceOf(ObjectType)
         expect(_.mapValues(location.fields, f => f.refType.elemID.name)).toEqual({
-          additionalProperties: 'Map<unknown>',
           name: 'serviceid',
           // address is defined as anyOf combining primitive and object - should use unknown
           address: 'unknown',
         })
+        expect(location.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]?.elemID.getFullName()).toEqual('unknown')
 
         return { allTypes, parsedConfigs }
       }
@@ -298,7 +297,8 @@ describe('swagger_type_elements', () => {
         expect(parsedConfigs).toEqual(updatedExpectedParsedConfigs)
         // regular response type with reference
         const pet = allTypes.Pet__new
-        expect(Object.keys((pet as ObjectType).fields).sort()).toEqual(['additionalProperties', 'category', 'id', 'name', 'photoUrls', 'status', 'tags'])
+        expect(Object.keys((pet as ObjectType).fields).sort()).toEqual(['category', 'id', 'name', 'photoUrls', 'status', 'tags'])
+        expect(pet.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]).toBeDefined()
       })
 
       it('should not have anything under the original typenames', () => {

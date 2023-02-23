@@ -22,15 +22,13 @@ import { validateRequestConfig } from './request'
 
 const { isDefined } = lowerDashValues
 
-type DuckTypeTransformationExtra = {
-  // types that contain a single object with dynamic keys (map type)
-  hasDynamicFields?: boolean
-  sourceTypeName?: string
-}
-export type DuckTypeTransformationConfig = TransformationConfig & DuckTypeTransformationExtra
-export type DuckTypeTransformationDefaultConfig = (
-  TransformationDefaultConfig & DuckTypeTransformationExtra
-)
+// type DuckTypeTransformationExtra = {
+//   // types that contain a single object with dynamic keys (map type)
+//   hasDynamicFields?: boolean
+//   sourceTypeName?: string
+// }
+export type DuckTypeTransformationConfig = TransformationConfig // TODON eliminate these
+export type DuckTypeTransformationDefaultConfig = TransformationDefaultConfig
 
 export type TypeDuckTypeConfig = TypeConfig<DuckTypeTransformationConfig>
 export type TypeDuckTypeDefaultsConfig = TypeDefaultsConfig<DuckTypeTransformationDefaultConfig>
@@ -38,7 +36,7 @@ export type AdapterDuckTypeApiConfig = AdapterApiConfig<
   DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig
 >
 
-export const createDucktypeAdapterApiConfigType = ({
+export const createDucktypeAdapterApiConfigType = ({ // TODON not only ducktype, rename...
   adapter,
   additionalFields,
   additionalRequestFields,

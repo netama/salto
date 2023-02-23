@@ -197,7 +197,6 @@ salesforce {
 | [brokenOutgoingReferencesSettings](#broken-outgoing-references-settings)      | {}                                               | Configuration for handling broken references                                                              |
 | omittedFields                                                                 | []                                               | List of API names of fields to discard when fetching data records.                                        |
 
-
 #### Salto ID settings configuration options
 
 | Name                                                   | Default when undefined                            | Description                                                             |

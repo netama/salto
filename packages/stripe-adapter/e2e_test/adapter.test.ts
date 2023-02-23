@@ -13,11 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Element, isObjectType } from '@salto-io/adapter-api'
+import { ElemID, Element, InstanceElement, isObjectType } from '@salto-io/adapter-api'
 import 'jest-extended'
 import { CredsLease } from '@salto-io/e2e-credentials-store'
-import { AccessTokenCredentials } from '../src/auth'
-import { credsLease, realAdapter } from './adapter'
+import { elementSource } from '@salto-io/workspace'
+import { AccessTokenCredentials, accessTokenCredentialsType } from '../src/auth'
+import { credsLease } from './adapter'
+import { adapter } from '../src/adapter_creator'
 
 
 /**
@@ -31,8 +33,11 @@ describe('Stripe adapter E2E with real swagger and mock replies', () => {
 
   beforeAll(async () => {
     credLease = await credsLease()
-    const adapterAttr = realAdapter({ credentials: credLease.value })
-    const { elements } = await adapterAttr.adapter.fetch({
+    const adapterOperations = adapter.operations({
+      credentials: new InstanceElement(ElemID.CONFIG_NAME, accessTokenCredentialsType, credLease),
+      elementsSource: elementSource.createInMemoryElementSource(),
+    })
+    const { elements } = await adapterOperations.fetch({
       progressReporter:
         { reportProgress: () => null },
     })
