@@ -45,6 +45,7 @@
     "@salto-io/okta-adapter": "0.3.41",
     "@salto-io/rocksdb": "5.1.1-salto-18",
     "@salto-io/salesforce-adapter": "0.3.41",
+    "@salto-io/sample-simple-adapter": "0.3.41",
     "@salto-io/sap-adapter": "0.3.41",
     "@salto-io/stripe-adapter": "0.3.41",
     "@salto-io/workato-adapter": "0.3.41",

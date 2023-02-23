@@ -51,6 +51,7 @@ Each configuration file holds information that is relevant to the specific adapt
 [Zendesk](../packages/zendesk-adapter/config_doc.md)
 [Zuora Billing](../packages/zuora-billing-adapter/config_doc.md)
 [SAP](../packages/sap-adapter/config_doc.md)
+[Sample Simple](../packages/sample-simple-adapter/config_doc.md)
 
 ## Global Salto configuration
 
