@@ -73,6 +73,10 @@ export type TransformationConfig = {
   nameMapping?: NameMappingOptions
   // if provided and true, types that are standalone fields will nest their instances under parent instances folders.
   nestStandaloneInstances?: boolean
+  // TODON moved from ducktype - make sure they work
+  // types that contain a single object with dynamic keys (map type)
+  hasDynamicFields?: boolean
+  sourceTypeName?: string
 }
 
 export type TransformationDefaultConfig = types.PickyRequired<Partial<Omit<TransformationConfig, 'isSingleton'>>, 'idFields'>

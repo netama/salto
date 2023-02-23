@@ -96,7 +96,7 @@ const transformNotificationEvent = (notificationEvent: NotificationEvent): void 
   notificationEvent.notifications?.forEach((notification: Values) => {
     notification.type = notification.notificationType
     delete notification.notificationType
-    delete notification.additionalProperties
+    // delete notification.additionalProperties // TODON instead delete all non-defined properties???
     delete notification.user
   })
 }

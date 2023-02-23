@@ -25,13 +25,12 @@ import {
 } from '@salto-io/adapter-api'
 import * as adapterComponents from '@salto-io/adapter-components'
 import { elements as elementUtils } from '@salto-io/adapter-components'
+import { createConfigType } from '@salto-io/adapter-creator'
 import { buildElementsSourceFromElements, naclCase } from '@salto-io/adapter-utils'
 import { adapter } from '../src/adapter_creator'
 import { oauthClientCredentialsType } from '../src/auth'
-import { SAP } from '../src/constants'
+import { ADAPTER_NAME } from '../src/constants'
 import {
-  configType,
-  DEFAULT_API_DEFINITIONS,
   DEFAULT_CONFIG,
   SUPPORTED_TYPES,
 } from '../src/config'
@@ -59,9 +58,9 @@ jest.mock('@salto-io/adapter-components', () => {
           type => [
             naclCase(type),
             new ObjectType({
-              elemID: new ElemID(SAP, type),
+              elemID: new ElemID(ADAPTER_NAME, type),
               fields: {
-                value: { refType: new ListType(new ObjectType({ elemID: new ElemID(SAP, naclCase(`MCMService_${type}`)) })) },
+                value: { refType: new ListType(new ObjectType({ elemID: new ElemID(ADAPTER_NAME, naclCase(`MCMService_${type}`)) })) },
               },
             }),
           ]
@@ -162,7 +161,7 @@ describe('adapter', () => {
           ),
           config: new InstanceElement(
             'config',
-            configType,
+            createConfigType({ adapterName: ADAPTER_NAME }),
             DEFAULT_CONFIG,
           ),
           elementsSource: buildElementsSourceFromElements([]),
@@ -170,13 +169,11 @@ describe('adapter', () => {
 
         expect(adapterComponents.elements.swagger.generateTypes).toHaveBeenCalledTimes(1)
         expect(adapterComponents.elements.swagger.generateTypes).toHaveBeenCalledWith(
-          SAP,
-          {
-            ...DEFAULT_API_DEFINITIONS,
-            supportedTypes: {
-              ...DEFAULT_API_DEFINITIONS.supportedTypes,
-            },
-          },
+          ADAPTER_NAME,
+          DEFAULT_CONFIG.apiComponents.sources?.swagger?.[0],
+          undefined,
+          undefined,
+          true,
         )
         expect(
           [...new Set(elements.filter(isInstanceElement).map(e => e.elemID.typeName))].sort()
@@ -200,7 +197,7 @@ describe('adapter', () => {
             ),
             config: new InstanceElement(
               'config',
-              configType,
+              createConfigType({ adapterName: ADAPTER_NAME }),
               DEFAULT_CONFIG,
             ),
             elementsSource: buildElementsSourceFromElements([]),

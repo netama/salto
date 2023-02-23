@@ -61,11 +61,14 @@ export const traverseRequests: (
       break
     }
 
-    const entries = (
-      (!Array.isArray(response.data) && Array.isArray(response.data.items))
-        ? response.data.items
-        : makeArray(response.data)
-    ).flatMap(extractPageEntries)
+    // TODON check if breaks anything, move heursitic elsewhere
+    // (the original doesn't work for swagger since the type should be swapped)
+    const entries = makeArray(response.data).flatMap(extractPageEntries)
+    // const entries = (
+    //   (!Array.isArray(response.data) && Array.isArray(response.data.items))
+    //     ? response.data.items
+    //     : makeArray(response.data)
+    // ).flatMap(extractPageEntries)
 
     // checking original entries and not the ones that passed the custom extractor, because even if all entries are
     // filtered out we should still continue querying
@@ -102,9 +105,8 @@ export const traverseRequests: (
  */
 export const getWithItemOffsetPagination = ({
   firstIndex,
-  pageSizeArgName
-  ,
-} : {
+  pageSizeArgName,
+}: {
   firstIndex: number
   pageSizeArgName: string | undefined
 }): PaginationFunc => {

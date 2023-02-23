@@ -17,14 +17,12 @@ import _ from 'lodash'
 import { Element, isInstanceElement, InstanceElement, ReferenceExpression } from '@salto-io/adapter-api'
 import { multiIndex, collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { transformValues, TransformFunc } from '@salto-io/adapter-utils'
-import { elements as elementUtils } from '@salto-io/adapter-components'
 import { FilterCreator } from '../filter'
 
 const { awu } = collections.asynciterable
 const { isPlainRecord } = lowerdashValues
-const { ADDITIONAL_PROPERTIES_FIELD } = elementUtils.swagger
 
-type ObjectWithSelfLink = { self: string } | { [ADDITIONAL_PROPERTIES_FIELD]: { self: string } }
+type ObjectWithSelfLink = { self: string }
 
 function getSelfLink(obj: ObjectWithSelfLink): string
 function getSelfLink(obj: unknown): string | undefined
@@ -34,10 +32,6 @@ function getSelfLink(obj: unknown): string | undefined {
   }
   if (_.isString(obj.self)) {
     return obj.self
-  }
-  const additionalProperties = obj[ADDITIONAL_PROPERTIES_FIELD]
-  if (isPlainRecord(additionalProperties) && _.isString(additionalProperties.self)) {
-    return additionalProperties.self
   }
   return undefined
 }

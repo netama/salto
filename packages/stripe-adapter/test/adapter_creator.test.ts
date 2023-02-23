@@ -17,15 +17,17 @@ import axios from 'axios'
 import MockAdapter from 'axios-mock-adapter'
 import { ObjectType, InstanceElement } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-components'
+import { createConfigType } from '@salto-io/adapter-creator'
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
 import { adapter } from '../src/adapter_creator'
 import { accessTokenCredentialsType } from '../src/auth'
-import { configType, DEFAULT_API_DEFINITIONS, DEFAULT_CONFIG, FETCH_CONFIG } from '../src/config'
+import { DEFAULT_CONFIG } from '../src/config'
 import { STRIPE } from '../src/constants'
 import * as connection from '../src/client/connection'
 
 describe('adapter creator', () => {
   let mockAxiosAdapter: MockAdapter
+  const configType = createConfigType({ adapterName: STRIPE })
   beforeEach(() => {
     mockAxiosAdapter = new MockAdapter(axios, { delayResponse: 1, onNoMatch: 'throwException' })
   })
@@ -122,19 +124,23 @@ describe('adapter creator', () => {
         STRIPE,
         adapter.configType as ObjectType,
         {
-          fetch: DEFAULT_CONFIG[FETCH_CONFIG],
-          apiDefinitions: {
-            swagger: {
-              url: '/tmp/swagger.yaml',
+          fetch: DEFAULT_CONFIG.fetch,
+          apiComponents: {
+            sources: {
+              swagger: {
+                url: '/tmp/swagger.yaml',
+              },
             },
-            types: {
-              Product: {
-                transformation: {
-                  idFields: ['id'],
-                  fieldsToHide: [
-                    { fieldName: 'a' },
-                    { fieldName: 'a' },
-                  ],
+            definitions: {
+              types: {
+                Product: {
+                  transformation: {
+                    idFields: ['id'],
+                    fieldsToHide: [
+                      { fieldName: 'a' },
+                      { fieldName: 'a' },
+                    ],
+                  },
                 },
               },
             },
@@ -162,9 +168,11 @@ describe('adapter creator', () => {
             ],
             exclude: [],
           },
-          apiDefinitions: {
-            ...DEFAULT_API_DEFINITIONS,
-            supportedTypes: {},
+          apiComponents: {
+            definitions: {
+              ...DEFAULT_CONFIG.apiComponents.definitions,
+              supportedTypes: {},
+            },
           },
         },
       ),

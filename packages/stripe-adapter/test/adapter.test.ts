@@ -27,17 +27,14 @@ import {
   Values,
 } from '@salto-io/adapter-api'
 import * as adapterComponents from '@salto-io/adapter-components'
+import { createConfigType } from '@salto-io/adapter-creator'
 import { buildElementsSourceFromElements, naclCase } from '@salto-io/adapter-utils'
 import mockReplies from './mock_replies.json'
 import { adapter } from '../src/adapter_creator'
 import { accessTokenCredentialsType } from '../src/auth'
 import {
   ALL_SUPPORTED_TYPES,
-  API_DEFINITIONS_CONFIG,
-  configType,
-  DEFAULT_API_DEFINITIONS,
   DEFAULT_CONFIG,
-  FETCH_CONFIG,
 } from '../src/config'
 import { STRIPE } from '../src/constants'
 
@@ -72,6 +69,8 @@ describe('stripe swagger adapter', () => {
     accessTokenCredentialsType,
     { token: 'testToken' }
   )
+
+  const configType = createConfigType({ adapterName: STRIPE })
 
   const DEFAULT_CONFIG_INSTANCE = new InstanceElement(
     'config',
@@ -237,11 +236,11 @@ describe('stripe swagger adapter', () => {
             'config',
             configType,
             {
-              [FETCH_CONFIG]: {
+              fetch: {
                 include: SINGULAR_INCLUDE_TYPES.map(type => ({ type })),
                 exclude: [],
               },
-              [API_DEFINITIONS_CONFIG]: DEFAULT_API_DEFINITIONS,
+              ..._.omit(DEFAULT_CONFIG, 'fetch'),
             }
           )
           const instances = await fetchInstances(config)
@@ -273,10 +272,10 @@ describe('stripe swagger adapter', () => {
             'config',
             configType,
             {
-              [FETCH_CONFIG]: {
+              fetch: {
                 includeTypes: ['coupons', 'tax_rates'],
               },
-              [API_DEFINITIONS_CONFIG]: DEFAULT_API_DEFINITIONS,
+              ..._.omit(DEFAULT_CONFIG, 'fetch'),
             }
           )
           const instances = await fetchInstances(config)
@@ -303,19 +302,21 @@ describe('stripe swagger adapter', () => {
         const config = new InstanceElement(
           'config',
           configType,
-          {
-            [FETCH_CONFIG]: DEFAULT_CONFIG[FETCH_CONFIG],
-            [API_DEFINITIONS_CONFIG]: {
-              ...DEFAULT_API_DEFINITIONS,
-              types: {
-                products: {
-                  request: {
-                    url: '/v1/products',
+          _.assign(
+            {},
+            DEFAULT_CONFIG,
+            {
+              apiConfig: {
+                types: {
+                  products: {
+                    request: {
+                      url: '/v1/products',
+                    },
                   },
                 },
               },
             },
-          }
+          )
         )
         const fetchedTypes = (await fetchInstances(config)).map(i => i.elemID.typeName)
         expect(fetchedTypes).toContain('product')
