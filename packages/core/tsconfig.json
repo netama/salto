@@ -26,6 +26,7 @@
         { "path": "../okta-adapter" },
         { "path": "../salesforce-adapter" },
         { "path": "../sample-simple-adapter" },
+        { "path": "../generic-adapter" },
         { "path": "../sap-adapter" },
         { "path": "../stripe-adapter" },
         { "path": "../test-utils" },

@@ -77,7 +77,7 @@ Supported login parameters per service type:
 [zuora billing](/packages/zuora-billing-adapter/specific-cli-options.md#non-interactive-login-parameters)
 [okta](/packages/okta-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [SAP](/packages/sap-adapter/specific-cli-options.md#non-interactive-login-parameters),
-[sample simple](/packages/sample-simple-adapter/specific-cli-options.md#non-interactive-login-parameters),
+[Generic](/packages/generic-adapter/specific-cli-options.md#non-interactive-login-parameters),
 
 ### **salto env \<command>**
 

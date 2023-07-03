@@ -53,7 +53,7 @@ const DEFAULT_SWAGGER_CONFIG: ApiConfig['swagger'] = {
 }
 
 export const SUPPORTED_TYPES = { // TODO
-  MCMService_EnergySourceTypes: ['EnergySourceTypes'],
+  TypeWithInstances: ['PageType'],
 }
 
 export const DEFAULT_API_DEFINITIONS: ApiConfig = {

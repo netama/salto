@@ -24,7 +24,6 @@ Currently, Salto supports the following services:
 - [Stripe](../packages/stripe-adapter)
 - [Okta](../packages/okta-adapter)
 - [SAP](../packages/sap-adapter)
-- [Sample Simple](../packages/sample-simple-adapter)
 
 Support for other services is in the works.
 
