@@ -37,9 +37,21 @@ const replaceParams = (value: string, args: Record<string, string>): string => (
   )
 )
 
-const parseCredentials = ({ secret, visible }: GenericJsonCredentials): Record<string, string> => {
-  const privateCreds = JSON.parse(secret)
-  const visibleCreds = JSON.parse(visible)
+export const safeParse = (credentials: Record<string, string>, key: keyof Credentials): Record<string, string> => {
+  try {
+    const val = credentials[key].trim().length > 0
+      ? JSON.parse(credentials[key])
+      : {}
+    return _.mapValues(val, v => String(v))
+  } catch (e) {
+    // must not log value OR error as it may contain sensitive data!
+    throw new Error(`Could not parse ${key} credentials, make sure they are a valid serialized JSON`)
+  } // TODON also validate on input
+}
+
+const parseCredentials = (creds: GenericJsonCredentials): Record<string, string> => {
+  const privateCreds = safeParse(creds, 'secret')
+  const visibleCreds = safeParse(creds, 'visible')
   return { ...visibleCreds, ...privateCreds }
 }
 
@@ -61,7 +73,7 @@ export const createConnectionConfigWrapper = ({ auth }: ClientConfig): clientUti
     const headers = extractHeaders(allArgs)
     if (auth.type === 'basic') {
       return {
-        auth: {
+        auth: { // TODON just get from config as well (with placeholders)
           username: allArgs.username,
           password: allArgs.password,
         },

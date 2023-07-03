@@ -13,6 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import _ from 'lodash'
 import { logger } from '@salto-io/logging'
 import {
   InstanceElement, Adapter,
@@ -24,18 +25,19 @@ import { Credentials, genericJsonCredentialsType } from './auth'
 import {
   configType, Config, CLIENT_CONFIG, DEFAULT_CONFIG, ApiComponentsConfig,
 } from './config'
-import { validateCredentials } from './client/connection'
+import { safeParse, validateCredentials } from './client/connection'
 
 const log = logger(module)
 const { validateClientConfig } = clientUtils
 // const { validateSwaggerApiDefinitionConfig, validateSwaggerFetchConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => {
-  const { secret, visible } = config.value
-  return {
-    secret,
-    visible,
-  }
+  // validate format
+  safeParse(config.value, 'visible' || {})
+  safeParse(config.value, 'secret' || {})
+
+  // keeping as string for now
+  return _.pick(config.value, ['secret', 'visible'])
 }
 
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): Config => {

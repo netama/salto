@@ -162,10 +162,16 @@ export const createApiComponentsConfigType = ({ adapter }: { adapter: string }):
     elemID: new ElemID(adapter, 'apiComponentsConfig'),
     fields: {
       ducktype: {
-        refType: new MapType(createDucktypeAdapterApiConfigType({ adapter })),
+        refType: new MapType(createDucktypeAdapterApiConfigType({
+          adapter,
+          elemIdPrefix: 'swagger',
+        })),
       },
       swagger: {
-        refType: new MapType(createSwaggerAdapterApiConfigType({ adapter })),
+        refType: new MapType(createSwaggerAdapterApiConfigType({
+          adapter,
+          elemIdPrefix: 'ducktype',
+        })),
       },
     },
     annotations: {
@@ -181,40 +187,17 @@ export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
 
 export const DEFAULT_API_COMPONENT_DEFINITIONS: ApiComponentsConfig = {
   swagger: {
-    main: { // TODON use names as prefixes to avoid conflicts
-      swagger: {
-        url: '/tmp/path-to-swagger.json', // TODON
-      },
-      typeDefaults: {
-        transformation: {
-          idFields: DEFAULT_ID_FIELDS,
-          fieldsToOmit: FIELDS_TO_OMIT,
-        },
-      },
-      types: {},
-      supportedTypes: {},
-    },
   },
   ducktype: {
-    main: {
-      typeDefaults: {
-        transformation: {
-          idFields: DEFAULT_ID_FIELDS,
-          fieldsToOmit: FIELDS_TO_OMIT,
-        },
-      },
-      types: {},
-      supportedTypes: {},
-    },
   },
 }
 
 export const DEFAULT_CONFIG: Config = {
   [FETCH_CONFIG]: {
     ...elements.query.INCLUDE_ALL_CONFIG,
-    hideTypes: true,
+    hideTypes: false,
   },
-  [API_COMPONENTS_CONFIG]: DEFAULT_API_COMPONENT_DEFINITIONS,
+  [API_COMPONENTS_CONFIG]: {},
   [CLIENT_CONFIG]: {
     [AUTH_CONFIG]: {
       type: 'custom',
@@ -229,28 +212,9 @@ export const DEFAULT_CONFIG: Config = {
 export const SAMPLE_CONFIG: Partial<Config> = _.defaults({}, {
   [API_COMPONENTS_CONFIG]: {
     swagger: {
-      // sample1: {
-      //   supportedTypes: {
-      //     TypeWithInstances: ['PageType'],
-      //   },
-      // },
-      main: { // TODON use names as prefixes to avoid conflicts
+      sample: { // TODON use names as prefixes to avoid conflicts
         swagger: {
-          url: 'https://raw.githubusercontent.com/salto-io/adapter-swaggers/main/okta/management-swagger-v3.yaml', // okta
-          typeNameOverrides: [
-            { originalName: 'Role', newName: 'RoleAssignment' },
-            { originalName: 'IamRole', newName: 'Role' },
-          ],
-          additionalTypes: [
-            {
-              typeName: 'OktaSignOnPolicies',
-              cloneFrom: 'api__v1__policies',
-            },
-            {
-              typeName: 'OktaSignOnPolicyRules',
-              cloneFrom: 'api__v1__policies___policyId___rules@uuuuuu_00123_00125uu',
-            },
-          ],
+          url: '/tmp/path-to-swagger.json', // TODON
         },
         typeDefaults: {
           transformation: {
@@ -258,154 +222,38 @@ export const SAMPLE_CONFIG: Partial<Config> = _.defaults({}, {
             fieldsToOmit: FIELDS_TO_OMIT,
           },
         },
-        types: {
-          Group: {
-            transformation: {
-              fieldTypeOverrides: [
-                { fieldName: 'roles', fieldType: 'list<RoleAssignment>' },
-                { fieldName: 'source', fieldType: 'Group__source' },
-              ],
-              fieldsToHide: [
-                { fieldName: 'id' },
-              ],
-              idFields: ['profile.name'],
-              serviceIdField: 'id',
-              serviceUrl: '/admin/group/{id}',
-              standaloneFields: [{ fieldName: 'roles' }],
-              nestStandaloneInstances: false,
-            },
-          },
-          IamRoles: {
-            request: {
-              url: '/api/v1/iam/roles',
-            },
-            transformation: {
-              dataField: 'roles',
-            },
-          },
-          OktaSignOnPolicies: {
-            request: {
-              url: '/api/v1/policies',
-              queryParams: {
-                type: 'OKTA_SIGN_ON',
-              },
-              recurseInto: [
-                {
-                  type: 'OktaSignOnPolicyRules',
-                  toField: 'policyRules',
-                  context: [
-                    {
-                      name: 'policyId',
-                      fromField: 'id',
-                    },
-                  ],
-                },
-              ],
-            },
-            transformation: {
-              fieldTypeOverrides: [
-                {
-                  fieldName: 'items',
-                  fieldType: 'list<OktaSignOnPolicy>',
-                },
-              ],
-            },
-          },
-          OktaSignOnPolicyRules: {
-            request: {
-              url: '/api/v1/policies/{policyId}/rules',
-            },
-            transformation: {
-              dataField: '.',
-              fieldTypeOverrides: [
-                {
-                  fieldName: 'items',
-                  fieldType: 'list<OktaSignOnPolicyRule>',
-                },
-              ],
-            },
-          },
-          OktaSignOnPolicy: {
-            transformation: {
-              serviceIdField: 'id',
-              fieldsToHide: [
-                {
-                  fieldName: 'id',
-                },
-              ],
-              fieldTypeOverrides: [
-                {
-                  fieldName: 'policyRules',
-                  fieldType: 'list<OktaSignOnPolicyRule>',
-                },
-              ],
-              standaloneFields: [
-                {
-                  fieldName: 'policyRules',
-                },
-              ],
-            },
-          },
-          OktaSignOnPolicyRule: {
-            transformation: {
-              serviceIdField: 'id',
-              fieldsToHide: [
-                {
-                  fieldName: 'id',
-                },
-              ],
-            },
-          },
-        },
+        types: {},
         supportedTypes: {
-          Application: ['api__v1__apps'],
-          Group: ['api__v1__groups'],
-          RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
-          Role: ['IamRoles'],
-          OktaSignOnPolicy: ['OktaSignOnPolicies'],
+          TypeWithInstances: ['PageType'],
         },
       },
     },
     ducktype: {
-      // sample2: {
-      //   supportedTypes: {
-      //     TypeWithInstances: ['PageType'],
-      //   },
-      // },
+      main: {
+        typeDefaults: {
+          transformation: {
+            idFields: DEFAULT_ID_FIELDS,
+            fieldsToOmit: [
+            ],
+          },
+        },
+        types: {},
+        // TODON fix to use real inner type names
+        supportedTypes: [],
+      },
     },
   },
   [CLIENT_CONFIG]: {
     [AUTH_CONFIG]: {
       type: 'custom',
       headers: {
-        Authorization: 'SSWS {token}',
+        Authorization: 'Bearer {token}',
       },
-      baseURL: 'https://{subdomain}.okta.com',
+      baseURL: 'http://localhost',
     },
   },
   [REFERENCES_CONFIG]: {
-    rules: [
-      {
-        src: { field: 'assignedGroups', parentTypes: ['Application'] },
-        serializationStrategy: 'id',
-        target: { type: 'Group' },
-      },
-      {
-        src: { field: 'role', parentTypes: ['RoleAssignment'] },
-        serializationStrategy: 'id',
-        target: { type: 'Role' },
-      },
-      {
-        src: { field: 'include', parentTypes: ['GroupCondition'] },
-        serializationStrategy: 'id',
-        target: { type: 'Group' },
-      },
-      {
-        src: { field: 'exclude', parentTypes: ['GroupCondition'] },
-        serializationStrategy: 'id',
-        target: { type: 'Group' },
-      },
-    ],
+    rules: [],
   },
 }, DEFAULT_CONFIG)
 
