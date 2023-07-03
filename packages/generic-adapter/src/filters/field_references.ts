@@ -17,22 +17,14 @@ import { Element } from '@salto-io/adapter-api'
 import { references as referenceUtils } from '@salto-io/adapter-components'
 import { FilterCreator } from '../filter'
 
-const fieldNameToTypeMappingDefs: referenceUtils.FieldReferenceDefinition<never>[] = [ // TODON config!
-  // {
-  //   src: { field: 'api_client_id', parentTypes: ['api_access_profile'] },
-  //   serializationStrategy: 'id',
-  //   target: { type: 'api_client' },
-  // },
-]
-
 /**
  * Convert field values into references, based on predefined rules.
  *
  */
-const filter: FilterCreator = () => ({
+const filter: FilterCreator = ({ config }) => ({
   name: 'fieldReferencesFilter',
   onFetch: async (elements: Element[]) => {
-    await referenceUtils.addReferences({ elements, defs: fieldNameToTypeMappingDefs })
+    await referenceUtils.addReferences({ elements, defs: config.references.rules })
   },
 })
 

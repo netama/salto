@@ -15,14 +15,14 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType,
-  DeployModifiers, FetchOptions,
+  FetchResult, AdapterOperations, DeployResult, Element, InstanceElement, TypeMap, isObjectType,
+  DeployModifiers, FetchOptions, ElemIdGetter,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import Client from './client/client'
-import { Config, API_DEFINITIONS_CONFIG, FETCH_CONFIG, ApiConfig } from './config'
+import { Config, FETCH_CONFIG, API_COMPONENTS_CONFIG } from './config'
 import { FilterCreator, Filter, filtersRunner } from './filter'
 import commonFilters from './filters/common'
 import fieldReferencesFilter from './filters/field_references'
@@ -31,7 +31,9 @@ import { ADAPTER_NAME } from './constants'
 import { paginate } from './client/pagination'
 
 const { createPaginator } = clientUtils
+const { computeGetArgs, findDataField } = elementUtils
 const { generateTypes, getAllInstances } = elementUtils.swagger
+const { getAllElements } = elementUtils.ducktype
 const log = logger(module)
 
 const { hideTypes, ...otherCommonFilters } = commonFilters
@@ -47,6 +49,8 @@ export interface AdapterParams {
   filterCreators?: FilterCreator[]
   client: Client
   config: Config
+  // callback function to get an existing elemId or create a new one by the ServiceIds values
+  getElemIdFunc?: ElemIdGetter
 }
 
 export default class AdapterImpl implements AdapterOperations {
@@ -55,14 +59,17 @@ export default class AdapterImpl implements AdapterOperations {
   private paginator: clientUtils.Paginator
   private userConfig: Config
   private fetchQuery: elementUtils.query.ElementQuery
+  private getElemIdFunc?: ElemIdGetter
 
   public constructor({
     filterCreators = DEFAULT_FILTERS,
     client,
     config,
+    getElemIdFunc,
   }: AdapterParams) {
     this.userConfig = config
     this.client = client
+    this.getElemIdFunc = getElemIdFunc
     const paginator = createPaginator({
       client: this.client,
       paginationFuncCreator: paginate,
@@ -74,16 +81,23 @@ export default class AdapterImpl implements AdapterOperations {
     )
   }
 
-  private apiDefinitions(
+  // TODON refactor...
+  private apiSwaggerDefinitions(
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-  ): ApiConfig {
+    componentName: string,
+  ): configUtils.AdapterSwaggerApiConfig {
+    // TODON reuse util
+    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
+    if (defs === undefined) {
+      throw new Error(`no swagger component named ${componentName} found`)
+    }
     return {
-      ...this.userConfig[API_DEFINITIONS_CONFIG],
+      ...defs,
       // user config takes precedence over parsed config
       types: {
         ...parsedConfigs,
         ..._.mapValues(
-          this.userConfig[API_DEFINITIONS_CONFIG].types,
+          defs.types,
           (def, typeName) => ({ ...parsedConfigs[typeName], ...def })
         ),
       },
@@ -91,10 +105,14 @@ export default class AdapterImpl implements AdapterOperations {
   }
 
   @logDuration('generating types from swagger')
-  private async getTypes(): Promise<elementUtils.swagger.ParsedTypes> {
+  private async getSwaggerTypes(componentName: string): Promise<elementUtils.swagger.ParsedTypes> {
+    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
+    if (defs === undefined) {
+      throw new Error(`no swagger component named ${componentName} found`)
+    }
     return generateTypes(
       ADAPTER_NAME,
-      this.userConfig[API_DEFINITIONS_CONFIG],
+      defs,
       undefined,
       undefined,
       true,
@@ -102,16 +120,52 @@ export default class AdapterImpl implements AdapterOperations {
   }
 
   @logDuration('getting instances from service')
-  private async getInstances(
+  private async getSwaggerInstances(
+    componentName: string,
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
   ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
+    if (defs === undefined) {
+      throw new Error(`no swagger component named ${componentName} found`)
+    }
     return getAllInstances({
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
-      apiConfig: this.apiDefinitions(parsedConfigs),
-      supportedTypes: this.userConfig[API_DEFINITIONS_CONFIG].supportedTypes,
+      apiConfig: this.apiSwaggerDefinitions(parsedConfigs, componentName),
+      supportedTypes: defs.supportedTypes,
       fetchQuery: this.fetchQuery,
+    })
+  }
+
+  async fetchSwaggerElements(componentName: string): Promise<elementUtils.FetchElements<Element[]>> {
+    log.debug(`going to fetch ${ADAPTER_NAME} component ${componentName} (swagger) account configuration`)
+    const { allTypes, parsedConfigs } = await this.getSwaggerTypes(componentName)
+    const { elements: instances } = await this.getSwaggerInstances(componentName, allTypes, parsedConfigs)
+    const elements = [
+      ...Object.values(allTypes),
+      ...instances,
+    ]
+    return { elements }
+  }
+
+  async fetchDucktypeElements(componentName: string): Promise<elementUtils.FetchElements<Element[]>> {
+    log.debug(`going to fetch ${ADAPTER_NAME} component ${componentName} (ducktype) account configuration`)
+    const defs = this.userConfig[API_COMPONENTS_CONFIG].ducktype?.[componentName]
+    if (defs === undefined) {
+      throw new Error(`no ducktype component named ${componentName} found`)
+    }
+    return getAllElements({
+      adapterName: ADAPTER_NAME,
+      types: defs.types,
+      shouldAddRemainingTypes: true,
+      supportedTypes: defs.supportedTypes,
+      fetchQuery: this.fetchQuery,
+      paginator: this.paginator,
+      nestedFieldFinder: findDataField,
+      computeGetArgs,
+      typeDefaults: defs.typeDefaults,
+      getElemIdFunc: this.getElemIdFunc,
     })
   }
 
@@ -122,14 +176,16 @@ export default class AdapterImpl implements AdapterOperations {
   @logDuration('fetching account configuration')
   async fetch({ progressReporter }: FetchOptions): Promise<FetchResult> {
     log.debug(`going to fetch ${ADAPTER_NAME} account configuration`)
-    progressReporter.reportProgress({ message: 'Fetching types' })
-    const { allTypes, parsedConfigs } = await this.getTypes()
-    progressReporter.reportProgress({ message: 'Fetching instances' })
-    const { elements: instances } = await this.getInstances(allTypes, parsedConfigs)
-    const elements = [
-      ...Object.values(allTypes),
-      ...instances,
-    ]
+    progressReporter.reportProgress({ message: 'Fetching elements' })
+    const allResults = await Promise.all([
+      ...Object.keys(this.userConfig[API_COMPONENTS_CONFIG].swagger ?? {}).map(
+        componentName => this.fetchSwaggerElements(componentName)
+      ),
+      ...Object.keys(this.userConfig[API_COMPONENTS_CONFIG].ducktype ?? {}).map(
+        componentName => this.fetchDucktypeElements(componentName)
+      ),
+    ])
+    const elements = allResults.flatMap(res => res.elements)
 
     log.debug('going to run filters on %d fetched elements', elements.length)
     progressReporter.reportProgress({ message: 'Running filters for additional information' })

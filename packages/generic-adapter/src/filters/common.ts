@@ -21,7 +21,7 @@ import { FilterCreator } from '../filter'
  */
 const filterCreators: Record<string, FilterCreator> = {
   hideTypes: filters.hideTypesFilterCreator(),
-  referencedInstanceNames: filters.referencedInstanceNamesFilterCreator(),
+  // referencedInstanceNames: filters.referencedInstanceNamesFilterCreator(), // TODON adjust to multiple components
   query: filters.queryFilterCreator(),
 }
 

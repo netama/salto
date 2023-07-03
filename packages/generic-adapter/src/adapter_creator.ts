@@ -18,19 +18,17 @@ import {
   InstanceElement, Adapter,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils } from '@salto-io/adapter-components'
-import _ from 'lodash'
 import Client from './client/client'
 import AdapterImpl from './adapter'
 import { Credentials, genericJsonCredentialsType } from './auth'
 import {
-  configType, Config, CLIENT_CONFIG, API_DEFINITIONS_CONFIG,
-  FETCH_CONFIG, DEFAULT_CONFIG, ApiConfig,
+  configType, Config, CLIENT_CONFIG, DEFAULT_CONFIG, ApiComponentsConfig,
 } from './config'
 import { validateCredentials } from './client/connection'
 
 const log = logger(module)
 const { validateClientConfig } = clientUtils
-const { validateSwaggerApiDefinitionConfig, validateSwaggerFetchConfig } = configUtils
+// const { validateSwaggerApiDefinitionConfig, validateSwaggerFetchConfig } = configUtils
 
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => {
   const { secret, visible } = config.value
@@ -41,28 +39,29 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
 }
 
 const adapterConfigFromConfig = (config: Readonly<InstanceElement> | undefined): Config => {
-  const apiDefinitions = configUtils.mergeWithDefaultConfig(
-    DEFAULT_CONFIG.apiDefinitions,
-    config?.value.apiDefinitions
-  ) as ApiConfig
+  const apiComponents = configUtils.mergeWithDefaultConfig(
+    DEFAULT_CONFIG.apiComponents,
+    config?.value.apiComponents
+  ) as ApiComponentsConfig
 
-  const fetch = _.defaults(
-    {}, config?.value.fetch, DEFAULT_CONFIG[FETCH_CONFIG],
-  )
+  // const fetch = _.defaults(
+  //   {}, config?.value.fetch, DEFAULT_CONFIG[FETCH_CONFIG],
+  // )
 
   validateClientConfig(CLIENT_CONFIG, config?.value?.client) // TODON
   // TODON validate auth + references config
-  validateSwaggerApiDefinitionConfig(API_DEFINITIONS_CONFIG, apiDefinitions)
-  validateSwaggerFetchConfig(
-    FETCH_CONFIG,
-    fetch,
-    apiDefinitions
-  )
+  // TODON fix validations to support multiple components (+ fetch validation)
+  // validateSwaggerApiDefinitionConfig(API_COMPONENTS_CONFIG, apiComponents)
+  // validateSwaggerFetchConfig(
+  //   FETCH_CONFIG,
+  //   fetch,
+  //   apiComponents
+  // )
 
   const adapterConfig: { [K in keyof Required<Config>]: Config[K] } = {
     client: config?.value?.client,
     fetch: config?.value?.fetch,
-    apiDefinitions,
+    apiComponents,
     references: config?.value?.references,
   }
   Object.keys(config?.value ?? {})
@@ -81,6 +80,7 @@ export const adapter: Adapter = {
         config: config[CLIENT_CONFIG],
       }),
       config,
+      getElemIdFunc: context.getElemIdFunc,
     })
 
     return {

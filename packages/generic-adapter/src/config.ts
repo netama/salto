@@ -22,12 +22,13 @@ import { ADAPTER_NAME } from './constants'
 const { createClientConfigType } = clientUtils
 const {
   createUserFetchConfigType,
+  createDucktypeAdapterApiConfigType,
   createSwaggerAdapterApiConfigType,
 } = configUtils
 
 export const CLIENT_CONFIG = 'client'
 export const FETCH_CONFIG = 'fetch'
-export const API_DEFINITIONS_CONFIG = 'apiDefinitions'
+export const API_COMPONENTS_CONFIG = 'apiComponents'
 export const AUTH_CONFIG = 'auth'
 export const REFERENCES_CONFIG = 'references'
 
@@ -43,7 +44,11 @@ export type ClientConfig = clientUtils.ClientBaseConfig<clientUtils.ClientRateLi
 
 export type FetchConfig = configUtils.UserFetchConfig
 
-export type ApiConfig = configUtils.AdapterSwaggerApiConfig
+// TODON merge logic of ducktype+swagger and refactor this
+export type ApiComponentsConfig = {
+  ducktype?: Record<string, configUtils.AdapterDuckTypeApiConfig>
+  swagger?: Record<string, configUtils.AdapterSwaggerApiConfig>
+}
 
 export type ReferencesConfig = {
   // TODON switch never once shared context exists (maybe already?)
@@ -53,7 +58,7 @@ export type ReferencesConfig = {
 export type Config = {
   [CLIENT_CONFIG]: ClientConfig
   [FETCH_CONFIG]: FetchConfig
-  [API_DEFINITIONS_CONFIG]: ApiConfig
+  [API_COMPONENTS_CONFIG]: ApiComponentsConfig
   [REFERENCES_CONFIG]: ReferencesConfig
 }
 
@@ -152,28 +157,56 @@ export const createReferencesConfigType = ({ adapter }: { adapter: string }): Ob
   return referencesConfigType
 }
 
+export const createApiComponentsConfigType = ({ adapter }: { adapter: string }): ObjectType => (
+  createMatchingObjectType<ApiComponentsConfig>({
+    elemID: new ElemID(adapter, 'apiComponentsConfig'),
+    fields: {
+      ducktype: {
+        refType: new MapType(createDucktypeAdapterApiConfigType({ adapter })),
+      },
+      swagger: {
+        refType: new MapType(createSwaggerAdapterApiConfigType({ adapter })),
+      },
+    },
+    annotations: {
+      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
+    },
+  })
+)
 
 const DEFAULT_ID_FIELDS = ['name']
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   // { fieldName: 'createdBy', fieldType: 'string' },
 ]
 
-const DEFAULT_TYPE_CUSTOMIZATIONS: ApiConfig['types'] = {}
-
-const DEFAULT_SWAGGER_CONFIG: ApiConfig['swagger'] = {
-  url: '/tmp/path-to-swagger.json', // TODON
-}
-
-export const DEFAULT_API_DEFINITIONS: ApiConfig = {
-  swagger: DEFAULT_SWAGGER_CONFIG,
-  typeDefaults: {
-    transformation: {
-      idFields: DEFAULT_ID_FIELDS,
-      fieldsToOmit: FIELDS_TO_OMIT,
+export const DEFAULT_API_COMPONENT_DEFINITIONS: ApiComponentsConfig = {
+  swagger: {
+    main: { // TODON use names as prefixes to avoid conflicts
+      swagger: {
+        url: '/tmp/path-to-swagger.json', // TODON
+      },
+      typeDefaults: {
+        transformation: {
+          idFields: DEFAULT_ID_FIELDS,
+          fieldsToOmit: FIELDS_TO_OMIT,
+        },
+      },
+      types: {},
+      supportedTypes: {},
     },
   },
-  types: DEFAULT_TYPE_CUSTOMIZATIONS,
-  supportedTypes: {},
+  ducktype: {
+    main: {
+      typeDefaults: {
+        transformation: {
+          idFields: DEFAULT_ID_FIELDS,
+          fieldsToOmit: FIELDS_TO_OMIT,
+        },
+      },
+      types: {},
+      supportedTypes: {},
+    },
+  },
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -181,7 +214,7 @@ export const DEFAULT_CONFIG: Config = {
     ...elements.query.INCLUDE_ALL_CONFIG,
     hideTypes: true,
   },
-  [API_DEFINITIONS_CONFIG]: DEFAULT_API_DEFINITIONS,
+  [API_COMPONENTS_CONFIG]: DEFAULT_API_COMPONENT_DEFINITIONS,
   [CLIENT_CONFIG]: {
     [AUTH_CONFIG]: {
       type: 'custom',
@@ -194,23 +227,185 @@ export const DEFAULT_CONFIG: Config = {
 }
 
 export const SAMPLE_CONFIG: Partial<Config> = _.defaults({}, {
-  [API_DEFINITIONS_CONFIG]: {
-    supportedTypes: {
-      TypeWithInstances: ['PageType'],
+  [API_COMPONENTS_CONFIG]: {
+    swagger: {
+      // sample1: {
+      //   supportedTypes: {
+      //     TypeWithInstances: ['PageType'],
+      //   },
+      // },
+      main: { // TODON use names as prefixes to avoid conflicts
+        swagger: {
+          url: 'https://raw.githubusercontent.com/salto-io/adapter-swaggers/main/okta/management-swagger-v3.yaml', // okta
+          typeNameOverrides: [
+            { originalName: 'Role', newName: 'RoleAssignment' },
+            { originalName: 'IamRole', newName: 'Role' },
+          ],
+          additionalTypes: [
+            {
+              typeName: 'OktaSignOnPolicies',
+              cloneFrom: 'api__v1__policies',
+            },
+            {
+              typeName: 'OktaSignOnPolicyRules',
+              cloneFrom: 'api__v1__policies___policyId___rules@uuuuuu_00123_00125uu',
+            },
+          ],
+        },
+        typeDefaults: {
+          transformation: {
+            idFields: DEFAULT_ID_FIELDS,
+            fieldsToOmit: FIELDS_TO_OMIT,
+          },
+        },
+        types: {
+          Group: {
+            transformation: {
+              fieldTypeOverrides: [
+                { fieldName: 'roles', fieldType: 'list<RoleAssignment>' },
+                { fieldName: 'source', fieldType: 'Group__source' },
+              ],
+              fieldsToHide: [
+                { fieldName: 'id' },
+              ],
+              idFields: ['profile.name'],
+              serviceIdField: 'id',
+              serviceUrl: '/admin/group/{id}',
+              standaloneFields: [{ fieldName: 'roles' }],
+              nestStandaloneInstances: false,
+            },
+          },
+          IamRoles: {
+            request: {
+              url: '/api/v1/iam/roles',
+            },
+            transformation: {
+              dataField: 'roles',
+            },
+          },
+          OktaSignOnPolicies: {
+            request: {
+              url: '/api/v1/policies',
+              queryParams: {
+                type: 'OKTA_SIGN_ON',
+              },
+              recurseInto: [
+                {
+                  type: 'OktaSignOnPolicyRules',
+                  toField: 'policyRules',
+                  context: [
+                    {
+                      name: 'policyId',
+                      fromField: 'id',
+                    },
+                  ],
+                },
+              ],
+            },
+            transformation: {
+              fieldTypeOverrides: [
+                {
+                  fieldName: 'items',
+                  fieldType: 'list<OktaSignOnPolicy>',
+                },
+              ],
+            },
+          },
+          OktaSignOnPolicyRules: {
+            request: {
+              url: '/api/v1/policies/{policyId}/rules',
+            },
+            transformation: {
+              dataField: '.',
+              fieldTypeOverrides: [
+                {
+                  fieldName: 'items',
+                  fieldType: 'list<OktaSignOnPolicyRule>',
+                },
+              ],
+            },
+          },
+          OktaSignOnPolicy: {
+            transformation: {
+              serviceIdField: 'id',
+              fieldsToHide: [
+                {
+                  fieldName: 'id',
+                },
+              ],
+              fieldTypeOverrides: [
+                {
+                  fieldName: 'policyRules',
+                  fieldType: 'list<OktaSignOnPolicyRule>',
+                },
+              ],
+              standaloneFields: [
+                {
+                  fieldName: 'policyRules',
+                },
+              ],
+            },
+          },
+          OktaSignOnPolicyRule: {
+            transformation: {
+              serviceIdField: 'id',
+              fieldsToHide: [
+                {
+                  fieldName: 'id',
+                },
+              ],
+            },
+          },
+        },
+        supportedTypes: {
+          Application: ['api__v1__apps'],
+          Group: ['api__v1__groups'],
+          RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
+          Role: ['IamRoles'],
+          OktaSignOnPolicy: ['OktaSignOnPolicies'],
+        },
+      },
+    },
+    ducktype: {
+      // sample2: {
+      //   supportedTypes: {
+      //     TypeWithInstances: ['PageType'],
+      //   },
+      // },
     },
   },
   [CLIENT_CONFIG]: {
-    [AUTH_CONFIG]: { // TODON move inside client! + add defaults for client...
+    [AUTH_CONFIG]: {
       type: 'custom',
       headers: {
-        'x-custom-username': '{username}',
-        'x-custom-password': '{password}',
+        Authorization: 'SSWS {token}',
       },
-      baseURL: 'https://{subdomain}.{domain}',
+      baseURL: 'https://{subdomain}.okta.com',
     },
   },
   [REFERENCES_CONFIG]: {
-    rules: [], // TODON
+    rules: [
+      {
+        src: { field: 'assignedGroups', parentTypes: ['Application'] },
+        serializationStrategy: 'id',
+        target: { type: 'Group' },
+      },
+      {
+        src: { field: 'role', parentTypes: ['RoleAssignment'] },
+        serializationStrategy: 'id',
+        target: { type: 'Role' },
+      },
+      {
+        src: { field: 'include', parentTypes: ['GroupCondition'] },
+        serializationStrategy: 'id',
+        target: { type: 'Group' },
+      },
+      {
+        src: { field: 'exclude', parentTypes: ['GroupCondition'] },
+        serializationStrategy: 'id',
+        target: { type: 'Group' },
+      },
+    ],
   },
 }, DEFAULT_CONFIG)
 
@@ -230,8 +425,8 @@ export const configType = createMatchingObjectType<Partial<Config>>({
         ADAPTER_NAME,
       ),
     },
-    [API_DEFINITIONS_CONFIG]: {
-      refType: createSwaggerAdapterApiConfigType({ adapter: ADAPTER_NAME }),
+    [API_COMPONENTS_CONFIG]: {
+      refType: createApiComponentsConfigType({ adapter: ADAPTER_NAME }),
     },
     [REFERENCES_CONFIG]: {
       refType: createReferencesConfigType({ adapter: ADAPTER_NAME }),
@@ -239,12 +434,13 @@ export const configType = createMatchingObjectType<Partial<Config>>({
   },
   annotations: {
     // _.omit(DEFAULT_CONFIG, API_DEFINITIONS_CONFIG, `${FETCH_CONFIG}.hideTypes`),
-    [CORE_ANNOTATIONS.DEFAULT]: DEFAULT_CONFIG,
+    [CORE_ANNOTATIONS.DEFAULT]: SAMPLE_CONFIG,
     [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
   },
 })
 
 export type FilterContext = {
   [FETCH_CONFIG]: FetchConfig
-  [API_DEFINITIONS_CONFIG]: ApiConfig
+  [API_COMPONENTS_CONFIG]: ApiComponentsConfig
+  [REFERENCES_CONFIG]: ReferencesConfig
 }
