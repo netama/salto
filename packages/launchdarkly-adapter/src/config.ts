@@ -17,11 +17,15 @@ import { config as configUtils, elements } from '@salto-io/adapter-components'
 import { Config } from '@salto-io/adapter-creator'
 
 const DEFAULT_ID_FIELDS = ['name']
-export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = []
+export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
+  { fieldName: '_links' },
+]
 
 export const SUPPORTED_TYPES = {
   Token: ['Tokens'],
   Member: ['Members'],
+  Project: ['Projects'],
+  RepositoryRep: ['RepositoryCollectionRep'],
   // TODON continue based on swagger or on https://static.launchdarkly.com/app/s/openapi.b217dbacb.json
 }
 
@@ -65,6 +69,27 @@ export const DEFAULT_CONFIG: Config = {
           Token: {
             transformation: {
               idFields: ['name'],
+            },
+          },
+          Projects: {
+            request: {
+              url: '/api/v2/projects',
+              queryParams: {
+                expand: 'environments',
+              },
+              // recurseInto: [
+              //   { toField: '' }
+              // ],
+            },
+            transformation: {
+              dataField: 'items',
+            },
+          },
+          Environments: {
+            transformation: {
+              fieldsToOmit: [
+                { fieldName: 'totalCount' },
+              ],
             },
           },
         },
