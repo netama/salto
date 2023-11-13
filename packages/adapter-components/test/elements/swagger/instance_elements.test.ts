@@ -160,6 +160,7 @@ describe('swagger_instance_elements', () => {
     it('should return an error on 403 or 401', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -211,6 +212,7 @@ describe('swagger_instance_elements', () => {
     it('should return instances corresponding to the HTTP response and the type', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -301,6 +303,7 @@ describe('swagger_instance_elements', () => {
     it('should use the request defaults', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -360,6 +363,7 @@ describe('swagger_instance_elements', () => {
     it('should not extract standalone fields', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -434,6 +438,7 @@ describe('swagger_instance_elements', () => {
     it('should extract standalone fields', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -568,6 +573,7 @@ describe('swagger_instance_elements', () => {
     it('should not extract standalone fields that are not object types or lists of object types', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -627,6 +633,7 @@ describe('swagger_instance_elements', () => {
     it('should omit fieldsToOmit from instances', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -714,6 +721,7 @@ describe('swagger_instance_elements', () => {
     it('should return nested instances when nestedFieldFinder returns a specific field\'s details', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -793,6 +801,7 @@ describe('swagger_instance_elements', () => {
     it('should fail gracefully if data field is not an object type', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -883,6 +892,7 @@ describe('swagger_instance_elements', () => {
         ].flatMap(extractPageEntries)
       })
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1004,6 +1014,7 @@ describe('swagger_instance_elements', () => {
         ].flatMap(extractPageEntries)
       })
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1076,6 +1087,7 @@ describe('swagger_instance_elements', () => {
         }
       )
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1147,6 +1159,7 @@ describe('swagger_instance_elements', () => {
         }
       )
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1232,6 +1245,7 @@ describe('swagger_instance_elements', () => {
         const objectTypes = generateObjectTypes()
 
         getAllInstancesParams = {
+          adapterName: 'salto',
           paginator: mockPaginator,
           apiConfig: {
             typeDefaults: {
@@ -1486,6 +1500,7 @@ describe('swagger_instance_elements', () => {
     it('should fail if type is missing from config', async () => {
       const objectTypes = generateObjectTypes()
       await expect(() => getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1513,6 +1528,7 @@ describe('swagger_instance_elements', () => {
     it('should fail if type is missing from object types', async () => {
       const objectTypes = generateObjectTypes()
       await expect(() => getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1540,6 +1556,7 @@ describe('swagger_instance_elements', () => {
     it('should fail if type does not have request details', async () => {
       const objectTypes = generateObjectTypes()
       await expect(() => getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1568,6 +1585,7 @@ describe('swagger_instance_elements', () => {
     it('should convert name and filename if nameMapping exists', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1688,6 +1706,7 @@ describe('swagger_instance_elements', () => {
     it('should have the correct instance name as a singleton types', async () => {
       const objectTypes = generateObjectTypes()
       const res = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {
@@ -1735,6 +1754,7 @@ describe('swagger_instance_elements', () => {
     it('should return fetch error if singleton type have more than one instance', async () => {
       const objectTypes = generateObjectTypes()
       const result = await getAllInstances({
+        adapterName: 'salto',
         paginator: mockPaginator,
         apiConfig: {
           typeDefaults: {

@@ -43,12 +43,17 @@ export const getDependencies = (
     .filter(isDefined)
 
 
+export type TypeElementGetter<E extends Element> = (args: {
+  typeName: string
+  contextElements?: Record<string, E[]>
+}) => Promise<FetchElements<E[]>>
+
 /**
  * Helper for fetch orchestration - concurrently fetch elements for the types specified in the
  * configuration, allowing one level of dependencies between the type's endpoints based on the
  * dependsOn field.
  */
-export const getElementsWithContext = async <E extends Element>({
+export const getElementsWithContext = async <E extends Element>({ // shared? but uses a different typeElementGetter
   fetchQuery,
   supportedTypes,
   types,
@@ -57,10 +62,7 @@ export const getElementsWithContext = async <E extends Element>({
   fetchQuery: Pick<ElementQuery, 'isTypeMatch'>
   supportedTypes: Record<string, string[]>
   types: Record<string, TypeConfig>
-  typeElementGetter: (args: {
-    typeName: string
-    contextElements?: Record<string, E[]>
-  }) => Promise<FetchElements<E[]>>
+  typeElementGetter: TypeElementGetter<E>
 }): Promise<FetchElements<E[]>> => {
   const includeTypes = _(supportedTypes)
     .entries()

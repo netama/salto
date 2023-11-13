@@ -19,9 +19,12 @@ import {
   FieldDefinition,
 } from '@salto-io/adapter-api'
 import { pathNaclCase, naclCase } from '@salto-io/adapter-utils'
+import { logger } from '@salto-io/logging'
 import { DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig, getConfigWithDefault } from '../../config'
 import { TYPES_PATH, SUBTYPES_PATH } from '../constants'
 import { fixFieldTypes, hideFields, markServiceIdField } from '../type_elements'
+
+const log = logger(module)
 
 const ID_SEPARATOR = '__'
 
@@ -177,6 +180,7 @@ export const generateType = ({
   typeNameOverrideConfig,
   isSubType = false,
   isUnknownEntry,
+  objectTypes,
 }: {
   adapterName: string
   name: string
@@ -187,7 +191,12 @@ export const generateType = ({
   typeNameOverrideConfig?: Record<string, string>
   isSubType?: boolean
   isUnknownEntry?: (value: unknown) => boolean
+  objectTypes?: Record<string, ObjectType>
 }): ObjectTypeWithNestedTypes => {
+  if (objectTypes?.[name] !== undefined) {
+    log.debug('found type %s for adapter %s in pre-generated object types, returning as-is', name, adapterName)
+    return { type: objectTypes?.[name], nestedTypes: [] }
+  }
   const typeRenameConfig = typeNameOverrideConfig ?? generateTypeRenameConfig(
     transformationConfigByType
   )

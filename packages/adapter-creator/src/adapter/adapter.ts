@@ -128,6 +128,7 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
       throw new Error(`no swagger component named ${componentName} found`)
     }
     return getAllInstances({
+      adapterName: this.adapterName,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: this.apiSwaggerDefinitions(parsedConfigs, componentName),

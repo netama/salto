@@ -60,6 +60,7 @@ type GetEntriesParams = {
   getElemIdFunc?: ElemIdGetter
   getEntriesResponseValuesFunc?: EntriesRequester
   reversedSupportedTypes: Record<string, string[]>
+  objectTypes?: Record<string, ObjectType>
 }
 
 type Entries = {
@@ -124,7 +125,7 @@ const getEntriesForType = async (
   const {
     typeName, paginator, typesConfig, typeDefaultConfig, contextElements,
     requestContext, nestedFieldFinder, computeGetArgs, adapterName, getElemIdFunc,
-    getEntriesResponseValuesFunc, reversedSupportedTypes,
+    getEntriesResponseValuesFunc, reversedSupportedTypes, objectTypes,
   } = params
   const typeConfig = typesConfig[typeName]
   if (typeConfig === undefined) {
@@ -163,13 +164,16 @@ const getEntriesForType = async (
 
   // types with dynamic fields will be associated with the dynamic_keys type
 
-  const { type, nestedTypes } = generateType({
+  // TODON make _this_ part aware of the swagger? and reuse nested types
+  // TODON also make it easy to override / add more args here based on the response? but less critical...
+  const { type, nestedTypes } = generateType({ // TODON first look in swagger? or just replace at the end?
     adapterName,
     name: typeName,
     entries: entriesValues,
     hasDynamicFields: hasDynamicFields === true,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
   // find the field and type containing the actual instances
   const nestedFieldDetails = await nestedFieldFinder(type, fieldsToOmit, dataField)
@@ -216,8 +220,7 @@ const getEntriesForType = async (
   }
 
   const { recurseInto } = requestWithDefaults
-  const getExtraFieldValues = async (instance: InstanceElement):
-  Promise<Record<string, Entries>> => Object.fromEntries(
+  const getExtraFieldValues = async (instance: InstanceElement): Promise<Record<string, Entries>> => Object.fromEntries(
     (await Promise.all(
       (recurseInto ?? [])
         .filter(({ conditions }) => shouldRecurseIntoEntry(
@@ -287,6 +290,7 @@ export const getTypeAndInstances = async ({
   reversedSupportedTypes,
   customInstanceFilter,
   additionalRequestContext,
+  objectTypes,
 }: {
   adapterName: string
   typeName: string
@@ -301,8 +305,9 @@ export const getTypeAndInstances = async ({
   reversedSupportedTypes: Record<string, string[]>
   customInstanceFilter?: (instances: InstanceElement[]) => InstanceElement[]
   additionalRequestContext?: Record<string, unknown>
+  objectTypes?: Record<string, ObjectType> // TODON rename?
 }): Promise<Element[]> => {
-  const entries = await getEntriesForType({
+  const entries = await getEntriesForType({ // should be shared...
     adapterName,
     paginator,
     typeName,
@@ -315,6 +320,7 @@ export const getTypeAndInstances = async ({
     getEntriesResponseValuesFunc,
     reversedSupportedTypes,
     requestContext: additionalRequestContext,
+    objectTypes,
   })
   const { type, nestedTypes, instances } = entries
   const filteredInstances = customInstanceFilter !== undefined ? customInstanceFilter(instances) : instances
@@ -322,7 +328,7 @@ export const getTypeAndInstances = async ({
   const transformationConfigByType = getTransformationConfigByType(typesConfig)
 
   // We currently don't support extracting standalone fields from the types we recursed into
-  await extractStandaloneFields({
+  await extractStandaloneFields({ // check for consistency
     adapterName,
     elements,
     transformationConfigByType,
@@ -340,7 +346,7 @@ export const getTypeAndInstances = async ({
  * Supports one level of dependency between the type's endpoints, using the dependsOn field
  * (note that it will need to be extended in order to support longer dependency chains).
  */
-export const getAllElements = async ({
+export const getAllElements = async ({ // ducktype
   adapterName,
   fetchQuery,
   supportedTypes,
@@ -371,6 +377,7 @@ export const getAllElements = async ({
   customInstanceFilter?: (instances: InstanceElement[]) => InstanceElement[]
   additionalRequestContext? : Record<string, unknown>
 }): Promise<FetchElements<Element[]>> => {
+  // TODON shouldn't these be all? except edge cases / special cases just for consistency?
   const supportedTypesWithEndpoints = _.mapValues(
     supportedTypes,
     typeNames => typeNames.filter(typeName => types[typeName].request?.url !== undefined)
@@ -398,12 +405,12 @@ export const getAllElements = async ({
   }
 
   const configSuggestions: ConfigChangeSuggestion[] = []
-  const { elements, errors } = await getElementsWithContext({
+  const { elements, errors } = await getElementsWithContext({ // TODON the actual code?
     fetchQuery,
     supportedTypes: supportedTypesWithEndpoints,
     types,
     typeElementGetter: async args => {
-      try {
+      try { // TODON move all this wrapping inside?
         return {
           elements: (await getTypeAndInstances({ ...elementGenerationParams, ...args, customInstanceFilter })),
           errors: [],
