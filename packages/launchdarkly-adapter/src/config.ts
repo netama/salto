@@ -48,24 +48,24 @@ export const DEFAULT_CONFIG: Config = {
             idFields: DEFAULT_ID_FIELDS,
             fieldsToOmit: FIELDS_TO_OMIT,
             nestStandaloneInstances: true,
+            dataField: 'items',
           },
         },
         types: {
-          Members: {
-            transformation: {
-              dataField: 'items',
-            },
-          },
+          // Members: {
+          //   transformation: {
+          //   },
+          // },
           Member: {
             transformation: {
               idFields: ['email'],
             },
           },
-          Tokens: {
-            transformation: {
-              dataField: 'items',
-            },
-          },
+          // Tokens: {
+          //   transformation: {
+          //     dataField: 'items',
+          //   },
+          // },
           Token: {
             transformation: {
               idFields: ['name'],
@@ -81,15 +81,15 @@ export const DEFAULT_CONFIG: Config = {
               //   { toField: '' }
               // ],
             },
-            transformation: {
-              dataField: 'items',
-            },
+            // transformation: {
+            //   dataField: 'items',
+            // },
           },
           Environments: {
             transformation: {
-              fieldsToOmit: [
+              fieldsToOmit: FIELDS_TO_OMIT.concat([
                 { fieldName: 'totalCount' },
-              ],
+              ]),
             },
           },
         },

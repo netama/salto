@@ -23,6 +23,7 @@ import { createClient } from './client'
 import {
   createConfigType, Config, CLIENT_CONFIG, API_COMPONENTS_CONFIG,
 } from './config'
+import { getConfigCreator } from './config_creator'
 import { FilterCreator } from './filter'
 import { AdapterImplConstructor } from './adapter/types'
 import { createAdapterImpl } from './adapter/creator'
@@ -95,7 +96,7 @@ export const createAdapter = <
   defaultConfig: Co
   operationsCustomizations: {
     // TODON template the instance element as well for consistency?
-    adapterConfigCreator?: (config: Readonly<InstanceElement> | undefined) => Co
+    adapterConfigCreator?: (config: Readonly<InstanceElement> | undefined) => Co // TODON too many creators for config?
     credentialsFromConfig?: (config: Readonly<InstanceElement>) => Credentials
     connectionCreatorFromConfig: (config: Co['client']) => clientUtils.ConnectionCreator<Credentials> // TODON config
     customizeFilterCreators?: (config: Co) => FilterCreator<Credentials>[]
@@ -158,5 +159,6 @@ export const createAdapter = <
     validateCredentials, // TODON credentials cannot be validated based on config, because config doesn't exist yet
     authenticationMethods,
     configType: createConfigType(adapterName),
+    configCreator: getConfigCreator(adapterName),
   }
 }
