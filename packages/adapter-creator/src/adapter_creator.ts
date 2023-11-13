@@ -29,7 +29,7 @@ import { AdapterImplConstructor } from './adapter/types'
 import { createAdapterImpl } from './adapter/creator'
 
 const { validateClientConfig } = clientUtils
-const { validateSwaggerApiDefinitionConfig, validateDuckTypeApiDefinitionConfig } = configUtils
+const { validateDuckTypeApiDefinitionConfig } = configUtils
 
 // TODON see if can customize this as well so that we get better logs per adapter/account???
 // const log = logger(module)
@@ -54,12 +54,11 @@ const adapterConfigFromConfigNoValidations = <Co extends Config>(
   validateClientConfig(CLIENT_CONFIG, config?.value?.client) // TODON
   // TODON validate auth + references config
   // TODON fix validations to support multiple components (+ fetch validation)
-  Object.values(apiComponents.swagger ?? {}).forEach(swaggerConf => {
-    validateSwaggerApiDefinitionConfig(API_COMPONENTS_CONFIG, swaggerConf)
-  })
-  Object.values(apiComponents.ducktype ?? {}).forEach(ducktypeConf => {
-    validateDuckTypeApiDefinitionConfig(API_COMPONENTS_CONFIG, ducktypeConf)
-  })
+  // collections.array.makeArray(apiComponents.sources?.swagger).forEach(swaggerConf => {
+  //   validateSwaggerApiDefinitionConfig(API_COMPONENTS_CONFIG, swaggerConf)
+  // })
+  // TODON add validation just for the swagger parts?
+  validateDuckTypeApiDefinitionConfig(API_COMPONENTS_CONFIG, apiComponents.definitions)
 
   // TODON validate after merging!!!
   // validateSwaggerFetchConfig(

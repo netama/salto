@@ -21,7 +21,7 @@ import {
 } from '../constants'
 import { ZuoraApiConfig } from '../config'
 
-const { RECORDS_PATH, swagger } = elementUtils
+const { RECORDS_PATH, getAllElements } = elementUtils
 
 export const getStandardObjectTypeName = (apiDefs: ZuoraApiConfig): string | undefined => (
   Object.keys(apiDefs.types).find(
@@ -53,7 +53,8 @@ export const getStandardObjectElements = async ({
       : undefined,
   })
 
-  const standardObjectInstances = (await swagger.getAllInstances({
+  const standardObjectElements = (await getAllElements({
+    adapterName: ZUORA_BILLING,
     paginator,
     // only need the top-level element
     objectTypes: { [standardObjecWrapperTypeName]: standardObjectWrapperType },
@@ -71,5 +72,6 @@ export const getStandardObjectElements = async ({
     inst.annotations,
   ))
 
-  return [standardObjectDefType, ...standardObjectInstances]
+  // return [standardObjectDefType, ...standardObjectInstances]
+  return standardObjectElements
 }

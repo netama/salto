@@ -13,39 +13,48 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ObjectType, ElemID, MapType, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
+import { ObjectType, ElemID, CORE_ANNOTATIONS, ListType } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
-import { AdapterDuckTypeApiConfig, createDucktypeAdapterApiConfigType } from './ducktype'
-import { AdapterSwaggerApiConfig, createSwaggerAdapterApiConfigType } from './swagger'
+import { createDucktypeAdapterApiConfigType } from './ducktype'
+import { SwaggerDefinitionBaseConfig, createSwaggerDefinitionsBaseConfigType } from './swagger'
+import { AdapterApiConfig } from './shared'
 
 // TODON merge logic of ducktype+swagger and refactor this
 export type ApiComponentsConfig = {
-  ducktype?: Record<string, AdapterDuckTypeApiConfig>
-  swagger?: Record<string, AdapterSwaggerApiConfig>
+  sources?: {
+    swagger?: SwaggerDefinitionBaseConfig[]
+  }
+  // clients: {} // TODON define
+  definitions: AdapterApiConfig
 }
 
-export const createApiComponentsConfigType = ({ adapter }: { adapter: string }): ObjectType => (
-  createMatchingObjectType<ApiComponentsConfig>({
+export const createApiComponentsConfigType = ({ adapter }: { adapter: string }): ObjectType => {
+  const createSwaggerSourceApiConfig = (): ObjectType => createMatchingObjectType<ApiComponentsConfig['sources']>({
+    elemID: new ElemID(adapter, 'apiSourceSwaggerConfig'),
+    fields: {
+      swagger: {
+        refType: new ListType(createSwaggerDefinitionsBaseConfigType(adapter)),
+      },
+    },
+  })
+  return createMatchingObjectType<ApiComponentsConfig>({
     elemID: new ElemID(adapter, 'apiComponentsConfig'),
     fields: {
-      ducktype: {
-        refType: new MapType(createDucktypeAdapterApiConfigType({
-          adapter,
-          elemIdPrefix: 'swagger',
-        })),
+      sources: {
+        refType: createSwaggerSourceApiConfig(),
       },
-      swagger: {
-        refType: new MapType(createSwaggerAdapterApiConfigType({
-          adapter,
-          elemIdPrefix: 'ducktype',
-        })),
+      definitions: {
+        refType: createDucktypeAdapterApiConfigType({ adapter }),
+        annotations: {
+          _required: true,
+        },
       },
     },
     annotations: {
       [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
     },
   })
-)
+}
 
 // TODON add validation
 // TODON move to "v1/v2" folders?

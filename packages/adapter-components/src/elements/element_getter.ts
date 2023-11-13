@@ -22,8 +22,8 @@ import { ElementQuery } from './query'
 
 const { isDefined } = lowerdashValues
 
-export type FetchElements<T> = {
-  elements: T
+export type FetchElements = {
+  elements: Element[]
   errors?: SaltoError[]
   configChanges?: ConfigChangeSuggestion[]
 }
@@ -46,14 +46,14 @@ export const getDependencies = (
 export type TypeElementGetter<E extends Element> = (args: {
   typeName: string
   contextElements?: Record<string, E[]>
-}) => Promise<FetchElements<E[]>>
+}) => Promise<FetchElements>
 
 /**
  * Helper for fetch orchestration - concurrently fetch elements for the types specified in the
  * configuration, allowing one level of dependencies between the type's endpoints based on the
  * dependsOn field.
  */
-export const getElementsWithContext = async <E extends Element>({ // shared? but uses a different typeElementGetter
+export const getElementsWithContext = async ({ // shared? but uses a different typeElementGetter
   fetchQuery,
   supportedTypes,
   types,
@@ -62,8 +62,8 @@ export const getElementsWithContext = async <E extends Element>({ // shared? but
   fetchQuery: Pick<ElementQuery, 'isTypeMatch'>
   supportedTypes: Record<string, string[]>
   types: Record<string, TypeConfig>
-  typeElementGetter: TypeElementGetter<E>
-}): Promise<FetchElements<E[]>> => {
+  typeElementGetter: TypeElementGetter<Element>
+}): Promise<FetchElements> => {
   const includeTypes = _(supportedTypes)
     .entries()
     .filter(([typeName]) => fetchQuery.isTypeMatch(typeName))
@@ -83,7 +83,7 @@ export const getElementsWithContext = async <E extends Element>({ // shared? but
   const additionalContextTypes: string[] = getDependencies([...dependentEndpoints], types)
     .filter(typeName => !independentEndpoints.has(typeName))
 
-  const contextElements: Record<string, FetchElements<E[]> & {
+  const contextElements: Record<string, FetchElements & {
     // if the type is only fetched as context for another type, do not persist it
     persistInstances: boolean
   }> = Object.fromEntries(await Promise.all(

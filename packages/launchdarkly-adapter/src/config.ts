@@ -35,66 +35,68 @@ export const DEFAULT_CONFIG: Config = {
     ...elements.query.INCLUDE_ALL_CONFIG,
   },
   apiComponents: {
-    swagger: {
-      main: {
-        swagger: {
+    sources: {
+      swagger: [ // TODON any point naming sources?
+        {
           url: 'https://app.launchdarkly.com/api/v2/openapi.json',
         },
-        typeDefaults: {
-          request: {
-            paginationField: '_links.next.href',
-          },
-          transformation: {
-            idFields: DEFAULT_ID_FIELDS,
-            fieldsToOmit: FIELDS_TO_OMIT,
-            nestStandaloneInstances: true,
-            dataField: 'items',
-          },
+      ],
+    },
+    definitions: {
+      typeDefaults: {
+        request: {
+          paginationField: '_links.next.href',
         },
-        types: {
-          // Members: {
-          //   transformation: {
-          //   },
-          // },
-          Member: {
-            transformation: {
-              idFields: ['email'],
-            },
-          },
-          // Tokens: {
-          //   transformation: {
-          //     dataField: 'items',
-          //   },
-          // },
-          Token: {
-            transformation: {
-              idFields: ['name'],
-            },
-          },
-          Projects: {
-            request: {
-              url: '/api/v2/projects',
-              queryParams: {
-                expand: 'environments',
-              },
-              // recurseInto: [
-              //   { toField: '' }
-              // ],
-            },
-            // transformation: {
-            //   dataField: 'items',
-            // },
-          },
-          Environments: {
-            transformation: {
-              fieldsToOmit: FIELDS_TO_OMIT.concat([
-                { fieldName: 'totalCount' },
-              ]),
-            },
-          },
+        transformation: {
+          idFields: DEFAULT_ID_FIELDS,
+          fieldsToOmit: FIELDS_TO_OMIT,
+          nestStandaloneInstances: true,
+          dataField: 'items',
         },
-        supportedTypes: SUPPORTED_TYPES,
       },
+      types: {
+        // Members: {
+        //   transformation: {
+        //   },
+        // },
+        Member: {
+          transformation: {
+            idFields: ['email'],
+          },
+        },
+        // Tokens: {
+        //   transformation: {
+        //     dataField: 'items',
+        //   },
+        // },
+        Token: {
+          transformation: {
+            idFields: ['name'],
+          },
+        },
+        Projects: {
+          request: {
+            url: '/api/v2/projects',
+            queryParams: {
+              expand: 'environments',
+            },
+            // recurseInto: [
+            //   { toField: '' }
+            // ],
+          },
+          // transformation: {
+          //   dataField: 'items',
+          // },
+        },
+        Environments: {
+          transformation: {
+            fieldsToOmit: FIELDS_TO_OMIT.concat([
+              { fieldName: 'totalCount' },
+            ]),
+          },
+        },
+      },
+      supportedTypes: SUPPORTED_TYPES,
     },
   },
 }

@@ -31,11 +31,11 @@ import commonFilters from './filters/common'
 import fieldReferencesFilter from './filters/field_references'
 
 const { createPaginator, getWithCursorPagination } = clientUtils
-
-const { generateTypes, getAllInstances } = elementUtils.swagger
+const { getAllElements } = elementUtils
+const { generateTypes } = elementUtils.swagger
 const log = logger(module)
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   // fieldReferencesFilter should run after all elements were created
   fieldReferencesFilter,
   ...Object.values(commonFilters),
@@ -95,7 +95,7 @@ export default class StripeAdapter implements AdapterOperations {
   private async getInstances(
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.TypeSwaggerConfig>
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+  ): Promise<elementUtils.FetchElements> {
     const updatedApiDefinitionsConfig = {
       ...this.userConfig[API_DEFINITIONS_CONFIG],
       // user config takes precedence over parsed config
@@ -107,7 +107,8 @@ export default class StripeAdapter implements AdapterOperations {
         ),
       },
     }
-    return getAllInstances({
+    return getAllElements({
+      adapterName: STRIPE,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: updatedApiDefinitionsConfig,
@@ -126,12 +127,12 @@ export default class StripeAdapter implements AdapterOperations {
     progressReporter.reportProgress({ message: 'Fetching types' })
     const { allTypes, parsedConfigs } = await this.getAllTypes()
     progressReporter.reportProgress({ message: 'Fetching instances' })
-    const { elements: instances } = await this.getInstances(allTypes, parsedConfigs)
+    const { elements } = await this.getInstances(allTypes, parsedConfigs)
 
-    const elements = [
-      ...Object.values(allTypes),
-      ...instances,
-    ]
+    // const elements = [
+    //   ...Object.values(allTypes),
+    //   ...instances,
+    // ]
 
     log.debug('going to run filters on %d fetched elements', elements.length)
     progressReporter.reportProgress({ message: 'Running filters for additional information' })

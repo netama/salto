@@ -14,23 +14,23 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { Element, InstanceElement, isObjectType, Values, ObjectType, ElemIdGetter, SaltoError } from '@salto-io/adapter-api'
+import { Element, InstanceElement, isObjectType, Values, ObjectType, ElemIdGetter, SaltoError, isType, isInstanceElement } from '@salto-io/adapter-api'
 import { naclCase } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { Paginator, ResponseValue, ClientGetWithPaginationParams } from '../../client'
 import { generateType } from './type_elements'
 import { toInstance } from './instance_elements'
-import { TypeConfig, getConfigWithDefault, getTransformationConfigByType } from '../../config'
-import { FindNestedFieldFunc } from '../field_finder'
+import { getConfigWithDefault, getTransformationConfigByType } from '../../config'
+import { FindNestedFieldFunc, findDataField } from '../field_finder'
 import { TypeDuckTypeDefaultsConfig, TypeDuckTypeConfig, DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig } from '../../config/ducktype'
-import { ComputeGetArgsFunc } from '../request_parameters'
+import { computeGetArgs as defaultComputeGetArgs, ComputeGetArgsFunc } from '../request_parameters'
 import { FetchElements, getElementsWithContext } from '../element_getter'
 import { extractStandaloneFields } from './standalone_field_extractor'
 import { shouldRecurseIntoEntry } from '../instance_elements'
 import { addRemainingTypes } from './add_remaining_types'
 import { ElementQuery } from '../query'
-import { AdapterFetchError, InvalidSingletonType } from '../../config/shared'
+import { AdapterApiConfig, AdapterFetchError, InvalidSingletonType } from '../../config/shared'
 import { ConfigChangeSuggestion } from '../../config/config_change'
 import { ARRAY_ITEMS_FIELD } from '../swagger/type_elements/swagger_parser'
 
@@ -368,16 +368,16 @@ export const getTypeAndInstances = async ({
  * Supports one level of dependency between the type's endpoints, using the dependsOn field
  * (note that it will need to be extended in order to support longer dependency chains).
  */
-export const getAllElements = async ({ // ducktype
+export const getAllElements = async ({
   adapterName,
   fetchQuery,
   supportedTypes,
-  types,
+  apiConfig,
+  objectTypes,
   shouldAddRemainingTypes = true,
   paginator,
-  nestedFieldFinder,
-  computeGetArgs,
-  typeDefaults,
+  nestedFieldFinder = findDataField,
+  computeGetArgs = defaultComputeGetArgs,
   getElemIdFunc,
   getEntriesResponseValuesFunc,
   isErrorTurnToConfigSuggestion,
@@ -387,18 +387,19 @@ export const getAllElements = async ({ // ducktype
   adapterName: string
   fetchQuery: ElementQuery
   supportedTypes: Record<string, string[]>
-  types: Record<string, TypeConfig>
+  apiConfig: Pick<AdapterApiConfig, 'types' | 'typeDefaults'>
+  objectTypes?: Record<string, ObjectType>
   shouldAddRemainingTypes?: boolean
   paginator: Paginator
-  nestedFieldFinder: FindNestedFieldFunc
-  computeGetArgs: ComputeGetArgsFunc
-  typeDefaults: TypeDuckTypeDefaultsConfig
+  nestedFieldFinder?: FindNestedFieldFunc
+  computeGetArgs?: ComputeGetArgsFunc
   getElemIdFunc?: ElemIdGetter
   getEntriesResponseValuesFunc?: EntriesRequester
   isErrorTurnToConfigSuggestion?: (error: Error) => boolean
   customInstanceFilter?: (instances: InstanceElement[]) => InstanceElement[]
   additionalRequestContext? : Record<string, unknown>
-}): Promise<FetchElements<Element[]>> => {
+}): Promise<FetchElements> => {
+  const { types, typeDefaults } = apiConfig
   // TODON shouldn't these be all? except edge cases / special cases just for consistency?
   const supportedTypesWithEndpoints = _.mapValues(
     supportedTypes,
@@ -427,14 +428,16 @@ export const getAllElements = async ({ // ducktype
   }
 
   const configSuggestions: ConfigChangeSuggestion[] = []
-  const { elements, errors } = await getElementsWithContext({ // TODON the actual code?
+  const { elements, errors } = await getElementsWithContext({
     fetchQuery,
     supportedTypes: supportedTypesWithEndpoints,
     types,
     typeElementGetter: async args => {
       try { // TODON move all this wrapping inside?
         return {
-          elements: (await getTypeAndInstances({ ...elementGenerationParams, ...args, customInstanceFilter })),
+          elements: (await getTypeAndInstances({
+            ...elementGenerationParams, ...args, customInstanceFilter, objectTypes,
+          })),
           errors: [],
         }
       } catch (e) {
@@ -463,11 +466,15 @@ export const getAllElements = async ({ // ducktype
       }
     },
   })
-  const objectTypes = Object.fromEntries(
-    elements.filter(isObjectType).map(e => [e.elemID.name, e])
-  )
+  // TODON make sure we remove orphan subtypes
+  const newObjectTypes = Object.fromEntries(elements
+    .filter(isType)
+    .filter(e => objectTypes?.[e.elemID.name] === undefined)
+    .map(e => [e.elemID.name, e]))
   const instancesAndTypes = [
-    ...Object.values(objectTypes), ...elements.filter(e => !isObjectType(e)),
+    ...Object.values(objectTypes ?? {}),
+    ...Object.values(newObjectTypes),
+    ...elements.filter(e => isInstanceElement(e)),
   ]
   if (shouldAddRemainingTypes) {
     addRemainingTypes({

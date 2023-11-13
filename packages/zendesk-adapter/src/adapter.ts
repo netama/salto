@@ -169,7 +169,7 @@ const { awu } = collections.asynciterable
 const { concatObjects } = objects
 const SECTIONS_TYPE_NAME = 'sections'
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   ticketStatusCustomStatusDeployFilter,
   ticketFieldFilter,
   userFieldFilter,
@@ -358,7 +358,7 @@ const getGuideElements = async ({
   apiDefinitions: configUtils.AdapterDuckTypeApiConfig
   fetchQuery: elementUtils.query.ElementQuery
   getElemIdFunc?: ElemIdGetter
-}): Promise<elementUtils.FetchElements<Element[]>> => {
+}): Promise<elementUtils.FetchElements> => {
   const transformationDefaultConfig = apiDefinitions.typeDefaults.transformation
   const transformationConfigByType = configUtils.getTransformationConfigByType(apiDefinitions.types)
 
@@ -369,14 +369,16 @@ const getGuideElements = async ({
     log.debug(`Fetching elements for brand ${brandInstance.elemID.name}`)
     return getAllElements({
       adapterName: ZENDESK,
-      types: typesConfigWithNoStandaloneFields,
+      apiConfig: {
+        types: typesConfigWithNoStandaloneFields,
+        typeDefaults: apiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: GUIDE_BRAND_SPECIFIC_TYPES,
       fetchQuery,
       paginator: brandsPaginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: apiDefinitions.typeDefaults,
       getElemIdFunc,
       getEntriesResponseValuesFunc: zendeskGuideEntriesFunc(brandInstance),
     })
@@ -459,6 +461,7 @@ export default class ZendeskAdapter implements AdapterOperations {
     configInstance,
     elementsSource,
   }: ZendeskAdapterParams) {
+    // TODON use in generic adapter creator as well?
     const wrapper = getElemIdFunc ? getElemIdFuncWrapper(getElemIdFunc) : undefined
     this.userConfig = config
     this.configInstance = configInstance
@@ -683,7 +686,7 @@ export default class ZendeskAdapter implements AdapterOperations {
       }) : undefined
 
     const fetchErrors = (errors ?? []).concat(result.errors ?? []).concat(localeError ?? [])
-    if (this.logIdsFunc !== undefined) {
+    if (this.logIdsFunc !== undefined) { // TODON use as well?
       this.logIdsFunc()
     }
     return { elements, errors: fetchErrors, updatedConfig }

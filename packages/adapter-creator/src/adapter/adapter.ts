@@ -15,12 +15,13 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, Element,
-  DeployModifiers, FetchOptions, ElemIdGetter, InstanceElement, isObjectType, TypeMap,
+  FetchResult, AdapterOperations, DeployResult,
+  DeployModifiers, FetchOptions, ElemIdGetter, InstanceElement, isObjectType,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
+import { collections } from '@salto-io/lowerdash'
 import { Client } from '../client'
 import { FETCH_CONFIG, Config, createConfigType, API_COMPONENTS_CONFIG } from '../config'
 import { Filter, filtersRunner } from '../filter'
@@ -28,9 +29,8 @@ import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
 
 const { createPaginator } = clientUtils
-const { computeGetArgs, findDataField } = elementUtils
-const { generateTypes, getAllInstances } = elementUtils.swagger
-const { getAllElements } = elementUtils.ducktype
+const { computeGetArgs, findDataField, getAllElements } = elementUtils
+const { generateTypes } = elementUtils.swagger
 const log = logger(module) // TODON move inside so that it has the account context???
 
 // TODON add a creator for this? and only use member functions where strictly needed
@@ -80,15 +80,11 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
   }
 
   // TODON refactor...
-  private apiSwaggerDefinitions(
-    parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-    componentName: string,
-  ): configUtils.AdapterSwaggerApiConfig {
+  private apiDefinitions(
+    parsedConfigs?: Record<string, configUtils.RequestableTypeSwaggerConfig>,
+  ): configUtils.AdapterApiConfig {
     // TODON reuse util
-    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
-    if (defs === undefined) {
-      throw new Error(`no swagger component named ${componentName} found`)
-    }
+    const defs = this.userConfig[API_COMPONENTS_CONFIG].definitions
     return {
       ...defs,
       // user config takes precedence over parsed config
@@ -96,76 +92,26 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
         ...parsedConfigs,
         ..._.mapValues(
           defs.types,
-          (def, typeName) => ({ ...parsedConfigs[typeName], ...def })
+          (def, typeName) => ({ ...parsedConfigs?.[typeName] ?? {}, ...def })
         ),
       },
     }
   }
 
   @logDuration('generating types from swagger')
-  private async getSwaggerTypes(componentName: string): Promise<elementUtils.swagger.ParsedTypes> {
-    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
-    if (defs === undefined) {
-      throw new Error(`no swagger component named ${componentName} found`)
-    }
-    return generateTypes(
-      this.adapterName,
-      defs,
-      undefined,
-      undefined,
-      true,
-    )
-  }
-
-  @logDuration('getting instances from service')
-  private async getSwaggerInstances(
-    componentName: string,
-    allTypes: TypeMap,
-    parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
-    const defs = this.userConfig[API_COMPONENTS_CONFIG].swagger?.[componentName]
-    if (defs === undefined) {
-      throw new Error(`no swagger component named ${componentName} found`)
-    }
-    return getAllInstances({
-      adapterName: this.adapterName,
-      paginator: this.paginator,
-      objectTypes: _.pickBy(allTypes, isObjectType),
-      apiConfig: this.apiSwaggerDefinitions(parsedConfigs, componentName),
-      supportedTypes: defs.supportedTypes,
-      fetchQuery: this.fetchQuery,
-    })
-  }
-
-  async fetchSwaggerElements(componentName: string): Promise<elementUtils.FetchElements<Element[]>> {
-    log.debug(`going to fetch ${this.adapterName} component ${componentName} (swagger) account configuration`)
-    const { allTypes, parsedConfigs } = await this.getSwaggerTypes(componentName)
-    const { elements: instances } = await this.getSwaggerInstances(componentName, allTypes, parsedConfigs)
-    const elements = [
-      ...Object.values(allTypes),
-      ...instances,
-    ]
-    return { elements }
-  }
-
-  async fetchDucktypeElements(componentName: string): Promise<elementUtils.FetchElements<Element[]>> {
-    log.debug(`going to fetch ${this.adapterName} component ${componentName} (ducktype) account configuration`)
-    const defs = this.userConfig[API_COMPONENTS_CONFIG].ducktype?.[componentName]
-    if (defs === undefined) {
-      throw new Error(`no ducktype component named ${componentName} found`)
-    }
-    return getAllElements({
-      adapterName: this.adapterName,
-      types: defs.types,
-      shouldAddRemainingTypes: true,
-      supportedTypes: defs.supportedTypes,
-      fetchQuery: this.fetchQuery,
-      paginator: this.paginator,
-      nestedFieldFinder: findDataField,
-      computeGetArgs,
-      typeDefaults: defs.typeDefaults,
-      getElemIdFunc: this.getElemIdFunc,
-    })
+  private async getAllSwaggerTypes(): Promise<elementUtils.swagger.ParsedTypes> {
+    return _.defaults({}, ...await Promise.all(
+      collections.array.makeArray(this.userConfig[API_COMPONENTS_CONFIG].sources?.swagger).map(defs => (generateTypes(
+        this.adapterName,
+        {
+          swagger: defs,
+          ...this.userConfig[API_COMPONENTS_CONFIG].definitions,
+        },
+        undefined,
+        undefined,
+        true,
+      )))
+    ))
   }
 
   /**
@@ -173,18 +119,27 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
    * Account credentials were given in the constructor.
    */
   @logDuration('fetching account configuration')
-  // TODON generalize and move to shared adapter code
-  async getElements(): Promise<elementUtils.FetchElements<Element[]>> {
-    const allResults = await Promise.all([
-      ...Object.keys(this.userConfig[API_COMPONENTS_CONFIG].swagger ?? {}).map(
-        componentName => this.fetchSwaggerElements(componentName)
-      ),
-      ...Object.keys(this.userConfig[API_COMPONENTS_CONFIG].ducktype ?? {}).map(
-        componentName => this.fetchDucktypeElements(componentName)
-      ),
-    ])
-    const elements = allResults.flatMap(res => res.elements)
-    return { elements }
+  async getElements(): Promise<elementUtils.FetchElements> {
+    // TODON next - share the type defs and don't distinguish between swagger and ducktype at all
+    const { allTypes, parsedConfigs } = await this.getAllSwaggerTypes()
+    // TODON consolidate all requests+transformations and call getAllElements once for everything
+    // TODON is there a case where some of the defaults should come from the types?
+    // e.g. pagination or client? - if so - can customize at that level...
+    // TODON add a client name as an arg for fetching types???
+
+    const defs = this.apiDefinitions(parsedConfigs)
+    return getAllElements({
+      adapterName: this.adapterName,
+      apiConfig: defs,
+      shouldAddRemainingTypes: true,
+      supportedTypes: defs.supportedTypes,
+      fetchQuery: this.fetchQuery,
+      paginator: this.paginator,
+      nestedFieldFinder: findDataField,
+      computeGetArgs,
+      getElemIdFunc: this.getElemIdFunc,
+      objectTypes: _.pickBy(allTypes, isObjectType),
+    })
   }
 
   /**

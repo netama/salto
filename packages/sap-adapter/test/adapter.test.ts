@@ -170,7 +170,7 @@ describe('adapter', () => {
         expect(adapterComponents.elements.swagger.generateTypes).toHaveBeenCalledTimes(1)
         expect(adapterComponents.elements.swagger.generateTypes).toHaveBeenCalledWith(
           ADAPTER_NAME,
-          DEFAULT_CONFIG.apiComponents.swagger?.main,
+          DEFAULT_CONFIG.apiComponents.sources?.swagger?.[0],
           undefined,
           undefined,
           true,

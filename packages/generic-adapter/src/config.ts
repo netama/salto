@@ -57,20 +57,24 @@ export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   // { fieldName: 'createdBy', fieldType: 'string' },
 ]
 
-export const DEFAULT_API_COMPONENT_DEFINITIONS: Config['apiComponents'] = {
-  swagger: {
-  },
-  ducktype: {
-  },
-}
-
 export const DEFAULT_CONFIG: Config = {
   fetch: {
     ...elements.query.INCLUDE_ALL_CONFIG,
     hideTypes: false,
   },
-  apiComponents: {},
-  client: {
+  apiComponents: {
+    sources: {},
+    definitions: {
+      supportedTypes: {},
+      typeDefaults: {
+        transformation: {
+          idFields: ['id'],
+        },
+      },
+      types: {},
+    },
+  },
+  client: { // TODON switch to multiple clients
     auth: {
       type: 'custom',
       baseURL: 'http://localhost:80',
@@ -83,35 +87,27 @@ export const DEFAULT_CONFIG: Config = {
 
 export const SAMPLE_CONFIG: Config = _.defaults({}, {
   apiComponents: {
-    swagger: {
-      sample: { // TODON use names as prefixes to avoid conflicts
-        swagger: {
-          url: '/tmp/path-to-swagger.json', // TODON
-        },
-        typeDefaults: {
-          transformation: {
-            idFields: DEFAULT_ID_FIELDS,
-            fieldsToOmit: FIELDS_TO_OMIT,
+    sources: {
+      swagger: [
+        {
+          sample: { // TODON use names as prefixes to avoid conflicts
+            swagger: {
+              url: '/tmp/path-to-swagger.json', // TODON
+            },
           },
         },
-        types: {},
-        supportedTypes: {
-          TypeWithInstances: ['PageType'],
+      ],
+    },
+    definitions: {
+      typeDefaults: {
+        transformation: {
+          idFields: DEFAULT_ID_FIELDS,
+          fieldsToOmit: FIELDS_TO_OMIT,
         },
       },
-    },
-    ducktype: {
-      main: {
-        typeDefaults: {
-          transformation: {
-            idFields: DEFAULT_ID_FIELDS,
-            fieldsToOmit: [
-            ],
-          },
-        },
-        types: {},
-        // TODON fix to use real inner type names
-        supportedTypes: [],
+      types: {},
+      supportedTypes: {
+        TypeWithInstances: ['PageType'],
       },
     },
   },

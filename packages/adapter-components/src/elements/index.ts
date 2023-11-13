@@ -24,7 +24,10 @@ import { filterTypes } from './type_elements'
 import { getInstanceName, generateInstanceNameFromConfig, createServiceIds, removeNullValues, toBasicInstance } from './instance_elements'
 import { FetchElements } from './element_getter'
 
+const { getAllElements } = ducktype
+
 export {
+  getAllElements,
   ducktype,
   swagger,
   soap,

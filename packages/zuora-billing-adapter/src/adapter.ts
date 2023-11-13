@@ -40,7 +40,8 @@ import { getStandardObjectElements, getStandardObjectTypeName } from './transfor
 import { paginate } from './client/pagination'
 
 const { createPaginator } = clientUtils
-const { generateTypes, getAllInstances } = elementUtils.swagger
+const { getAllElements } = elementUtils
+const { generateTypes } = elementUtils.swagger
 const log = logger(module)
 
 const { hideTypes: hideTypesFilter, ...otherCommonFilters } = commonFilters
@@ -131,7 +132,8 @@ export default class ZuoraAdapter implements AdapterOperations {
     }
 
     const apiDefs = this.apiDefinitions(parsedConfigs)
-    const settingsOpInfoInstances = await getAllInstances({
+    const settingsOpInfoInstances = await getAllElements({
+      adapterName: ZUORA_BILLING,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: apiDefs,
@@ -174,11 +176,12 @@ export default class ZuoraAdapter implements AdapterOperations {
   private async getInstances(
     allTypes: TypeMap,
     parsedConfigs: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-  ): Promise<elementUtils.FetchElements<InstanceElement[]>> {
+  ): Promise<elementUtils.FetchElements> {
     // standard objects are not included in the swagger and need special handling - done in a filter
     const standardObjectTypeName = getStandardObjectTypeName(this.apiDefinitions(parsedConfigs))
 
-    return getAllInstances({
+    return getAllElements({
+      adapterName: ZUORA_BILLING,
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: this.apiDefinitions(parsedConfigs),
