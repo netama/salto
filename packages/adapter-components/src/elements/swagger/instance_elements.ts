@@ -15,17 +15,14 @@
 */
 import _ from 'lodash'
 import {
-  InstanceElement, Values, ObjectType, isObjectType, ReferenceExpression, isReferenceExpression,
-  isListType, isMapType, TypeElement, PrimitiveType, MapType, ElemIdGetter, SaltoError, isInstanceElement,
+  InstanceElement, ObjectType,
+  ElemIdGetter, SaltoError, isInstanceElement,
 } from '@salto-io/adapter-api'
-import { transformElement, TransformFunc, safeJsonStringify } from '@salto-io/adapter-utils'
+import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
-import { ADDITIONAL_PROPERTIES_FIELD } from './type_elements/swagger_parser'
-import { InstanceCreationParams, toBasicInstance } from '../instance_elements'
 import { Paginator, PageEntriesExtractor } from '../../client'
 import {
-  TransformationConfig, TransformationDefaultConfig,
   AdapterSwaggerApiConfig, ConfigChangeSuggestion,
 } from '../../config'
 import { AdapterFetchError, InvalidSingletonType } from '../../config/shared'
@@ -36,254 +33,15 @@ import { ElementQuery } from '../query'
 import { getTypeAndInstances, getUniqueConfigSuggestions } from '../ducktype' // TODON move to shared location
 
 const { makeArray } = collections.array
-const { awu } = collections.asynciterable
 const { isPlainRecord } = lowerdashValues
 const log = logger(module)
 
 // TODON might lost performance optimizations for jira!!! check
 
-/**
- * Extract standalone fields to their own instances, and convert the original value to a reference.
- */
-const extractStandaloneFields = async (
-  inst: InstanceElement,
-  {
-    transformationConfigByType,
-    transformationDefaultConfig,
-    nestedPath,
-    getElemIdFunc,
-  }: {
-    transformationConfigByType: Record<string, TransformationConfig>
-    transformationDefaultConfig: TransformationDefaultConfig
-    nestedPath: string[]
-    getElemIdFunc?: ElemIdGetter
-  },
-): Promise<InstanceElement[]> => {
-  if (_.isEmpty(transformationConfigByType[inst.refType.elemID.name]?.standaloneFields)) {
-    return [inst]
-  }
-  const additionalInstances: InstanceElement[] = []
-
-  const replaceWithReference = async ({
-    values,
-    parent,
-    objType,
-    updatedNestedPath,
-  }: {
-    values: Values[]
-    parent: InstanceElement
-    objType: ObjectType
-    updatedNestedPath: string[]
-  }): Promise<ReferenceExpression[]> => {
-    // eslint-disable-next-line no-use-before-define
-    const refInstances = await generateInstancesForType({
-      entries: values,
-      objType,
-      nestName: true,
-      parent,
-      transformationConfigByType,
-      transformationDefaultConfig,
-      normalized: true,
-      nestedPath: updatedNestedPath,
-      getElemIdFunc,
-    })
-    additionalInstances.push(...refInstances)
-    return refInstances.map(refInst => new ReferenceExpression(refInst.elemID, refInst))
-  }
-
-  const extractFields: TransformFunc = async ({ value, field, path }) => {
-    if (field === undefined) {
-      return value
-    }
-    const parentType = field.parent.elemID.name
-    const { standaloneFields } = (
-      transformationConfigByType[parentType]
-      ?? transformationDefaultConfig
-    )
-    if (standaloneFields === undefined) {
-      return value
-    }
-    const fieldExtractionDefinition = standaloneFields.find(def => def.fieldName === field.name)
-
-    if (fieldExtractionDefinition === undefined || isReferenceExpression(value)) {
-      return value
-    }
-
-    const refOrListType = await field.getType()
-    const refType = isListType(refOrListType) ? await refOrListType.getInnerType() : refOrListType
-    if (!isObjectType(refType)) {
-      log.error(`unexpected type encountered when extracting nested fields - skipping path ${path} for instance ${inst.elemID.getFullName()}`)
-      return value
-    }
-
-    if (Array.isArray(value)) {
-      return replaceWithReference({
-        values: value,
-        parent: inst,
-        objType: refType,
-        updatedNestedPath: [...nestedPath, field.name],
-      })
-    }
-    return (await replaceWithReference({
-      values: [value],
-      parent: inst,
-      objType: refType,
-      updatedNestedPath: [...nestedPath, field.name],
-    }))[0]
-  }
-
-  const updatedInst = await transformElement({
-    element: inst,
-    transformFunc: extractFields,
-    strict: false,
-  })
-  return [updatedInst, ...additionalInstances]
-}
-
-const getListDeepInnerType = async (
-  type: TypeElement,
-): Promise<ObjectType | PrimitiveType | MapType> => {
-  if (!isListType(type)) {
-    return type
-  }
-  return getListDeepInnerType(await type.getInnerType())
-}
-
-/**
- * Normalize the element's values, by nesting swagger additionalProperties under the
- * additionalProperties field in order to align with the type.
- *
- * Note: The reverse will need to be done pre-deploy (not implemented for fetch-only)
- */
-const normalizeElementValues = (instance: InstanceElement): Promise<InstanceElement> => {
-  const transformAdditionalProps: TransformFunc = async ({ value, field, path }) => {
-    if (!_.isPlainObject(value)) {
-      return value
-    }
-
-    const fieldType = path?.isEqual(instance.elemID)
-      ? await instance.getType()
-      : await field?.getType()
-
-    if (fieldType === undefined) {
-      return value
-    }
-    const fieldInnerType = await getListDeepInnerType(fieldType)
-    if (
-      !isObjectType(fieldInnerType)
-      || fieldInnerType.fields[ADDITIONAL_PROPERTIES_FIELD] === undefined
-      || !isMapType(await fieldInnerType.fields[ADDITIONAL_PROPERTIES_FIELD].getType())
-    ) {
-      return value
-    }
-
-    const additionalProps = _.merge(
-      _.pickBy(
-        value,
-        (_val, key) => !Object.keys(fieldInnerType.fields).includes(key),
-      ),
-      // if the value already has additional properties, give them precedence
-      value[ADDITIONAL_PROPERTIES_FIELD],
-    )
-    return {
-      ..._.omit(value, Object.keys(additionalProps)),
-      [ADDITIONAL_PROPERTIES_FIELD]: additionalProps,
-    }
-  }
-
-  return transformElement({
-    element: instance,
-    transformFunc: transformAdditionalProps,
-    strict: false,
-  })
-}
-
-const toInstance = async (args: InstanceCreationParams): Promise<InstanceElement> => (
-  args.normalized ? toBasicInstance(args) : normalizeElementValues(await toBasicInstance(args))
-)
-
-/**
- * Generate instances for the specified types based on the entries from the API responses,
- * using the endpoint's specific config and the adapter's defaults.
- */
-const generateInstancesForType = ({
-  entries,
-  objType,
-  nestName,
-  parent,
-  transformationConfigByType,
-  transformationDefaultConfig,
-  normalized,
-  nestedPath,
-  getElemIdFunc,
-}: {
-  entries: Values[]
-  objType: ObjectType
-  nestName?: boolean
-  parent?: InstanceElement
-  transformationConfigByType: Record<string, TransformationConfig>
-  transformationDefaultConfig: TransformationDefaultConfig
-  normalized?: boolean
-  nestedPath?: string[]
-  getElemIdFunc?: ElemIdGetter
-}): Promise<InstanceElement[]> => {
-  const standaloneFields = transformationConfigByType[objType.elemID.name]?.standaloneFields
-  return awu(entries)
-    .map((entry, index) => toInstance({
-      entry,
-      type: objType,
-      nestName,
-      parent,
-      transformationConfigByType,
-      transformationDefaultConfig,
-      normalized,
-      nestedPath,
-      defaultName: `unnamed_${index}`, // TODO improve
-      getElemIdFunc,
-    }))
-    .flatMap(inst => (
-      standaloneFields === undefined
-        ? [inst]
-        : extractStandaloneFields(inst, {
-          transformationConfigByType,
-          transformationDefaultConfig,
-          nestedPath: [...(nestedPath ?? [objType.elemID.name]), inst.elemID.name],
-          getElemIdFunc,
-        })
-    )).toArray()
-}
-
+// TODON used for special case - make sure covered...
 // const isAdditionalPropertiesOnlyObjectType = (type: ObjectType): boolean => (
 //   _.isEqual(Object.keys(type.fields), [ADDITIONAL_PROPERTIES_FIELD])
 // )
-
-// const isItemsOnlyObjectType = (type: ObjectType): boolean => (
-//   _.isEqual(Object.keys(type.fields), [ARRAY_ITEMS_FIELD])
-// )
-
-// const normalizeType = async (type: ObjectType | undefined): Promise<ObjectType | undefined> => {
-//   if (type !== undefined && isItemsOnlyObjectType(type)) {
-//     const itemsType = await type.fields.items.getType()
-//     if (isListType(itemsType) && isObjectType(await itemsType.getInnerType())) {
-//       return itemsType.getInnerType() as Promise<ObjectType>
-//     }
-//   }
-//   return type
-// }
-
-// type GetEntriesParams = {
-//   typeName: string
-//   paginator: Paginator
-//   objectTypes: Record<string, ObjectType>
-//   typesConfig: Record<string, TypeSwaggerConfig>
-//   typeDefaultConfig: TypeSwaggerDefaultConfig
-//   contextElements?: Record<string, InstanceElement[]>
-//   requestContext?: Record<string, unknown>
-//   nestedFieldFinder: FindNestedFieldFunc
-//   computeGetArgs: ComputeGetArgsFunc
-//   getElemIdFunc?: ElemIdGetter
-//   reversedSupportedTypes: Record<string, string[]>
-// }
 
 export const extractPageEntriesByNestedField = (fieldName?: string): PageEntriesExtractor => (
   page => {
@@ -387,7 +145,7 @@ export const getAllInstances = async ({ // part 2 swagger
       }
     },
   })
-  // TODON fix types to use the original ones - but need to also address additionalProperties?
+  // TODON fix types to use the original ones
   return {
     elements: elements.filter(isInstanceElement), // TODON do something smarter with the types
     configChanges: getUniqueConfigSuggestions(configSuggestions),

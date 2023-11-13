@@ -31,7 +31,7 @@ export const CORE_ANNOTATIONS = {
   CREATABLE: '_creatable',
   UPDATABLE: '_updatable',
   DELETABLE: '_deletable',
-  ADDITIONAL_PROPERTIES: '_additional_properties',
+  ADDITIONAL_PROPERTIES: '_additional_properties',// TODON can we annotate with deployment annotations???
   ALIAS: '_alias',
   IMPORTANT_VALUES: '_important_values',
   SELF_IMPORTANT_VALUES: '_self_important_values',

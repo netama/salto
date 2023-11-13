@@ -55,12 +55,8 @@ export const defaultDeployChange = async ({
 }: DeployChangeParam): Promise<
   clientUtils.ResponseValue | clientUtils.ResponseValue[] | undefined
 > => {
-  const resolvedChange = await resolveChangeElement(change, getLookUpName, resolveValues, elementsSource)
-  invertKeysNames(getChangeData(resolvedChange).value)
-  const changeToDeploy = await elementUtils.swagger.flattenAdditionalProperties(
-    resolvedChange,
-    elementsSource,
-  )
+  const changeToDeploy = await resolveChangeElement(change, getLookUpName, resolveValues, elementsSource)
+  invertKeysNames(getChangeData(changeToDeploy).value)
 
   if (isModificationChange(changeToDeploy)) {
     const valuesBefore = (await deployment.filterIgnoredValues(

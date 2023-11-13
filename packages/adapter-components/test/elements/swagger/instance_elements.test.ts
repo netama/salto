@@ -15,7 +15,7 @@
 */
 
 import { collections } from '@salto-io/lowerdash'
-import { ObjectType, ElemID, BuiltinTypes, ListType, MapType, InstanceElement, ReferenceExpression } from '@salto-io/adapter-api'
+import { ObjectType, ElemID, BuiltinTypes, ListType, InstanceElement, ReferenceExpression } from '@salto-io/adapter-api'
 import { mockFunction } from '@salto-io/test-utils'
 import { getAllInstances } from '../../../src/elements/swagger'
 import { returnFullEntry } from '../../../src/elements/field_finder'
@@ -36,9 +36,9 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'Owner'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN,
         },
       })
       const Food = new ObjectType({
@@ -55,7 +55,9 @@ describe('swagger_instance_elements', () => {
           name: { refType: BuiltinTypes.STRING },
           owners: { refType: new ListType(Owner) },
           primaryOwner: { refType: Owner },
-          additionalProperties: { refType: new MapType(Food) },
+        },
+        annotations: {
+          _additional_properties: Food,
         },
       })
       const Status = new ObjectType({
@@ -284,17 +286,13 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
           primaryOwner: { name: 'primary' },
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -523,10 +521,8 @@ describe('swagger_instance_elements', () => {
         objectTypes.Owner,
         {
           name: 'o1',
-          additionalProperties: {
-            bla: 'BLA',
-            x: { nested: 'value' },
-          },
+          bla: 'BLA',
+          x: { nested: 'value' },
         },
         // path has no effect on equality
         [],
@@ -560,10 +556,8 @@ describe('swagger_instance_elements', () => {
             new ReferenceExpression(dogO1Inst.elemID),
           ],
           primaryOwner: new ReferenceExpression(primaryOInst.elemID),
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         // path has no effect on equality
         [],
@@ -599,7 +593,7 @@ describe('swagger_instance_elements', () => {
               },
               transformation: {
                 standaloneFields: [
-                  { fieldName: 'additionalProperties' },
+                  { fieldName: 'additionalProperties' }, // TODON? check what should happen
                   { fieldName: 'name' },
                 ],
               },
@@ -703,16 +697,12 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -789,10 +779,8 @@ describe('swagger_instance_elements', () => {
         objectTypes.Owner,
         {
           name: 'o1',
-          additionalProperties: {
-            bla: 'BLA',
-            x: { nested: 'value' },
-          },
+          bla: 'BLA',
+          x: { nested: 'value' },
         },
         [ADAPTER_NAME, 'Records', 'Owner', 'o1'],
       ))).toBeTruthy()
@@ -942,17 +930,13 @@ describe('swagger_instance_elements', () => {
           owners: [
             {
               name: 'o1',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
           primaryOwner: { name: 'primary' },
-          additionalProperties: {
-            food1: { id: 'f1' },
-            food2: { id: 'f2' },
-          },
+          food1: { id: 'f1' },
+          food2: { id: 'f2' },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'dog'],
       ))).toBeTruthy()
@@ -963,17 +947,15 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'CustomObjectDefinition'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN, // TODON just true?
         },
       })
       const CustomObjectDefinitionMapping = new ObjectType({
         elemID: new ElemID(ADAPTER_NAME, 'CustomObjectDefinitionMapping'),
-        fields: {
-          additionalProperties: {
-            refType: new MapType(CustomObjectDefinition),
-          },
+        annotations: {
+          _additional_properties: CustomObjectDefinition,
         },
       })
       const AllCustomObjects = new ObjectType({
@@ -1060,9 +1042,7 @@ describe('swagger_instance_elements', () => {
         objectTypes.CustomObjectDefinition,
         {
           name: 'Pet',
-          additionalProperties: {
-            something: 'else',
-          },
+          something: 'else',
         },
         [ADAPTER_NAME, 'CustomObjectDefinition', 'Owner', 'Pet'],
       ))).toBeTruthy()
@@ -1131,10 +1111,8 @@ describe('swagger_instance_elements', () => {
           primaryOwner: [
             {
               name: 'o3',
-              additionalProperties: {
-                bla: 'BLA',
-                x: { nested: 'value' },
-              },
+              bla: 'BLA',
+              x: { nested: 'value' },
             },
           ],
         },
@@ -1202,10 +1180,8 @@ describe('swagger_instance_elements', () => {
           name: 'def',
           owners: {
             name: 'o3',
-            additionalProperties: {
-              bla: 'BLA',
-              x: { nested: 'value' },
-            },
+            bla: 'BLA',
+            x: { nested: 'value' },
           },
         },
         [ADAPTER_NAME, 'Records', 'Pet', 'mouse'],
@@ -1355,17 +1331,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1373,8 +1345,8 @@ describe('swagger_instance_elements', () => {
         expect(fish.value).toHaveProperty(
           'owners',
           [
-            { name: 'o1', additionalProperties: { info: { numOfPets: 2 } } },
-            { name: 'o2', additionalProperties: { info: { numOfPets: 2 } } },
+            { name: 'o1', info: { numOfPets: 2 } },
+            { name: 'o2', info: { numOfPets: 2 } },
           ]
         )
       })
@@ -1418,17 +1390,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1478,17 +1446,13 @@ describe('swagger_instance_elements', () => {
           [
             {
               name: 'o1',
-              additionalProperties: {
-                nicknames: [{ names: ['n1', 'n2'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n1', 'n2'] }],
+              info: { numOfPets: 2 },
             },
             {
               name: 'o2',
-              additionalProperties: {
-                nicknames: [{ names: ['n3'] }],
-                info: { numOfPets: 2 },
-              },
+              nicknames: [{ names: ['n3'] }],
+              info: { numOfPets: 2 },
             },
           ]
         )
@@ -1655,9 +1619,9 @@ describe('swagger_instance_elements', () => {
         elemID: new ElemID(ADAPTER_NAME, 'Owner'),
         fields: {
           name: { refType: BuiltinTypes.STRING },
-          additionalProperties: {
-            refType: new MapType(BuiltinTypes.UNKNOWN),
-          },
+        },
+        annotations: {
+          _additional_properties: BuiltinTypes.UNKNOWN, // TODON just true?
         },
         isSettings: true,
       })

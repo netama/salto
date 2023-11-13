@@ -130,16 +130,12 @@ export const assignServiceIdToAdditionChange = (
  * Deploy change with the standard "add", "modify", "remove" endpoints
  */
 export const defaultDeployChange = async (
-  change: Change<InstanceElement>,
+  changeToDeploy: Change<InstanceElement>,
   client: OktaClient,
   apiDefinitions: OktaSwaggerApiConfig,
   fieldsToIgnore?: string[],
   queryParams?: Record<string, string>,
 ): Promise<deployment.ResponseResult> => {
-  const changeToDeploy = await elementUtils.swagger.flattenAdditionalProperties(
-    _.cloneDeep(change)
-  )
-
   if (isModificationChange(changeToDeploy)) {
     const valuesBefore = (await deployment.filterIgnoredValues(
       changeToDeploy.data.before.clone(),

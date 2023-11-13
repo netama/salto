@@ -38,7 +38,6 @@ const FETCHED_ONLY_INITIAL_POST_FUNCTION = [
 ]
 
 const transformProperties = (item: Status | Transition): void => {
-  item.properties = item.properties?.additionalProperties
   // This is not deployable and we get another property
   // of "jira.issue.editable" with the same value
   delete item.properties?.issueEditable

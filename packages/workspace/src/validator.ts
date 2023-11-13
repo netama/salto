@@ -649,7 +649,7 @@ const validateFieldValueAndName = ({ parentElemID, value, fieldName, objType, va
   objType: ObjectType
   validatedIds: Set<string>
  }): ValidationError[] => {
-  const errors = objType.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES] === false
+  const errors = objType.annotations[CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES] === false // TODON validate
     ? validateNotAdditionalProperty(parentElemID, fieldName, objType)
     : []
   return errors.concat(validateFieldValue(

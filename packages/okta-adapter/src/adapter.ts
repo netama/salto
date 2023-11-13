@@ -65,7 +65,7 @@ const { findDataField, computeGetArgs } = elementUtils
 const { createPaginator } = clientUtils
 const log = logger(module)
 
-export const DEFAULT_FILTERS = [
+const DEFAULT_FILTERS = [
   standardRolesFilter,
   deleteFieldsFilter,
   userTypeFilter,

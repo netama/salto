@@ -32,6 +32,7 @@ import { addRemainingTypes } from './add_remaining_types'
 import { ElementQuery } from '../query'
 import { AdapterFetchError, InvalidSingletonType } from '../../config/shared'
 import { ConfigChangeSuggestion } from '../../config/config_change'
+import { ARRAY_ITEMS_FIELD } from '../swagger/type_elements/swagger_parser'
 
 const { makeArray } = collections.array
 const { toArrayAsync, awu } = collections.asynciterable
@@ -83,6 +84,22 @@ export const getUniqueConfigSuggestions = (
   configSuggestions: ConfigChangeSuggestion[]
 ): ConfigChangeSuggestion[] => (_.uniqBy(configSuggestions, suggestion => suggestion.typeToExclude))
 
+
+const isItemsOnlyObjectType = (type: ObjectType): boolean => (
+  _.isEqual(Object.keys(type.fields), [ARRAY_ITEMS_FIELD])
+)
+
+const getNestedEntries = (
+  entry: Values,
+  fieldName: string,
+  type: ObjectType,
+): Values[] => {
+  if (fieldName === ARRAY_ITEMS_FIELD && entry[fieldName] === undefined && isItemsOnlyObjectType(type)) {
+    return makeArray(entry)
+  }
+  return makeArray(entry[fieldName])
+}
+
 /**
  * Creates new type based on instances values,
  * then creates new instances pointing the new type
@@ -93,12 +110,14 @@ export const getNewElementsFromInstances = ({
   instances,
   transformationConfigByType,
   transformationDefaultConfig,
+  objectTypes,
 }: {
   adapterName: string
   typeName: string
   instances: InstanceElement[]
   transformationConfigByType: Record<string, DuckTypeTransformationConfig>
   transformationDefaultConfig: DuckTypeTransformationDefaultConfig
+  objectTypes?: Record<string, ObjectType>
 }): Entries => {
   const { hasDynamicFields } = getConfigWithDefault(transformationConfigByType[typeName], transformationDefaultConfig)
 
@@ -109,6 +128,7 @@ export const getNewElementsFromInstances = ({
     hasDynamicFields: hasDynamicFields === true,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
   return {
     instances: instances.map(inst => new InstanceElement(
@@ -184,7 +204,8 @@ const getEntriesForType = async (
 
   const instances = await awu(entriesValues).flatMap(async (entry, index) => {
     if (nestedFieldDetails !== undefined) {
-      return awu(makeArray(entry[nestedFieldDetails.field.name])).map(
+      const nestedEntries = getNestedEntries(entry, nestedFieldDetails.field.name, type)
+      return awu(nestedEntries).map(
         (nestedEntry, nesteIndex) => {
           if (!isObjectType(nestedFieldDetails.type)) {
             log.error(`for typeName ${typeName} in adapter ${adapterName} nestedFieldDetails.type is not objectType returning undefined`)
@@ -263,6 +284,7 @@ const getEntriesForType = async (
     instances,
     transformationConfigByType,
     transformationDefaultConfig,
+    objectTypes,
   })
 
   return {
