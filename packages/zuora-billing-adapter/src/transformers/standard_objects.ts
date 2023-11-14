@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Element, ObjectType, InstanceElement, ElemID } from '@salto-io/adapter-api'
+import { Element, ObjectType, InstanceElement, ElemID, isInstanceElement } from '@salto-io/adapter-api'
 import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { pathNaclCase } from '@salto-io/adapter-utils'
 import {
@@ -62,8 +62,9 @@ export const getStandardObjectElements = async ({
     supportedTypes: apiConfig.supportedTypes,
     fetchQuery: {
       isTypeMatch: typeName => typeName === standardObjecWrapperTypeName,
+      isInstanceMatch: () => true, // TODON implement
     },
-  })).elements.map(inst => new InstanceElement(
+  })).elements.filter(isInstanceElement).map(inst => new InstanceElement( // TODON fix
     inst.elemID.name,
     standardObjectDefType,
     inst.value,

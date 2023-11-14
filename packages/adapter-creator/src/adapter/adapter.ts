@@ -19,11 +19,11 @@ import {
   DeployModifiers, FetchOptions, ElemIdGetter, InstanceElement, isObjectType,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
-import { logDuration } from '@salto-io/adapter-utils'
+import { logDuration, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections } from '@salto-io/lowerdash'
 import { Client } from '../client'
-import { FETCH_CONFIG, Config, createConfigType, API_COMPONENTS_CONFIG } from '../config'
+import { FETCH_CONFIG, Config, createConfigType, API_COMPONENTS_CONFIG, extendApiDefinitionsFromSwagger } from '../config'
 import { Filter, filtersRunner } from '../filter'
 import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
@@ -62,7 +62,6 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
   }: AdapterParams<Credentials, Co>) {
     this.adapterName = adapterName // TODON move to closure instead?
     this.accountName = accountName // TODON same
-    // this.userConfig = config // TODON add back when using the infra! (in inheriting adapter?)
     this.client = client
     this.getElemIdFunc = getElemIdFunc
     const paginator = createPaginator({
@@ -77,25 +76,6 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
     )
     this.userConfig = config // TODON add back when using the infra! (in inheriting adapter?)
     this.configInstance = configInstance // TODON check if really needed
-  }
-
-  // TODON refactor...
-  private apiDefinitions(
-    parsedConfigs?: Record<string, configUtils.RequestableTypeSwaggerConfig>,
-  ): configUtils.AdapterApiConfig {
-    // TODON reuse util
-    const defs = this.userConfig[API_COMPONENTS_CONFIG].definitions
-    return {
-      ...defs,
-      // user config takes precedence over parsed config
-      types: {
-        ...parsedConfigs,
-        ..._.mapValues(
-          defs.types,
-          (def, typeName) => ({ ...parsedConfigs?.[typeName] ?? {}, ...def })
-        ),
-      },
-    }
   }
 
   @logDuration('generating types from swagger')
@@ -122,12 +102,13 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
   async getElements(): Promise<elementUtils.FetchElements> {
     // TODON next - share the type defs and don't distinguish between swagger and ducktype at all
     const { allTypes, parsedConfigs } = await this.getAllSwaggerTypes()
-    // TODON consolidate all requests+transformations and call getAllElements once for everything
+    log.debug('Full parsed configuration from swaggers: %s', safeJsonStringify(parsedConfigs))
+
     // TODON is there a case where some of the defaults should come from the types?
     // e.g. pagination or client? - if so - can customize at that level...
-    // TODON add a client name as an arg for fetching types???
+    // TODON add client name as arg for fetching types? or auth (like in openapi - though focused on what's supported)
 
-    const defs = this.apiDefinitions(parsedConfigs)
+    const defs = extendApiDefinitionsFromSwagger(this.userConfig, parsedConfigs)
     return getAllElements({
       adapterName: this.adapterName,
       apiConfig: defs,

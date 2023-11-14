@@ -538,7 +538,10 @@ export default class ZendeskAdapter implements AdapterOperations {
     // Zendesk Support and (if enabled) global Zendesk Guide types
     const defaultSubdomainResult = await getAllElements({
       adapterName: ZENDESK,
-      types: this.userConfig.apiDefinitions.types,
+      apiConfig: {
+        types: this.userConfig.apiDefinitions.types,
+        typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: !isGuideInFetch,
       // tags are "fetched" in a filter
       supportedTypes: _.omit(supportedTypes, 'tag'),
@@ -546,7 +549,6 @@ export default class ZendeskAdapter implements AdapterOperations {
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: this.userConfig.apiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
       customInstanceFilter: filterOutInactiveInstancesForType(this.userConfig),
     })

@@ -13,6 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import _ from 'lodash'
 import { CORE_ANNOTATIONS, ElemID, ObjectType } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils } from '@salto-io/adapter-components'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
@@ -68,3 +69,22 @@ export const createConfigType = (
     [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
   },
 })
+
+export const extendApiDefinitionsFromSwagger = (
+  userConfig: Config,
+  parsedConfigs?: Record<string, configUtils.RequestableTypeSwaggerConfig>,
+): configUtils.AdapterApiConfig => {
+  // TODON reuse util
+  const defs = userConfig[API_COMPONENTS_CONFIG].definitions
+  return {
+    ...defs,
+    // user config takes precedence over parsed config
+    types: {
+      ...parsedConfigs,
+      ..._.mapValues(
+        defs.types,
+        (def, typeName) => ({ ...parsedConfigs?.[typeName] ?? {}, ...def })
+      ),
+    },
+  }
+}

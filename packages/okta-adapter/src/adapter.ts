@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { Element, FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType, FetchOptions, DeployOptions, Change, isInstanceChange, ElemIdGetter, ReadOnlyElementsSource, getChangeData, ProgressReporter } from '@salto-io/adapter-api'
+import { FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType, FetchOptions, DeployOptions, Change, isInstanceChange, ElemIdGetter, ReadOnlyElementsSource, getChangeData, ProgressReporter } from '@salto-io/adapter-api'
 import { config as configUtils, elements as elementUtils, client as clientUtils } from '@salto-io/adapter-components'
 import { applyFunctionToChangeData, logDuration, resolveChangeElement, restoreChangeElement } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
@@ -220,14 +220,16 @@ export default class OktaAdapter implements AdapterOperations {
 
     return getAllElements({
       adapterName: OKTA,
-      types: privateApiDefinitions.types,
+      apiConfig: {
+        types: privateApiDefinitions.types,
+        typeDefaults: privateApiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: privateApiDefinitions.supportedTypes,
       fetchQuery: this.fetchQuery,
       paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: privateApiDefinitions.typeDefaults,
       getElemIdFunc: this.getElemIdFunc,
     })
   }

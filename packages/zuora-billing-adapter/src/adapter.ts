@@ -15,8 +15,8 @@
 */
 import _ from 'lodash'
 import {
-  FetchResult, AdapterOperations, DeployResult, InstanceElement, TypeMap, isObjectType,
-  DeployModifiers, Element, FetchOptions,
+  FetchResult, AdapterOperations, DeployResult, TypeMap, isObjectType,
+  DeployModifiers, Element, FetchOptions, isInstanceElement,
 } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration } from '@salto-io/adapter-utils'
@@ -138,12 +138,15 @@ export default class ZuoraAdapter implements AdapterOperations {
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: apiDefs,
       supportedTypes: { ...SUPPORTED_TYPES, [LIST_ALL_SETTINGS_TYPE]: [LIST_ALL_SETTINGS_TYPE] },
-      fetchQuery: { isTypeMatch: typeName => typeName === LIST_ALL_SETTINGS_TYPE },
+      fetchQuery: {
+        isTypeMatch: typeName => typeName === LIST_ALL_SETTINGS_TYPE,
+        isInstanceMatch: () => true, // TODON fix
+      },
     })
     if (_.isEmpty(settingsOpInfoInstances.elements)) {
       throw new Error('could not find any settings definitions - remove settingsFetchTypes and fetch again')
     }
-    return generateBillingSettingsTypes(settingsOpInfoInstances.elements, apiDefs)
+    return generateBillingSettingsTypes(settingsOpInfoInstances.elements.filter(isInstanceElement), apiDefs) // TODON
   }
 
   @logDuration('generating type and instances for standard objects')
@@ -189,6 +192,7 @@ export default class ZuoraAdapter implements AdapterOperations {
       fetchQuery: {
         isTypeMatch: typeName => typeName !== standardObjectTypeName
           && this.fetchQuery.isTypeMatch(typeName),
+        isInstanceMatch: () => true, // TODON fix
       },
     })
   }
