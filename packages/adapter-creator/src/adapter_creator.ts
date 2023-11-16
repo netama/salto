@@ -21,7 +21,7 @@ import { client as clientUtils, config as configUtils } from '@salto-io/adapter-
 import { createCommonFilters } from './filters'
 import { createClient } from './client'
 import {
-  createConfigType, Config, CLIENT_CONFIG, API_COMPONENTS_CONFIG,
+  createConfigType, Config, CLIENT_CONFIG, API_COMPONENTS_CONFIG, ConfigTypeCreator,
 } from './config'
 import { getConfigCreator } from './config_creator'
 import { FilterCreator } from './filter'
@@ -85,6 +85,7 @@ export const createAdapter = <
     validateCredentials,
     adapterImpl,
     defaultConfig,
+    configTypeCreator,
     operationsCustomizations,
   }: {
   adapterName: string
@@ -93,6 +94,7 @@ export const createAdapter = <
   validateCredentials: Adapter['validateCredentials']
   adapterImpl?: AdapterImplConstructor<Credentials, Co>
   defaultConfig: Co
+  configTypeCreator?: ConfigTypeCreator
   operationsCustomizations: {
     // TODON template the instance element as well for consistency?
     adapterConfigCreator?: (config: Readonly<InstanceElement> | undefined) => Co // TODON too many creators for config?
@@ -158,7 +160,10 @@ export const createAdapter = <
     },
     validateCredentials, // TODON credentials cannot be validated based on config, because config doesn't exist yet
     authenticationMethods,
-    configType: createConfigType(adapterName, defaultConfig),
-    configCreator: getConfigCreator(adapterName, defaultConfig),
+    configType: (configTypeCreator ?? createConfigType)({ adapterName, defaultConfig }),
+    configCreator: getConfigCreator(
+      adapterName,
+      (configTypeCreator ?? createConfigType)({ adapterName, defaultConfig }),
+    ),
   }
 }

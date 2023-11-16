@@ -49,11 +49,9 @@ export const safeParse = (credentials: Record<string, string>, key: keyof Creden
   } // TODON also validate on input
 }
 
-const parseCredentials = (creds: GenericJsonCredentials): Record<string, string> => {
-  const privateCreds = safeParse(creds, 'secret')
-  const visibleCreds = safeParse(creds, 'visible')
-  return { ...visibleCreds, ...privateCreds }
-}
+const parseCredentials = (creds: GenericJsonCredentials): Record<string, string> => (
+  { ...creds.secret, ...creds.visible }
+)
 
 export const createConnectionConfigWrapper = ({ auth }: Config['client']): clientUtils.ConnectionCreator<Credentials> => {
   const extractHeaders = (args: Record<string, string>): Record<string, string> | undefined => {

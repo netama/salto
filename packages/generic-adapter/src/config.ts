@@ -13,26 +13,40 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import _ from 'lodash'
-import { ElemID, CORE_ANNOTATIONS, ObjectType, BuiltinTypes, MapType } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils, elements } from '@salto-io/adapter-components'
+import { ElemID, CORE_ANNOTATIONS, ObjectType, BuiltinTypes, MapType, ListType } from '@salto-io/adapter-api'
+import { client as clientUtils, elements } from '@salto-io/adapter-components'
 import * as adapterCreator from '@salto-io/adapter-creator'
+import { createConfigType, ConfigTypeCreator } from '@salto-io/adapter-creator'
+import { createMatchingObjectType } from '@salto-io/adapter-utils'
 
 // TODON add oauth support separately + allow additional params
-export type AuthConfig = {
+type AuthConfig = {
   type: 'custom' | 'basic' // TODON add oauth
   // TODON formalize basic language and placeholders
   headers?: Record<string, string>
   baseURL: string
 }
 
-export type Config = adapterCreator.Config & {
-  client: clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig> & { auth: AuthConfig }
+// matching getCredentialsFromUser
+type CredentialsArgConfig = {
+  // TODON clarify rules for secret vs visible field names in docs
+  name: string
+  type: 'string' | 'number' | 'boolean'
+  message?: string
 }
 
-export const createAuthConfigType = ({ adapter }: { adapter: string }): ObjectType => { // TODON use
-  const authConfigType = new ObjectType({
-    elemID: new ElemID(adapter, 'authConfig'),
+type CredentialsConfig = {
+  args: CredentialsArgConfig[]
+}
+
+export type Config = adapterCreator.Config & {
+  client: clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig> & { auth: AuthConfig }
+  credentials?: CredentialsConfig // TODON use to validate input?
+}
+
+const createAuthConfigType = ({ adapterName }: { adapterName: string }): ObjectType => {
+  const authConfigType = createMatchingObjectType<AuthConfig>({
+    elemID: new ElemID(adapterName, 'authConfig'),
     fields: {
       type: {
         refType: BuiltinTypes.STRING,
@@ -52,10 +66,56 @@ export const createAuthConfigType = ({ adapter }: { adapter: string }): ObjectTy
   return authConfigType
 }
 
-const DEFAULT_ID_FIELDS = ['name']
-export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
-  // { fieldName: 'createdBy', fieldType: 'string' },
-]
+export const createCredentialsConfigType = ({ adapterName }: { adapterName: string }): ObjectType => {
+  const credsArgConfigType = createMatchingObjectType<CredentialsArgConfig>({
+    elemID: new ElemID(adapterName, 'credsArgConfig'),
+    fields: {
+      name: {
+        refType: BuiltinTypes.STRING,
+        annotations: { _required: true },
+      },
+      type: {
+        refType: BuiltinTypes.STRING,
+        annotations: { _required: true },
+      },
+      message: { refType: BuiltinTypes.STRING },
+    },
+    annotations: {
+      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
+    },
+  })
+  return createMatchingObjectType<CredentialsConfig>({
+    elemID: new ElemID(adapterName, 'credsConfig'),
+    fields: {
+      args: {
+        refType: new ListType(credsArgConfigType),
+        annotations: {
+          _required: true,
+        },
+      },
+    },
+    annotations: {
+      [CORE_ANNOTATIONS.ADDITIONAL_PROPERTIES]: false,
+    },
+  })
+}
+
+export const createConfigTypeWithAuth: ConfigTypeCreator = ({ adapterName, defaultConfig }) => createConfigType({
+  adapterName,
+  defaultConfig,
+  additionalClientFields: {
+    auth: {
+      refType: createAuthConfigType({ adapterName }),
+      annotations: { _required: true },
+    },
+  },
+  additionalFields: {
+    credentials: {
+      refType: createCredentialsConfigType({ adapterName }),
+      // annotations: { _required: true },
+    },
+  },
+})
 
 export const DEFAULT_CONFIG: Config = {
   fetch: {
@@ -77,59 +137,26 @@ export const DEFAULT_CONFIG: Config = {
   client: { // TODON switch to multiple clients
     auth: {
       type: 'custom',
-      baseURL: 'http://localhost:80',
+      baseURL: 'https://{subdomain}.salto.io',
+      headers: {
+        Authorization: 'ZZZ {token}',
+      },
     },
   },
   references: {
     rules: [],
+  },
+  credentials: {
+    args: [
+      {
+        name: 'subdomain',
+        type: 'string',
+        message: 'The subdomin to use when making HTTP requests to the service, e.g.: \'https://<subdomain>.my-domain.com\'',
+      },
+      {
+        name: 'token',
+        type: 'string',
+      },
+    ],
   },
 }
-
-export const SAMPLE_CONFIG: Config = _.defaults({}, {
-  apiComponents: {
-    sources: {
-      swagger: [
-        {
-          sample: { // TODON use names as prefixes to avoid conflicts
-            swagger: {
-              url: '/tmp/path-to-swagger.json', // TODON
-            },
-          },
-        },
-      ],
-    },
-    definitions: {
-      typeDefaults: {
-        transformation: {
-          idFields: DEFAULT_ID_FIELDS,
-          fieldsToOmit: FIELDS_TO_OMIT,
-        },
-      },
-      types: {},
-      supportedTypes: {
-        TypeWithInstances: ['PageType'],
-      },
-    },
-  },
-  // TODON multiple clients with names and potentially different auth flows?
-  client: {
-    // TODON make this (partially) importable from https://swagger.io/specification/?sbsearch=security-schemes#security-scheme-object
-    // specifically:
-    // * apiKey + name + in (including cookie to help with one-off fetches?)
-    // * http + basic, http + bearer, ?? maybe http + oauth?
-    // oauth2 + (eventually) all flows and their params
-    // ?? also have a custom / in-code option (or extend the mapping in-code and make usable in config?)
-    // or just extend the apiKey to allow multiple headers?
-    // *** but the currently-implemented placeholders format is also useful for the current approach - so extend it?
-    auth: { // TODON can also have "ready" adapters by config type if needed...
-      type: 'custom',
-      headers: {
-        Authorization: 'Bearer {token}',
-      },
-      baseURL: 'http://localhost',
-    },
-  },
-  references: {
-    rules: [],
-  },
-}, DEFAULT_CONFIG)

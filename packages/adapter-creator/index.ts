@@ -16,6 +16,6 @@
 
 export { createAdapter } from './src/adapter_creator'
 export { AdapterImpl } from './src/adapter/adapter'
-export { Config, createConfigType } from './src/config' // TODON move elsewhere?
+export { Config, createConfigType, ConfigTypeCreator } from './src/config' // TODON move elsewhere?
 export { createCommonFilters } from './src/filters'
 export { AdapterParams } from './src/adapter/types'

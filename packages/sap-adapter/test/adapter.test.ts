@@ -161,7 +161,7 @@ describe('adapter', () => {
           ),
           config: new InstanceElement(
             'config',
-            createConfigType(ADAPTER_NAME),
+            createConfigType({ adapterName: ADAPTER_NAME }),
             DEFAULT_CONFIG,
           ),
           elementsSource: buildElementsSourceFromElements([]),
@@ -197,7 +197,7 @@ describe('adapter', () => {
             ),
             config: new InstanceElement(
               'config',
-              createConfigType(ADAPTER_NAME),
+              createConfigType({ adapterName: ADAPTER_NAME }),
               DEFAULT_CONFIG,
             ),
             elementsSource: buildElementsSourceFromElements([]),

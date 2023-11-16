@@ -70,7 +70,7 @@ describe('stripe swagger adapter', () => {
     { token: 'testToken' }
   )
 
-  const configType = createConfigType(STRIPE)
+  const configType = createConfigType({ adapterName: STRIPE })
 
   const DEFAULT_CONFIG_INSTANCE = new InstanceElement(
     'config',

@@ -253,6 +253,7 @@ const getEntriesForType = async (
               contextDef => [contextDef.name, _.get(instance.value, contextDef.fromField)]
             )
           )
+          // TODON avoid crashing if fails on sub-element (copy from swagger)
           const nestedEntries = (await getEntriesForType({
             ...params,
             typeName: nested.type,
@@ -349,7 +350,7 @@ export const getTypeAndInstances = async ({
   const elements = [type, ...nestedTypes, ...filteredInstances]
   const transformationConfigByType = getTransformationConfigByType(typesConfig)
 
-  // We currently don't support extracting standalone fields from the types we recursed into
+  // We currently don't support extracting standalone fields from the types we recursed into // TODON fix
   await extractStandaloneFields({ // check for consistency
     adapterName,
     elements,

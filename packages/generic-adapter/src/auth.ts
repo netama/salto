@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ElemID, BuiltinTypes } from '@salto-io/adapter-api'
+import { ElemID, BuiltinTypes, MapType } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
@@ -23,22 +23,22 @@ const SECRET_MESSAGE = 'JSON-stringified secret parameters - for example { "pass
 export type GenericJsonCredentials = {
   // TODON validate can parse...
   // TODON add basic-auth, oauth, generic
-  secret: string
-  visible: string
+  secret: Record<string, string>
+  visible: Record<string, string>
 }
 
 export const genericJsonCredentialsType = createMatchingObjectType<GenericJsonCredentials>({
   elemID: new ElemID(constants.ADAPTER_NAME),
   fields: {
     visible: {
-      refType: BuiltinTypes.STRING,
+      refType: new MapType(BuiltinTypes.STRING),
       annotations: {
         _required: true,
         message: VISIBLE_MESSAGE,
       },
     },
     secret: {
-      refType: BuiltinTypes.STRING,
+      refType: new MapType(BuiltinTypes.STRING),
       annotations: {
         _required: true,
         message: SECRET_MESSAGE,

@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { CORE_ANNOTATIONS, ElemID, ObjectType } from '@salto-io/adapter-api'
+import { CORE_ANNOTATIONS, ElemID, FieldDefinition, ObjectType } from '@salto-io/adapter-api'
 import { client as clientUtils, config as configUtils } from '@salto-io/adapter-components'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 
@@ -39,16 +39,21 @@ export type Config = { // TODON generalize? keep client config
   [REFERENCES_CONFIG]?: configUtils.ReferencesConfig
 }
 
+export type ConfigTypeCreator = (args: {
+  adapterName: string
+  defaultConfig?: Partial<Config>
+  additionalFields?: Record<string, FieldDefinition>
+  additionalClientFields?: Record<string, FieldDefinition>
+}) => ObjectType
 // TODON check if can reuse the already-existing functions?
 // TODON allow *overriding* any of the fields for customizations!!! or extensions???
-export const createConfigType = (
-  adapterName: string,
-  defaultConfig?: Partial<Config>
-): ObjectType => createMatchingObjectType<Partial<Config>>({
+export const createConfigType: ConfigTypeCreator = ({
+  adapterName, defaultConfig, additionalClientFields, additionalFields,
+}) => createMatchingObjectType<Partial<Config>>({
   elemID: new ElemID(adapterName),
   fields: {
     [CLIENT_CONFIG]: {
-      refType: createClientConfigType(adapterName),
+      refType: createClientConfigType(adapterName, undefined, undefined, additionalClientFields),
     },
     // TODON extend with auth config??? only in generic adapter
     [FETCH_CONFIG]: {
@@ -62,7 +67,7 @@ export const createConfigType = (
     [REFERENCES_CONFIG]: {
       refType: createReferencesConfigType({ adapter: adapterName }),
     },
-    // TODON add config
+    ...additionalFields,
   },
   annotations: {
     [CORE_ANNOTATIONS.DEFAULT]: defaultConfig, // TODON omit some parts

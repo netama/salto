@@ -27,7 +27,7 @@ import * as connection from '../src/client/connection'
 
 describe('adapter creator', () => {
   let mockAxiosAdapter: MockAdapter
-  const configType = createConfigType(STRIPE)
+  const configType = createConfigType({ adapterName: STRIPE })
   beforeEach(() => {
     mockAxiosAdapter = new MockAdapter(axios, { delayResponse: 1, onNoMatch: 'throwException' })
   })

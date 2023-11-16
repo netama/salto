@@ -148,7 +148,7 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
       ? configUtils.getConfigWithExcludeFromConfigChanges({
         configChanges,
         currentConfig: this.configInstance,
-        configType: createConfigType(this.adapterName),
+        configType: createConfigType({ adapterName: this.adapterName }),
         adapterName: this.adapterName,
       }) : undefined
 

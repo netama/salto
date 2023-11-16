@@ -15,13 +15,13 @@
 */
 import axios from 'axios'
 import _ from 'lodash'
-import { BuiltinTypes, ConfigCreator, ElemID, InstanceElement, ListType } from '@salto-io/adapter-api'
+import { BuiltinTypes, ConfigCreator, ElemID, InstanceElement, ListType, ObjectType } from '@salto-io/adapter-api'
 import { elements as elementUtils } from '@salto-io/adapter-components'
-import { createDefaultInstanceFromType, createMatchingObjectType } from '@salto-io/adapter-utils'
+import { createDefaultInstanceFromType, createMatchingObjectType, safeJsonStringify } from '@salto-io/adapter-utils'
 import { readTextFile } from '@salto-io/file'
 import { collections } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import { API_COMPONENTS_CONFIG, Config, createConfigType, extendApiDefinitionsFromSwagger } from './config'
+import { API_COMPONENTS_CONFIG, Config, extendApiDefinitionsFromSwagger } from './config'
 
 const { generateTypes } = elementUtils.swagger
 const log = logger(module)
@@ -41,7 +41,10 @@ type ConfigOptionsType = {
   // TODON potentially the entire apiComponents config? if so might need a way to "refresh" as well
 }
 
-export const getConfigCreator = (adapterName: string, defaultConfig?: Config): ConfigCreator => {
+export const getConfigCreator = (
+  adapterName: string,
+  configType: ObjectType,
+): ConfigCreator => {
   const optionsElemId = new ElemID(adapterName, 'configOptionsType')
   const optionsType = createMatchingObjectType<ConfigOptionsType>({
     elemID: optionsElemId,
@@ -65,7 +68,8 @@ export const getConfigCreator = (adapterName: string, defaultConfig?: Config): C
   const getConfig = async (
     options?: InstanceElement
   ): Promise<InstanceElement> => {
-    const conf = await createDefaultInstanceFromType(ElemID.CONFIG_NAME, createConfigType(adapterName, defaultConfig))
+    // TODON use the correct config creator
+    const conf = await createDefaultInstanceFromType(ElemID.CONFIG_NAME, configType)
     if (options === undefined || !isOptionsTypeInstance(options)) {
       return conf
     }
@@ -124,6 +128,7 @@ export const getConfigCreator = (adapterName: string, defaultConfig?: Config): C
       }
       _.assign(conf.value.apiComponents.definitions, updatedApiDefinitions)
     }
+    log.info('finalized config for %s: %s', adapterName, safeJsonStringify(conf.value))
     return conf
   }
 

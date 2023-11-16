@@ -509,7 +509,7 @@ export default class JiraAdapter implements AdapterOperations {
 
   @logDuration('generating JSM assets instances and types from service')
   private async getJSMAssetsElements():
-  Promise<elementUtils.FetchElements<Element[]>> {
+  Promise<elementUtils.FetchElements> {
     const { jsmApiDefinitions } = this.userConfig
     // jsmApiDefinitions is currently undefined for DC
     if (this.client === undefined
@@ -526,14 +526,16 @@ export default class JiraAdapter implements AdapterOperations {
     const workspaceContext = { workspaceId }
     return getAllElements({
       adapterName: JIRA,
-      types: jsmApiDefinitions.types,
+      apiConfig: {
+        types: jsmApiDefinitions.types,
+        typeDefaults: jsmApiDefinitions.typeDefaults,
+      },
       shouldAddRemainingTypes: false,
       supportedTypes: JSM_ASSETS_DUCKTYPE_SUPPORTED_TYPES,
       fetchQuery: this.fetchQuery,
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
       computeGetArgs,
-      typeDefaults: jsmApiDefinitions.typeDefaults,
       additionalRequestContext: workspaceContext,
       getElemIdFunc: this.getElemIdFunc,
     })
