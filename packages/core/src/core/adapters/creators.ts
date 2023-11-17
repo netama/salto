@@ -25,6 +25,7 @@ import { adapter as stripeAdapter } from '@salto-io/stripe-adapter'
 import { adapter as oktaAdapter } from '@salto-io/okta-adapter'
 import { adapter as sapAdapter } from '@salto-io/sap-adapter'
 import { adapter as genericAdapter } from '@salto-io/generic-adapter'
+import { adapter as genericLaunchDarklyAdapter } from '@salto-io/generic-launchdarkly-adapter'
 import { adapter as launchDarklyAdapter } from '@salto-io/launchdarkly-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
@@ -42,6 +43,7 @@ const adapterCreators: Record<string, Adapter> = {
   dummy: dummyAdapter,
   generic: genericAdapter,
   launchdarkly: launchDarklyAdapter,
+  generic_launchdarkly: genericLaunchDarklyAdapter,
 }
 
 export default adapterCreators

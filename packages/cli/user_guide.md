@@ -78,6 +78,7 @@ Supported login parameters per service type:
 [okta](/packages/okta-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [SAP](/packages/sap-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [Generic](/packages/generic-adapter/specific-cli-options.md#non-interactive-login-parameters),
+[Generic-LaunchDarkly](/packages/generic-launchdarkly-adapter/specific-cli-options.md#non-interactive-login-parameters),
 
 ### **salto env \<command>**
 
