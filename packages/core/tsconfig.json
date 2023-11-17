@@ -30,6 +30,7 @@
         { "path": "../generic-launchdarkly-adapter" },
         { "path": "../sap-adapter" },
         { "path": "../stripe-adapter" },
+        { "path": "../PLACEHOLDER-adapter" },
         { "path": "../test-utils" },
         { "path": "../workato-adapter" },
         { "path": "../workspace" },

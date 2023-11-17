@@ -27,6 +27,7 @@ import { adapter as sapAdapter } from '@salto-io/sap-adapter'
 import { adapter as genericAdapter } from '@salto-io/generic-adapter'
 import { adapter as genericLaunchDarklyAdapter } from '@salto-io/generic-launchdarkly-adapter'
 import { adapter as launchDarklyAdapter } from '@salto-io/launchdarkly-adapter'
+import { adapter as PLACEHOLDERAdapter } from '@salto-io/PLACEHOLDER-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
   salesforce: salesforceAdapter,
@@ -44,6 +45,7 @@ const adapterCreators: Record<string, Adapter> = {
   generic: genericAdapter,
   launchdarkly: launchDarklyAdapter,
   generic_launchdarkly: genericLaunchDarklyAdapter,
+  PLACEHOLDER: PLACEHOLDERAdapter,
 }
 
 export default adapterCreators
