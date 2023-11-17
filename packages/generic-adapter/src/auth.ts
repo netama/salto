@@ -13,9 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ElemID, BuiltinTypes, MapType } from '@salto-io/adapter-api'
+import { ElemID, BuiltinTypes, MapType, ObjectType } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
-import * as constants from './constants'
 
 const VISIBLE_MESSAGE = 'JSON-stringified visible parameters - for example { "username": "myname" }'
 const SECRET_MESSAGE = 'JSON-stringified secret parameters - for example { "password": "mypaS$w0rd" }'
@@ -27,8 +26,10 @@ export type GenericJsonCredentials = {
   visible: Record<string, string>
 }
 
-export const genericJsonCredentialsType = createMatchingObjectType<GenericJsonCredentials>({
-  elemID: new ElemID(constants.ADAPTER_NAME),
+export const createGenericJsonCredentialsType = (
+  adapterName: string,
+): ObjectType => createMatchingObjectType<GenericJsonCredentials>({
+  elemID: new ElemID(adapterName),
   fields: {
     visible: {
       refType: new MapType(BuiltinTypes.STRING),

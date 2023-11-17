@@ -15,3 +15,6 @@
 */
 
 export { adapter } from './src/adapter_creator'
+export { createConnectionConfigWrapper, validateCredentials } from './src/client/connection'
+export { createGenericJsonCredentialsType, Credentials } from './src/auth'
+export { createConfigTypeWithAuth, Config } from './src/config'

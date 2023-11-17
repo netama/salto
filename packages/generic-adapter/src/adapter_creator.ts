@@ -15,7 +15,7 @@
 */
 import { client as clientUtils } from '@salto-io/adapter-components'
 import { createAdapter } from '@salto-io/adapter-creator'
-import { Credentials, genericJsonCredentialsType } from './auth'
+import { Credentials, createGenericJsonCredentialsType } from './auth'
 import { Config, DEFAULT_CONFIG, createConfigTypeWithAuth } from './config'
 import { createConnectionConfigWrapper, validateCredentials } from './client/connection'
 import { ADAPTER_NAME } from './constants'
@@ -29,7 +29,7 @@ export const adapter = createAdapter<Credentials, Config>({
   adapterName: ADAPTER_NAME, // TODON customize via config as well? not sure needed...
   authenticationMethods: {
     basic: {
-      credentialsType: genericJsonCredentialsType, // TODON can this be adjusted from the config?
+      credentialsType: createGenericJsonCredentialsType(ADAPTER_NAME), // TODON can this be adjusted from the config?
     },
   },
   validateCredentials, // TODON credentials cannot be validated based on config, because config doesn't exist yet

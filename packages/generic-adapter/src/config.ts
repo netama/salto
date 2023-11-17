@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { ElemID, CORE_ANNOTATIONS, ObjectType, BuiltinTypes, MapType, ListType } from '@salto-io/adapter-api'
-import { client as clientUtils, elements } from '@salto-io/adapter-components'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import * as adapterCreator from '@salto-io/adapter-creator'
 import { createConfigType, ConfigTypeCreator } from '@salto-io/adapter-creator'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
@@ -119,7 +119,7 @@ export const createConfigTypeWithAuth: ConfigTypeCreator = ({ adapterName, defau
 
 export const DEFAULT_CONFIG: Config = {
   fetch: {
-    ...elements.query.INCLUDE_ALL_CONFIG,
+    ...elementUtils.query.INCLUDE_ALL_CONFIG,
     hideTypes: false,
   },
   apiComponents: {
