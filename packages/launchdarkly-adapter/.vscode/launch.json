@@ -7,7 +7,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "PLACEHOLDER-adapter Debug Jest Tests",
+      "name": "launchdarkly-adapter Debug Jest Tests",
       "cwd": "${workspaceFolder}",
       "args": [
         "${workspaceRoot}/node_modules/.bin/jest",

@@ -53,7 +53,7 @@
     "@salto-io/zendesk-adapter": "0.3.48",
     "@salto-io/zuora-billing-adapter": "0.3.48",
     "@salto-io/generic-adapter": "0.3.48",
-    "@salto-io/PLACEHOLDER-adapter": "0.3.48",
+    "@salto-io/launchdarkly-adapter": "0.3.48",
     "async-lock": "^1.2.4",
     "axios": "^0.26.1",
     "bottleneck": "^2.19.5",
