@@ -16,6 +16,8 @@
 import { config as configUtils, elements } from '@salto-io/adapter-components'
 import { Config } from '@salto-io/adapter-creator'
 
+// TODO adjust this file
+
 // initially set to some field that exists, e.g. id or name - then adjust
 const DEFAULT_ID_FIELDS = ['name']
 // fields that are returned but should not be included in the instance
@@ -62,6 +64,7 @@ export const DEFAULT_CONFIG: Config = {
           fieldsToOmit: FIELDS_TO_OMIT,
           fieldsToHide: FIELDS_TO_HIDE,
           nestStandaloneInstances: true,
+          // default place to search for items when getting a page response (can adjust per type)
           dataField: 'items',
         },
       },
