@@ -31,32 +31,15 @@ export const FIELDS_TO_HIDE: configUtils.FieldToHideType[] = [
   // { fieldName: 'created_at' },
 ]
 
-export const SUPPORTED_TYPES = {
-  // examples - replace
-  // <item type>: [<page types>],
-  Item: ['Items'],
-  // note: the left-hand side is used for filtering the config in include/exclude - so initially can start with
-  // ALL: [<all page types that we want to fetch>]
-}
-
 export const DEFAULT_CONFIG: Config = {
   client: {},
   fetch: {
     ...elements.query.INCLUDE_ALL_CONFIG,
   },
   apiComponents: {
-    sources: {
-      swagger: [
-        {
-          // replace or remove
-          url: 'http://localhost:80',
-        },
-      ],
-    },
     definitions: {
       typeDefaults: {
         request: {
-          // if using cursor-based pagination, set to where the "next" link is located
           paginationField: '_links.next.href',
         },
         transformation: {
@@ -69,24 +52,8 @@ export const DEFAULT_CONFIG: Config = {
         },
       },
       types: {
-        Items: {
-          // not needed if exists in swagger
-          request: {
-            url: '/api/v1/items',
-          },
-        },
-        Item: {
-          transformation: {
-            // not needed if same as typeDefaults.idFields
-            idFields: ['category'],
-            // if want to append values on top of what is in typeDefaults - don't forget to concat the original
-            fieldsToOmit: FIELDS_TO_OMIT.concat([
-              { fieldName: 'totalCount' },
-            ]),
-          },
-        },
       },
-      supportedTypes: SUPPORTED_TYPES,
+      supportedTypes: {},
     },
   },
 }

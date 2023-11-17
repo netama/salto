@@ -17,7 +17,6 @@ import { ElemID, BuiltinTypes } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-// TODO adjust based on the needed auth (also below)
 export type TokenCredentials = {
   token: string
 }

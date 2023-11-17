@@ -23,7 +23,6 @@ import { ADAPTER_NAME } from './constants'
 
 const { validateCredentials, getWithCursorPagination } = clientUtils
 
-// TODO adjust if needed. if the config is the same as the credentials, just use it
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => config.value as Credentials
 
 export const adapter = createAdapter({
@@ -41,9 +40,6 @@ export const adapter = createAdapter({
   ),
   defaultConfig: DEFAULT_CONFIG,
   operationsCustomizations: {
-    // TODO adjust
-    // cursor pagination follows links in the response page (and is recommended when available)
-    // also possible: offset+limit, offset + last (boolean), by page
     paginate: () => getWithCursorPagination(),
     connectionCreatorFromConfig: () => createConnection,
   },

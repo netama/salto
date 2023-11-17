@@ -25,7 +25,7 @@ export const validateCredentials = async ({ connection }: {
   connection: clientUtils.APIConnection
 }): Promise<AccountInfo> => {
   try {
-    await connection.get('/api/v2/account') // TODO replace with some valid endpoint, validate response if needed
+    await connection.get('/api/v2/projects')
     return { accountId: '' }
   } catch (e) {
     log.error('Failed to validate credentials: %s', e)
@@ -38,7 +38,7 @@ export const createConnection: clientUtils.ConnectionCreator<Credentials> = retr
     authParamsFunc: async ({ token }: Credentials) => ({
       headers: { Authorization: token }, // TODO adjust
     }),
-    baseURLFunc: async () => 'https://localhost:80', // TODO replace with base endpoint, creds can be used
+    baseURLFunc: async () => 'https://app.launchdarkly.com/',
     credValidateFunc: validateCredentials,
   })
 )
