@@ -27,7 +27,9 @@ const { mapValuesAsync } = promises.object
 const log = logger(module)
 
 const argNamePartsLower = (argName: string): string[] => (
-  argName.replace('_', ' ').split(' ').flatMap(prettifyWord).map(toLower)
+  argName.replace('_', ' ').split(' ').flatMap(prettifyWord)
+    .filter(x => x.length > 0)
+    .map(toLower)
 )
 
 export const analyzeConfig = async ({
@@ -98,7 +100,7 @@ export const analyzeConfig = async ({
     .mapValues(typeDef => ({
       typeName: typeDef.elemID.typeName,
       // TODON also strip _ (underscore) prefix/suffix
-      fieldNames: Object.fromEntries(Object.keys(typeDef.fields).map(f => [f.toLowerCase(), f])),
+      fieldNames: Object.fromEntries(Object.keys(typeDef.fields).map(f => [_.trim(f, '_').toLowerCase(), f])),
     }))
     .value()
 
@@ -108,12 +110,8 @@ export const analyzeConfig = async ({
       const findMatch = (): Partial<{ typeName: string; fieldName: string; isSelfReference: boolean }> => {
         // TODON if more than 2, also try combining multiple words on each side...
         const lowercaseArgParts = argNamePartsLower(arg)
-        if (lowercaseArgParts.length === 1) {
-          // self-reference - TODON ignore completely?
-          return {}
-        }
-        const partPotentialMatches = _.range(0, lowercaseArgParts.length).map(i => {
-          const typeNameLower = lowercaseArgParts.slice(0, i).join('') || targetTypeName
+        const partPotentialMatches = _.rangeRight(0, lowercaseArgParts.length).map(i => {
+          const typeNameLower = lowercaseArgParts.slice(0, i).join('') || targetTypeName.toLowerCase()
           const fieldNameLower = lowercaseArgParts.slice(i).join('')
           const { typeName, fieldNames } = typeAndFieldLowercase[typeNameLower] ?? {}
           const fieldName = fieldNames?.[fieldNameLower]
