@@ -27,6 +27,7 @@ import { FETCH_CONFIG, Config, createConfigType, API_COMPONENTS_CONFIG, extendAp
 import { Filter, filtersRunner } from '../filter'
 import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
+import { analyzeConfig } from '../utils/config_initializer'
 
 const { createPaginator } = clientUtils
 const { computeGetArgs, findDataField, getAllElements } = elementUtils
@@ -37,6 +38,8 @@ const log = logger(module) // TODON move inside so that it has the account conte
 // should adapters _inherit_ from this or replace it? can technically do both...
 // (same as with the client from adapter-components)
 // TODON restrict Config template
+// TODON keep this so that if someone wants to customize, they can just copy-paste?
+// (though might end up becoming more different over time)
 export class AdapterImpl<Credentials, Co extends Config> implements AdapterOperations {
   protected createFiltersRunner: () => Required<Filter>
   protected client: Client<Credentials>
@@ -107,12 +110,13 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
     // TODON is there a case where some of the defaults should come from the types?
     // e.g. pagination or client? - if so - can customize at that level...
     // TODON add client name as arg for fetching types? or auth (like in openapi - though focused on what's supported)
-    const defs = extendApiDefinitionsFromSwagger(this.userConfig, parsedConfigs)
-    return getAllElements({
+    const extendedApiConfig = extendApiDefinitionsFromSwagger(this.userConfig, parsedConfigs)
+    // TODON input something that will contain all http responses, and log it in a single "line"?
+    const res = await getAllElements({
       adapterName: this.adapterName,
-      apiConfig: defs,
+      apiConfig: extendedApiConfig,
       shouldAddRemainingTypes: true,
-      supportedTypes: defs.supportedTypes,
+      supportedTypes: extendedApiConfig.supportedTypes,
       fetchQuery: this.fetchQuery,
       paginator: this.paginator,
       nestedFieldFinder: findDataField,
@@ -122,6 +126,14 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
         ? undefined
         : _.pickBy(allTypes, isObjectType),
     })
+    if (this.userConfig[API_COMPONENTS_CONFIG].initializing && this.configInstance !== undefined) {
+      await analyzeConfig({
+        adapterName: this.adapterName,
+        extendedApiConfig,
+        elements: res.elements,
+      })
+    }
+    return res
   }
 
   /**

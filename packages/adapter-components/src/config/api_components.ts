@@ -28,6 +28,8 @@ export type ApiComponentsConfig = {
   }
   // clients: {} // TODON define
   definitions: AdapterApiConfig
+  // TODON when on, will also log info and suggestions for initializing the adapter
+  initializing?: boolean
 }
 
 export const createApiComponentsConfigType = ({ adapter }: { adapter: string }): ObjectType => {
@@ -51,6 +53,9 @@ export const createApiComponentsConfigType = ({ adapter }: { adapter: string }):
         annotations: {
           _required: true,
         },
+      },
+      initializing: {
+        refType: BuiltinTypes.BOOLEAN,
       },
     },
     annotations: {

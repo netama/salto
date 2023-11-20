@@ -328,7 +328,7 @@ export const createRequestConfigs = ({
   }
 }
 
-const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string>): string[] => {
+export const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string> = new Set()): string[] => {
   const urlParams = url.match(ARG_PLACEHOLDER_MATCHER)?.map(m => m.slice(1, -1)) ?? []
   return urlParams.filter(p => !dependsOnArgs.has(p))
 }

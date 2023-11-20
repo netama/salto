@@ -23,6 +23,7 @@ import { findDataField, returnFullEntry, FindNestedFieldFunc } from './field_fin
 import { filterTypes } from './type_elements'
 import { getInstanceName, generateInstanceNameFromConfig, createServiceIds, removeNullValues, toBasicInstance } from './instance_elements'
 import { FetchElements } from './element_getter'
+import { findUnresolvedArgs } from '../config/request' // TODON move / replace
 
 const { getAllElements } = ducktype
 
@@ -44,4 +45,5 @@ export {
   query,
   FetchElements,
   toBasicInstance,
+  findUnresolvedArgs,
 }
