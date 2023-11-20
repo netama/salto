@@ -237,7 +237,7 @@ export const getWithCursorPagination = (pathChecker = defaultPathChecker): Pagin
         const nextPage = new URL(nextPagePath, 'http://localhost')
         if (!pathChecker(url, nextPage.pathname)) {
           log.error('unexpected next page received for endpoint %s params %o: %s', url, currentParams, nextPage.pathname)
-          throw new Error(`unexpected next page received for endpoint ${url}: ${nextPage.pathname}`)
+          // throw new Error(`unexpected next page received for endpoint ${url}: ${nextPage.pathname}`)
         }
         return [{
           ...currentParams,

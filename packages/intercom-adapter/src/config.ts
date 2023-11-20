@@ -22,7 +22,7 @@ import { Config } from '@salto-io/adapter-creator'
 const DEFAULT_ID_FIELDS = ['name']
 // fields that are returned but should not be included in the instance
 export const FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
-  { fieldName: '_links' },
+  // { fieldName: '_links' },
 ]
 // fields that should be hidden
 // IMPORTANT: hiding fields inside arrays can corrupt the workspace - best to adjust after the initial setup
@@ -32,11 +32,18 @@ export const FIELDS_TO_HIDE: configUtils.FieldToHideType[] = [
 ]
 
 export const SUPPORTED_TYPES = {
-  // examples - replace
-  // <item type>: [<page types>],
-  Item: ['Items'],
-  // note: the left-hand side is used for filtering the config in include/exclude - so initially can start with
-  // ALL: [<all page types that we want to fetch>]
+  ALL: [
+    'admin_with_app',
+    'admin_list',
+    'article_list',
+    'collection_list',
+    'help_center_list',
+    'company',
+    'data_attribute_list',
+    'segment_list',
+    'team_list',
+    'ticket_type_list',
+  ],
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -49,15 +56,16 @@ export const DEFAULT_CONFIG: Config = {
       swagger: [
         {
           // replace or remove
-          url: 'http://localhost:80',
+          url: 'https://raw.githubusercontent.com/intercom/Intercom-OpenAPI/main/descriptions/2.10/api.intercom.io.yaml',
         },
       ],
     },
+    initializing: true,
     definitions: {
       typeDefaults: {
         request: {
-          // if using cursor-based pagination, set to where the "next" link is located
-          paginationField: '_links.next.href',
+          // // if using cursor-based pagination, set to where the "next" link is located
+          paginationField: 'pages.next',
         },
         transformation: {
           idFields: DEFAULT_ID_FIELDS,
@@ -65,24 +73,13 @@ export const DEFAULT_CONFIG: Config = {
           fieldsToHide: FIELDS_TO_HIDE,
           nestStandaloneInstances: true,
           // default place to search for items when getting a page response (can adjust per type)
-          dataField: 'items',
+          // dataField: 'items',
         },
       },
       types: {
-        Items: {
-          // not needed if exists in swagger
-          request: {
-            url: '/api/v1/items',
-          },
-        },
-        Item: {
+        article_list: {
           transformation: {
-            // not needed if same as typeDefaults.idFields
-            idFields: ['category'],
-            // if want to append values on top of what is in typeDefaults - don't forget to concat the original
-            fieldsToOmit: FIELDS_TO_OMIT.concat([
-              { fieldName: 'totalCount' },
-            ]),
+            dataField: 'data',
           },
         },
       },

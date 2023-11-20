@@ -19,6 +19,7 @@ import { config as configUtils, elements as elementUtils } from '@salto-io/adapt
 import { prettifyWord, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { values as lowerdashValues, promises } from '@salto-io/lowerdash'
+// import { Config } from '../config'
 
 const { DATA_FIELD_ENTIRE_OBJECT } = configUtils
 const { findDataField, findUnresolvedArgs } = elementUtils
@@ -40,8 +41,17 @@ type ArgSource = {
 type EndpointDef = {
   url: string
   args: Record<string, ArgSource>
+  // TODON all-or-nothing
+  validParents?: string[]
+  remainingArgs?: Record<string, ArgSource>
 }
 
+type ConfigAnalysisRes = {
+  potentialMatchesNoSelfRef: Record<string, EndpointDef>
+  supportedTypes: Record<string, string[]>
+  dataFieldMapping: Record<string, string>
+  potentialMatchesWithSelfRef: Record<string, EndpointDef>
+}
 export const analyzeConfig = async ({
   elements,
   extendedApiConfig,
@@ -49,7 +59,7 @@ export const analyzeConfig = async ({
   adapterName: string
   elements: Element[]
   extendedApiConfig: configUtils.AdapterApiConfig
-}): Promise<void> => {
+}): Promise<ConfigAnalysisRes> => {
   log.debug('--- config initialization suggestions block ---')
   const allTypes = _.keyBy(elements.filter(isObjectType), e => e.elemID.typeName)
   const { types: typeConfig, typeDefaults: typeDefaultConfig } = extendedApiConfig
@@ -173,17 +183,22 @@ export const analyzeConfig = async ({
         const remainingArgsParentTypes = _.uniq(Object.values(remainingArgs).map(arg => arg.typeName))
         if (remainingArgsParentTypes.length === 0) {
           // prefer parent directly related to the args
-          return { validParents: _.sortBy(potentialParents, parent => [
-            // TODON go through supportedTypes as well!
-            !(
-              Object.values(def.args).map(arg => arg.typeName).includes(parent)),
-          ]) }
+          return {
+            validParents: _.sortBy(potentialParents, parent => {
+              const defParents = new Set(Object.values(def.args).flatMap(arg => supportedTypes[arg.typeName] ?? []))
+              return !defParents.has(parent)
+            }),
+            remainingArgs,
+          }
         }
         if (remainingArgsParentTypes.length === 1) {
           const requiredParent = remainingArgsParentTypes[0]
           const parentSupportedTypes = new Set(supportedTypes[requiredParent] ?? [])
           if (potentialParents.some(parent => parentSupportedTypes.has(parent))) {
-            return { validParents: [requiredParent] }
+            return {
+              validParents: [requiredParent],
+              remainingArgs,
+            }
           }
         }
         return undefined
@@ -191,7 +206,7 @@ export const analyzeConfig = async ({
       }).find(isDefined)
       return {
         ...def,
-        ...(nearestParent ?? {}),
+        ...(nearestParent ?? { validParents: undefined, remainingArgs: undefined }),
       }
     })
     .value()
@@ -203,12 +218,16 @@ export const analyzeConfig = async ({
   const potentialMatchesNoSelfRef = _.omitBy(dependentTypeToParentAndArgs, hasSelfRefArg)
   const potentialMatchesWithSelfRef = _.pickBy(dependentTypeToParentAndArgs, hasSelfRefArg)
 
-  log.info('--- config input for review: %s', safeJsonStringify({
+  const res = {
     potentialMatchesNoSelfRef,
     supportedTypes,
     dataFieldMapping,
     potentialMatchesWithSelfRef, // probably not useful?
-  }))
+  }
+
+  log.info('--- config input for review: %s', safeJsonStringify(res))
+  return res
+
   // TODON generate config blocks - based on supported types to find parent
   // + standalone fields, and fieldTypeOverrides based on reversed supported-types to find child to override
 
@@ -225,3 +244,47 @@ export const analyzeConfig = async ({
   // log.debug('--- config initialization suggestions block done ---')
   // TODON have option to turn into change suggestion?
 }
+
+// export const generateConfigFromAnalysis = async ({
+//   defaultConfig,
+//   dataFieldMapping,
+//   potentialMatchesNoSelfRef,
+//   // potentialMatchesWithSelfRef,
+//   supportedTypes,
+// }: ConfigAnalysisRes & { defaultConfig: Config }): Promise<Partial<Config>> => {
+//   const matches = {
+//     ...potentialMatchesNoSelfRef,
+//     // ...potentialMatchesWithSelfRef, // TODON see if needed
+//   }
+//   const recurseIntoConfig = Object.entries(matches)
+//     .map(([targetTypeName, argDef]) => {
+//       const { validParents, remainingArgs } = argDef
+//       if (validParents === undefined || remainingArgs === undefined) {
+//         return {}
+//       }
+//       const toField = strings.lowerCaseFirstLetter(targetTypeName)
+//       const pageTypes = supportedTypes[validParents[0]]
+//       const parentRecurseInto: configUtils.RecurseIntoConfig = {
+//         type: targetTypeName,
+//         toField, // TODON allow configuring as well
+//         context: Object.entries(remainingArgs).map(([argName, arg]) =>
+//           ({ name: argName, fromField: arg.fieldName })),
+//       }
+//       // TODON combine all parentRecurseInto definitions together with the arrays etc
+//       // TODON add standaloneFields + fieldTypeOverrides on child
+//     })
+//   const dataFieldConfig = _.mapValues(
+//     dataFieldMapping,
+//     val => ({ transformation: { dataField: val } })
+//   )
+//   // TODON use the typeDefaults definitions - e.g. remove fieldsToOmit
+//   return _.merge(
+//     {},
+//     defaultConfig,
+//     // data fields
+//     { apiComponents: { definitions: { types: dataFieldConfig } } },
+//     // supported types
+//     { apiComponents: { definitions: { supportedTypes } } },
+//     // recurseInto
+//   )
+// }

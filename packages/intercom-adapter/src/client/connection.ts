@@ -30,7 +30,7 @@ export const validateCredentials = async ({ connection }: {
   connection: clientUtils.APIConnection
 }): Promise<AccountInfo> => {
   try {
-    await connection.get('/api/v2/account') // TODO replace with some valid endpoint, validate response if needed
+    await connection.get('https://api.intercom.io/me') // TODO replace with some valid endpoint, validate response if needed
     return { accountId: '' }
   } catch (e) {
     log.error('Failed to validate credentials: %s', e)
@@ -41,30 +41,34 @@ export const validateCredentials = async ({ connection }: {
 export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
   clientUtils.axiosConnection({
     retryOptions,
-    baseURLFunc: async () => 'https://localhost:80', // TODO replace with base URL, creds can be used
     authParamsFunc: async ({ token, username, password }: Credentials) => {
-      // TODO adjust / remove - sample for private APIs requiring cookies
+      // for private APIs
       const jar = new CookieJar()
       const client = wrapper(axios.create({ jar }))
-      const { data } = await client.get('https://localhost:80/sign_in')
-      const root = HTMLParser.parse(data)
-      const authenticityToken = root.querySelector('TODO')?.attrs.value // TODO adjust query
+
+      const signinHTML = await client.get('https://app.intercom.com/admins/sign_in')
+      const root = HTMLParser.parse(signinHTML.data)
+      const authenticityToken = root.querySelector('.new_admin input[name="authenticity_token"]')?.attrs.value
       const form = new FormData()
+      form.append('authenticity_token', authenticityToken)
       form.append('admin[email]', username)
       form.append('admin[password]', password)
-      form.append('authenticity_token', authenticityToken)
+      form.append('admin[remember_me]', '0')
+      form.append('selected_region', 'us-east-1')
+      form.append('utf8', '✓')
       await client.post(
-        'https://localhost:80/authenticate',
+        'https://app.intercom.com/admins/sign_in',
         form,
         { headers: form.getHeaders() },
       )
 
-      // TODO return arguments that should be used by all client calls
       return {
-        headers: { Authorization: `Bearer ${token}` },
-        jar, // TODO remove if cookies are not needed (usually not needed for public APIs)
+        headers: { Authorization: `Bearer ${token}` }, // for public APIs
+        jar,
       }
     },
+    // TODON can do per client probably instead
+    // baseURLFunc: async () => 'https://api.intercom.io', // TODON allow customizing better per endpoint
     credValidateFunc: validateCredentials,
   })
 )
