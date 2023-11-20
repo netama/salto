@@ -1,5 +1,5 @@
 /*
-*                      Copyright 2020 Salto Labs Ltd.
+*                      Copyright 2023 Salto Labs Ltd.
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with
@@ -13,26 +13,4 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-const deepMerge = require('../../build_utils/deep_merge')
-
-module.exports = deepMerge(
-  require('../../jest.base.config.js'),
-  {
-    name: 'PLACEHOLDER-adapter',
-    displayName: 'PLACEHOLDER-adapter',
-    rootDir: `${__dirname}`,
-    collectCoverageFrom: [
-      '!<rootDir>/index.ts',
-    ],
-    testEnvironment: undefined,
-    coverageThreshold: {
-      'global': {
-        branches: 0,
-        functions: 0,
-        lines: 0,
-        statements: 0,
-      },
-    },
-  },
-)
-
+export const ADAPTER_NAME = 'intercom' // TODO adjust

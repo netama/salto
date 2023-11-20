@@ -1,4 +1,4 @@
-# PLACEHOLDER CLI options
+# intercom CLI options
 
 ## Non interactive Login Parameters
 Supprted parameters are:
@@ -9,5 +9,5 @@ Supprted parameters are:
 
 ### Example
 ```
-salto account add PLACEHOLDER --login-parameters token=token
+salto account add intercom --login-parameters token=token
 ```

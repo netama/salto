@@ -1,8 +1,8 @@
 {
-  "name": "@salto-io/PLACEHOLDER-adapter",
+  "name": "@salto-io/intercom-adapter",
   "version": "0.3.49",
   "license": "Apache-2.0",
-  "description": "Salto PLACEHOLDER adapter",
+  "description": "Salto intercom adapter",
   "repository": {
     "type": "git",
     "url": "https://github.com/salto-io/salto"
