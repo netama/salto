@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export { serviceUrlFilterCreator, addUrlToInstance } from './service_url'
-export { referencedInstanceNamesFilterCreator } from './referenced_instance_names'
-export { queryFilterCreator, createParentChildGraph } from './query'
-export { hideTypesFilterCreator } from './hide_types'
-export { defaultDeployFilterCreator } from './default_deploy'
+import { Change, InstanceElement, ChangeGroup } from '@salto-io/adapter-api'
+
+export type InstanceChangeAndGroup = {
+  change: Change<InstanceElement>
+  changeGroup: Readonly<ChangeGroup>
+}

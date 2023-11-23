@@ -15,7 +15,7 @@
  */
 
 type SourceTypeDefinition = {
-  originalTypeName: string
+  newTypeName: string
   // when true, the original type name is renamed and all references to it point to the new type.
   // when false, it is (shallow) cloned, and no other types are impacted.
   // NOTE: renames happen BEFORE clones, and the original type name will not be accessible.

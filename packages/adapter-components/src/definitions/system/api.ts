@@ -18,14 +18,13 @@ import { ApiClientDefinition, PaginationDefinitions } from './requests'
 import { OptionsWithDefault } from './shared'
 import { OpenAPIDefinition } from './sources'
 import { FetchApiDefinitions } from './fetch'
-// import { DeployApiDefinitions } from './deploy'
+import { DeployApiDefinitions } from './deploy'
 import { ReferenceDefinitions } from './references'
 
 export type ApiDefinitions<
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _Action extends string = ActionName,
+  Action extends string = ActionName,
 > = {
   // sources are processed and used to populate initial options for clients and components, in order of definition,
   // followed by the rest of the adjustments
@@ -47,6 +46,5 @@ export type ApiDefinitions<
   references?: ReferenceDefinitions
 
   fetch?: FetchApiDefinitions<ClientOptions>
-  // TODO add deploy
-  // deploy?: DeployApiDefinitions<Action, ClientOptions>
+  deploy?: DeployApiDefinitions<Action, ClientOptions>
 }

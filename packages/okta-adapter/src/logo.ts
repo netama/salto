@@ -16,10 +16,8 @@
 
 import _ from 'lodash'
 import {
-  BuiltinTypes,
   CORE_ANNOTATIONS,
   Change,
-  ElemID,
   InstanceElement,
   ObjectType,
   ReferenceExpression,
@@ -37,7 +35,7 @@ import { getOktaError } from './deployment'
 import { APP_LOGO_TYPE_NAME, BRAND_LOGO_TYPE_NAME, FAV_ICON_TYPE_NAME, OKTA } from './constants'
 import { extractIdFromUrl } from './utils'
 
-const { SUBTYPES_PATH, TYPES_PATH, RECORDS_PATH } = elementsUtils
+const { RECORDS_PATH } = elementsUtils
 
 type BrandFileValues = {
   fileType: string
@@ -120,21 +118,6 @@ export const deployLogo = async (change: Change<InstanceElement>, client: OktaCl
     throw getOktaError(logoInstance.elemID, e)
   }
 }
-
-export const createFileType = (objectTypeName: string): ObjectType =>
-  new ObjectType({
-    elemID: new ElemID(OKTA, objectTypeName),
-    fields: {
-      id: {
-        refType: BuiltinTypes.STRING,
-        annotations: { [CORE_ANNOTATIONS.HIDDEN_VALUE]: true },
-      },
-      content: { refType: BuiltinTypes.STRING },
-      contentType: { refType: BuiltinTypes.STRING },
-      fileName: { refType: BuiltinTypes.STRING },
-    },
-    path: [OKTA, TYPES_PATH, SUBTYPES_PATH, objectTypeName, objectTypeName],
-  })
 
 export const getLogo = async ({
   client,
