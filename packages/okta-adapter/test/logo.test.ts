@@ -16,7 +16,6 @@
 
 import {
   ElemID,
-  BuiltinTypes,
   CORE_ANNOTATIONS,
   ObjectType,
   InstanceElement,
@@ -24,13 +23,14 @@ import {
   StaticFile,
   toChange,
 } from '@salto-io/adapter-api'
-import { client as clientUtils } from '@salto-io/adapter-components'
+import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { MockInterface } from '@salto-io/test-utils'
-import { TYPES_PATH, SUBTYPES_PATH, RECORDS_PATH } from '@salto-io/adapter-components/src/elements'
 import OktaClient from '../src/client/client'
 import { APPLICATION_TYPE_NAME, APP_LOGO_TYPE_NAME, LINKS_FIELD, OKTA } from '../src/constants'
-import { createFileType, deployLogo, getLogo } from '../src/logo'
+import { deployLogo, getLogo } from '../src/logo'
 import { mockClient } from './utils'
+
+const { RECORDS_PATH } = elementUtils
 
 describe('logo filter', () => {
   const content = Buffer.from('test')
@@ -59,27 +59,6 @@ describe('logo filter', () => {
   const fileName = 'app1'
   const link = 'https://ok12static.oktacdn.com/fs/bco/4/111'
   const appLogoType = new ObjectType({ elemID: new ElemID(OKTA, APP_LOGO_TYPE_NAME) })
-  describe('createFileType', () => {
-    it('should create logo type', () => {
-      const logoType = createFileType(APP_LOGO_TYPE_NAME)
-      expect(logoType.elemID.name).toEqual(APP_LOGO_TYPE_NAME)
-      expect(logoType).toEqual(
-        new ObjectType({
-          elemID: new ElemID(OKTA, APP_LOGO_TYPE_NAME),
-          fields: {
-            id: {
-              refType: BuiltinTypes.STRING,
-              annotations: { [CORE_ANNOTATIONS.HIDDEN_VALUE]: true },
-            },
-            content: { refType: BuiltinTypes.STRING },
-            contentType: { refType: BuiltinTypes.STRING },
-            fileName: { refType: BuiltinTypes.STRING },
-          },
-          path: [OKTA, TYPES_PATH, SUBTYPES_PATH, APP_LOGO_TYPE_NAME, APP_LOGO_TYPE_NAME],
-        }),
-      )
-    })
-  })
   describe('getLogo', () => {
     beforeEach(async () => {
       const mockCli = mockClient()

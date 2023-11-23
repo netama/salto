@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * as changeValidators from './change_validators'
-export * as dependency from './dependency'
-export * as grouping from './grouping'
-export { createAdditionalParentChanges } from './change_utils'
-export { filterUndeployableValues, filterIgnoredValues, transformRemovedValuesToNull } from './filtering'
-export { deployChange, ResponseResult, assignServiceId } from './deploy_steps'
-export { defaultDeployChange } from './default_deploy_change'
-export { OPERATION_TO_ANNOTATION } from './annotations'
+import { Change, InstanceElement, ChangeGroup } from '@salto-io/adapter-api'
+
+export type InstanceChangeAndGroup = {
+  change: Change<InstanceElement>
+  changeGroup: ChangeGroup<Change<InstanceElement>>
+}

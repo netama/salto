@@ -20,14 +20,13 @@ import {
   createSaltoElementError,
   getChangeData,
   InstanceElement,
-  isAdditionChange,
   isInstanceChange,
   SaltoError,
 } from '@salto-io/adapter-api'
-import { deployment } from '@salto-io/adapter-components'
+import { deployment as deploymentUtils } from '@salto-io/adapter-components'
 import { FilterCreator } from '../filter'
 import { CLIENT_CONFIG } from '../config'
-import { assignServiceIdToAdditionChange, deployChanges } from '../deployment'
+import { deployChanges, getOktaError } from '../deployment'
 
 const log = logger(module)
 
@@ -75,14 +74,12 @@ const filterCreator: FilterCreator = ({ adminClient, config }) => ({
       }
     }
     const deployResult = await deployChanges(relevantChanges.filter(isInstanceChange), async change => {
-      const response = await deployment.deployChange({
+      await deploymentUtils.defaultDeployChange({
         change,
         client: adminClient,
-        endpointDetails: privateApiDefinitions.types[getChangeData(change).elemID.typeName]?.deployRequests,
+        apiDefinitions: privateApiDefinitions,
+        convertError: getOktaError,
       })
-      if (isAdditionChange(change)) {
-        assignServiceIdToAdditionChange(response, change, privateApiDefinitions)
-      }
     })
     return { deployResult, leftoverChanges }
   },
