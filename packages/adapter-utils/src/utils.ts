@@ -694,6 +694,20 @@ export const resolveChangeElement = <T extends Change<ChangeDataType> = Change<C
 ): Promise<T> =>
   applyFunctionToChangeData(change, changeData => resolveValuesFunc(changeData, getLookUpName, elementsSource))
 
+export type ChangeElementResolver<T extends Change<ChangeDataType> = Change<ChangeDataType>> = (change: T) => Promise<T>
+export const createChangeElementResolver =
+  <T extends Change<ChangeDataType> = Change<ChangeDataType>>({
+    getLookUpName,
+    resolveValuesFunc,
+    elementSource,
+  }: {
+    getLookUpName: GetLookupNameFunc
+    resolveValuesFunc?: ResolveValuesFunc
+    elementSource?: ReadOnlyElementsSource
+  }): ChangeElementResolver<T> =>
+  change =>
+    resolveChangeElement(change, getLookUpName, resolveValuesFunc, elementSource)
+
 export const findElements = (elements: Iterable<Element>, id: ElemID): Iterable<Element> =>
   wu(elements).filter(e => e.elemID.isEqual(id))
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import _ from 'lodash'
-import { ElemIdGetter, ObjectType, isObjectType } from '@salto-io/adapter-api'
+import { ActionName, ElemIdGetter, ObjectType, isObjectType } from '@salto-io/adapter-api'
 import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { types } from '@salto-io/lowerdash'
@@ -41,6 +41,7 @@ const log = logger(module)
 export const getElements = async <
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
+  Action extends string = ActionName,
 >({
   adapterName,
   fetchQuery,
@@ -51,7 +52,10 @@ export const getElements = async <
 }: {
   adapterName: string
   fetchQuery: ElementQuery
-  definitions: types.PickyRequired<ApiDefinitions<ClientOptions, PaginationOptions>, 'clients' | 'pagination' | 'fetch'>
+  definitions: types.PickyRequired<
+    ApiDefinitions<ClientOptions, PaginationOptions, Action>,
+    'clients' | 'pagination' | 'fetch'
+  >
   predefinedTypes?: Record<string, ObjectType>
   getElemIdFunc?: ElemIdGetter
   additionalRequestContext?: Record<string, unknown>
