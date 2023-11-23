@@ -15,7 +15,7 @@
 */
 export { ApiComponentsConfig, createApiComponentsConfigType } from './api_components'
 export { createDucktypeAdapterApiConfigType, AdapterDuckTypeApiConfig, DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig, TypeDuckTypeConfig, TypeDuckTypeDefaultsConfig, validateApiDefinitionConfig as validateDuckTypeApiDefinitionConfig, validateFetchConfig as validateDuckTypeFetchConfig } from './ducktype'
-export { createRequestConfigs, validateRequestConfig, FetchRequestConfig, DeployRequestConfig, UrlParams, DeploymentRequestsByAction, RecurseIntoCondition, isRecurseIntoConditionByField } from './request'
+export { createRequestConfigs, validateRequestConfig, FetchRequestConfig, DeployRequestConfig, UrlParams, DeploymentRequestsByAction, RecurseIntoCondition, RecurseIntoConfig, isRecurseIntoConditionByField } from './request'
 export { ReferencesConfig, createReferencesConfigType } from './references'
 export { createAdapterApiConfigType, getConfigWithDefault, AdapterApiConfig, UserFetchConfig, TypeConfig, TypeDefaultsConfig, createUserFetchConfigType, DEPLOYER_FALLBACK_VALUE, UserDeployConfig, DefaultMissingUserFallbackConfig, DefaultFetchCriteria, createUserDeployConfigType, validateDefaultMissingUserFallbackConfig, validateSupportedTypes, defaultMissingUserFallbackField, AdapterFetchError as FetchError } from './shared'
 export { mergeWithDefaultConfig } from './merge'

@@ -19,7 +19,11 @@ import * as constants from './constants'
 
 // TODO adjust based on the needed auth (also below)
 export type TokenCredentials = {
+  // for public API
   token: string
+  // for private API
+  username: string
+  password: string
 }
 
 export const tokenCredentialsType = createMatchingObjectType<TokenCredentials>({
@@ -27,6 +31,14 @@ export const tokenCredentialsType = createMatchingObjectType<TokenCredentials>({
   fields: {
     // TODO adjust according to above
     token: {
+      refType: BuiltinTypes.STRING,
+      annotations: { _required: true },
+    },
+    username: {
+      refType: BuiltinTypes.STRING,
+      annotations: { _required: true },
+    },
+    password: {
       refType: BuiltinTypes.STRING,
       annotations: { _required: true },
     },
