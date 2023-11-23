@@ -78,6 +78,9 @@ export const createElementQuery = <T extends Record<string, unknown>>(
 
       return isIncluded && !isExcluded
     },
+
+    // TODON also extend and add something like getCriteriaForType? (formatted as include/exclude)
+    // so that it can be used for optimizations
   })
 
 export const createMockQuery = (): MockInterface<ElementQuery> => ({

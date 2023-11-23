@@ -14,67 +14,18 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ActionName, Change, ElemID, getChangeData, InstanceElement, ReadOnlyElementsSource, isAdditionOrModificationChange, isRemovalChange } from '@salto-io/adapter-api'
-import { transformElement, inspectValue } from '@salto-io/adapter-utils'
+import { Change, ElemID, getChangeData, InstanceElement, ReadOnlyElementsSource, isAdditionOrModificationChange, isAdditionChange, isRemovalChange } from '@salto-io/adapter-api'
+import { inspectValue } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { createUrl } from '../fetch/resource'
-import { HTTPError, HTTPWriteClientInterface } from '../client/http_client'
-import { DeploymentRequestsByAction } from '../config/request'
+import { HTTPError, HTTPReadClientInterface, HTTPWriteClientInterface } from '../client/http_client'
+import { DeploymentRequestsByAction, AdapterApiConfig, getConfigWithDefault } from '../config'
 import { ResponseValue } from '../client'
-import { OPERATION_TO_ANNOTATION } from './annotations'
+import { filterIgnoredValues, filterUndeployableValues } from './filtering'
 
 const log = logger(module)
 
 export type ResponseResult = ResponseValue | ResponseValue[] | undefined
-
-export const filterUndeployableValues = async (
-  instance: InstanceElement,
-  action: ActionName,
-  elementsSource?: ReadOnlyElementsSource,
-): Promise<InstanceElement> => (
-  transformElement({
-    element: instance,
-    strict: false,
-    allowEmpty: true,
-    elementsSource,
-    transformFunc: ({ value, field }) => {
-      // The === false is because if the value is undefined, we don't want to filter it out
-      if (field?.annotations[OPERATION_TO_ANNOTATION[action]] === false) {
-        return undefined
-      }
-      return value
-    },
-  })
-)
-
-export const filterIgnoredValues = async (
-  instance: InstanceElement,
-  fieldsToIgnore: string[] | ((path: ElemID) => boolean),
-  configFieldsToIgnore: string[] = [],
-  elementsSource?: ReadOnlyElementsSource,
-): Promise<InstanceElement> => {
-  const filteredInstance = _.isFunction(fieldsToIgnore)
-    ? (await transformElement({
-      element: instance,
-      strict: false,
-      allowEmpty: true,
-      elementsSource,
-      transformFunc: ({ value, path }) => {
-        if (path !== undefined && fieldsToIgnore(path)) {
-          return undefined
-        }
-        return value
-      },
-    })) : instance
-
-
-  filteredInstance.value = _.omit(
-    filteredInstance.value,
-    [...configFieldsToIgnore, ...Array.isArray(fieldsToIgnore) ? fieldsToIgnore : []],
-  )
-
-  return filteredInstance
-}
 
 /**
  * Deploy a single change to the service using the given details
@@ -99,7 +50,7 @@ export const deployChange = async ({
   allowedStatusCodesOnRemoval = [],
 }:{
   change: Change<InstanceElement>
-  client: HTTPWriteClientInterface
+  client: HTTPWriteClientInterface & HTTPReadClientInterface
   endpointDetails?: DeploymentRequestsByAction
   fieldsToIgnore?: string[] | ((path: ElemID) => boolean)
   additionalUrlVars?: Record<string, string>
@@ -151,4 +102,39 @@ export const deployChange = async ({
     }
     throw error
   }
+}
+
+export const assignServiceId = ({
+  change, apiDefinitions, response, dataField, addAlsoOnModification = false,
+}: {
+  change: Change<InstanceElement>
+  apiDefinitions: AdapterApiConfig
+  response: ResponseResult
+  dataField?: string
+  addAlsoOnModification?: boolean
+}): void => {
+  if (!(isAdditionChange(change) || addAlsoOnModification)) {
+    return
+  }
+  if (Array.isArray(response)) {
+    log.warn(
+      'Received an array for the response of the deploy. Not assigning service id. Action: %s, elem id: %s',
+      change.action, getChangeData(change).elemID.getFullName()
+    )
+    return
+  }
+  const transformationConfig = getConfigWithDefault(
+    apiDefinitions.types[getChangeData(change).elemID.typeName]?.transformation,
+    apiDefinitions.typeDefaults.transformation,
+  )
+  const data = dataField
+    ? response?.[dataField]
+    : response
+  const serviceIdField = transformationConfig.serviceIdField ?? 'id'
+  const serviceId = _.get(data, serviceIdField)
+  if (serviceId !== undefined) {
+    _.set(getChangeData(change).value, serviceIdField, serviceId)
+    return
+  }
+  log.warn('Received unexpected response, could not assign service id to change %s from response %o', getChangeData(change).elemID.getFullName(), response)
 }

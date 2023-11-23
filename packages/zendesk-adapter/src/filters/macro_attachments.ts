@@ -38,11 +38,11 @@ import {
   resolveChangeElement, safeJsonStringify, pathNaclCase, references, inspectValue,
 } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { elements as elementsUtils, fetch as fetchUtils } from '@salto-io/adapter-components'
+import { elements as elementsUtils, fetch as fetchUtils, deployment as deploymentUtils } from '@salto-io/adapter-components'
 import { values, collections } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
 import { ZENDESK, MACRO_TYPE_NAME } from '../constants'
-import { addId, deployChange, deployChanges } from '../deployment'
+import { deployChange, deployChanges } from '../deployment'
 import { getZendeskError } from '../errors'
 import { lookupFunc } from './field_references'
 import ZendeskClient from '../client/client'
@@ -307,13 +307,15 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
         }
         const instance = getChangeData(change)
         const response = await addAttachment(client, instance)
-        addId({
-          change,
-          apiDefinitions: config.apiDefinitions,
-          response: response.data,
-          dataField: MACRO_ATTACHMENT_DATA_FIELD,
-          addAlsoOnModification: true,
-        })
+        if (!Array.isArray(response.data)) {
+          deploymentUtils.assignServiceId({
+            change,
+            apiDefinitions: config.apiDefinitions,
+            response: response.data,
+            dataField: MACRO_ATTACHMENT_DATA_FIELD,
+            addAlsoOnModification: true,
+          })
+        }
         childFullNameToInstance[instance.elemID.getFullName()] = instance
       }
     )

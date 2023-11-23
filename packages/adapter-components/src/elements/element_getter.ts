@@ -22,7 +22,7 @@ import { ElementQuery } from '../fetch/query'
 
 const { isDefined } = lowerdashValues
 
-export type FetchElements<T> = {
+export type FetchElements<T = Element[]> = {
   elements: T
   errors?: SaltoError[]
   configChanges?: ConfigChangeSuggestion[]

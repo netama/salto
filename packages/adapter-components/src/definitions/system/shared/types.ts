@@ -25,7 +25,7 @@ export type DefaultWithCustomizations<T, K extends string = string> = {
   // if the customization is an array, the default will be applied to each array item
   // (if the customization is empty, it will not be used)
   default?: types.RecursivePartial<T extends (infer U)[] ? U : T>
-  // hack to avoid requiring al keys of an enum
+  // hack to avoid requiring all keys of an enum
   customizations: string extends K ? Record<K, T> : Partial<Record<K, T>>
 }
 

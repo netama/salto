@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+export { getElements } from './fetch'
 export * as element from './element'
 export * as query from './query'
 export * as request from './request'
 export * as resource from './resource'
+export * as source from './source'

@@ -15,7 +15,8 @@
 */
 
 export { ApiDefinitions } from './api'
+export * as deploy from './deploy'
 export * as fetch from './fetch'
 export * from './requests'
+export { DATA_FIELD_ENTIRE_OBJECT, NameMappingOptions, DefaultWithCustomizations, ArgsWithCustomizer, OptionsWithDefault, TransformFunction, AdjustFunction, ContextParams } from './shared'
 export * from './utils'
-export { DATA_FIELD_ENTIRE_OBJECT, NameMappingOptions, DefaultWithCustomizations, TransformFunction, AdjustFunction, ContextParams } from './shared'

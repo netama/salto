@@ -42,7 +42,7 @@ export const isConditionByField = (
 )
 
 type RecurseIntoContextParamDefinition = {
-  fromField: string
+  fromField: string // TODON replace with transformation config to align
 }
 type RecurseIntoContext = {
   args: Record<string, RecurseIntoContextParamDefinition>

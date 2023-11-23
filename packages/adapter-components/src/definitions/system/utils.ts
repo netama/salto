@@ -39,22 +39,31 @@ export const mergeSingleDefWithDefault = <T, K extends string>(
       log.warn('found array in custom and default definitions, ignoring default')
       return def
     }
-    // TODON improve casting
+    // TODO improve casting
     return def.map(item => mergeSingleDefWithDefault(defaultDef, item)) as unknown as T
   }
+  // we add a fake nesting level called "value" in order for ignoreDefaultFieldCustomizations to be caught even
+  // if it directly under the root.
   return _.mergeWith(
-    _.cloneDeep(defaultDef),
-    def,
+    { value: _.cloneDeep(defaultDef) },
+    { value: def },
     (first, second) => {
-      if (lowerdashValues.isPlainObject(second) && _.get(second, 'ignoreDefaultFieldCustomizations')) {
-        return mergeSingleDefWithDefault(_.omit(first, 'fieldCustomizations'), second)
+      if (lowerdashValues.isPlainObject(second) && _.get(second, 'ignoreDefaultFieldCustomizations') !== undefined) {
+        const updatedSecond = _.omit(second, 'ignoreDefaultFieldCustomizations')
+        if (_.get(second, 'ignoreDefaultFieldCustomizations')) {
+          return mergeSingleDefWithDefault(
+            _.omit(first, 'fieldCustomizations'),
+            updatedSecond,
+          )
+        }
+        return mergeSingleDefWithDefault(first, updatedSecond)
       }
       if (Array.isArray(second)) {
         return mergeSingleDefWithDefault(first, second)
       }
       return undefined
     }
-  )
+  ).value
 }
 
 export type DefQuery<T> = {
@@ -96,16 +105,16 @@ export function mergeWithDefault<T>(
   )
 }
 
-export const getWithDefault = <T, TNested, K extends string>(
+export const mergeNestedWithDefault = <T, TNested, K extends string>(
   defsWithDefault: DefaultWithCustomizations<T, K>,
-  path: keyof T
-): DefaultWithCustomizations<TNested, K> => ({
+  path: string
+): DefaultWithCustomizations<TNested, K> => mergeWithDefault({
   default: _.get(defsWithDefault.default, path),
   customizations: _.mapValues(
     defsWithDefault.customizations,
-    (def: T) => def[path]
+    (def: T) => _.get(def, path)
   ),
-// TODON see if can avoid the cast
+// TODO see if can avoid the cast
 }) as unknown as DefaultWithCustomizations<TNested, K>
 
 export const mergeWithUserElemIDDefinitions = <

@@ -16,7 +16,7 @@
 import _ from 'lodash'
 import { InstanceElement, isObjectType, isInstanceElement, Values, CORE_ANNOTATIONS, ReferenceExpression, isInstanceChange, getChangeData, Change, isAdditionChange, AdditionChange } from '@salto-io/adapter-api'
 import { elements as elementUtils, config as configUtils } from '@salto-io/adapter-components'
-import { applyFunctionToChangeData, getParents } from '@salto-io/adapter-utils'
+import { applyFunctionToChangeData, getParents, naclCase } from '@salto-io/adapter-utils'
 import { values } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../filter'
@@ -30,7 +30,7 @@ const log = logger(module)
 const { getTransformationConfigByType } = configUtils
 const { toBasicInstance } = elementUtils
 const { isDefined } = values
-const LINK_PATH = [LINKS_FIELD, 'additionalProperties', 'schema', 'href']
+const LINK_PATH = [LINKS_FIELD, 'schema', 'href']
 
 const getUserSchemaId = (instance: InstanceElement): string | undefined => {
   const url = _.get(instance.value, LINK_PATH)
@@ -47,9 +47,12 @@ const getUserSchemaId = (instance: InstanceElement): string | undefined => {
 const getUserSchema = async (
   userSchemaId: string,
   client: OktaClient
-): Promise<Values> => (await client.get({
-  url: `/api/v1/meta/schemas/user/${userSchemaId}`,
-})).data as Values[]
+): Promise<Values> => _.mapKeys(
+  (await client.get({
+    url: `/api/v1/meta/schemas/user/${userSchemaId}`,
+  })).data,
+  (_val, key) => naclCase(key),
+)
 
 /**
  * 1. onFetch: Fetch UserSchema instances and add UserType as parent to its UserSchema instance

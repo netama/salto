@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-import { Change, InstanceElement, ObjectType, SaltoError, getChangeData, isInstanceElement } from '@salto-io/adapter-api'
+import { Change, InstanceElement, ObjectType, SaltoError, getChangeData, isInstanceElement, isObjectType } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import _ from 'lodash'
 import { createSchemeGuardForInstance, naclCase } from '@salto-io/adapter-utils'
@@ -23,7 +23,7 @@ import Joi from 'joi'
 import { OktaConfig } from '../config'
 import { APPLICATION_TYPE_NAME, APP_LOGO_TYPE_NAME, LINKS_FIELD } from '../constants'
 import { FilterCreator } from '../filter'
-import { createFileType, deployLogo, getLogo } from '../logo'
+import { deployLogo, getLogo } from '../logo'
 import OktaClient from '../client/client'
 import { deployChanges } from '../deployment'
 
@@ -100,8 +100,13 @@ const appLogoFilter: FilterCreator = ({ client, config }) => ({
       .filter(isInstanceElement)
       .filter(instance => instance.elemID.typeName === APPLICATION_TYPE_NAME)
       .filter(instance => isAppInstance(instance))
-    const appLogoType = createFileType(APP_LOGO_TYPE_NAME)
-    elements.push(appLogoType)
+    const appLogoType = elements.filter(isObjectType).find(e => e.elemID.typeName === APP_LOGO_TYPE_NAME)
+    if (appLogoType === undefined) {
+      return { errors: [{
+        message: 'Failed to fetch App logo. Could not find type',
+        severity: 'Warning',
+      }] }
+    }
 
     const allInstances = (await Promise.all(appsWithLogo
       .map(async app => getAppLogo({ client, app, appLogoType, config }))))

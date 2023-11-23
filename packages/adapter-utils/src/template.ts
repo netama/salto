@@ -86,6 +86,26 @@ export const replaceTemplatesWithValues = (
   })
 }
 
+// TODON see if needed
+export const serializeTemplates = ({ value, fieldName, prepRef }: {
+  value: Values
+  fieldName: string
+  prepRef: (part: ReferenceExpression) => TemplatePart
+}): Values => {
+  const handleTemplateValue = (template: TemplateExpression): string => {
+    const templateUsingIdField = prepareTemplateForDeploy(template, prepRef)
+    return templateUsingIdField.value
+  }
+  const replaceIfTemplate = (val: unknown): unknown => {
+    if (Array.isArray(val)) {
+      return val.map(replaceIfTemplate)
+    }
+    return (isTemplateExpression(val) ? handleTemplateValue(val) : val)
+  }
+
+  return _.assign({}, value, { [fieldName]: replaceIfTemplate(value[fieldName]) })
+}
+
 export const resolveTemplates = (
   container: TemplateContainer,
   deployTemplateMapping: Record<string, TemplateExpression>

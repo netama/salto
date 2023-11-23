@@ -109,7 +109,6 @@ export type AllowOnly<T, K extends keyof T> = Pick<T, K> & { [P in keyof Omit<T,
 export type OneOf<T, K = keyof T> = K extends keyof T ? AllowOnly<T, K> : never
 export type XOR<A, B> = AllowOnly<A & B, keyof A> | AllowOnly<A & B, keyof B>
 export type NonPromise<T> = T extends Promise<unknown> ? never : T
-export type InferKeys<O extends Record<string, unknown>> = keyof O
 
 export type RecursivePartial<T> = {
   [P in keyof T]?:
