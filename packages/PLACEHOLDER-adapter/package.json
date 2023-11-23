@@ -1,6 +1,6 @@
 {
   "name": "@salto-io/PLACEHOLDER-adapter",
-  "version": "0.3.48",
+  "version": "0.3.50",
   "license": "Apache-2.0",
   "description": "Salto PLACEHOLDER adapter",
   "repository": {
@@ -29,12 +29,12 @@
     "lint-fix": "yarn lint --fix"
   },
   "dependencies": {
-    "@salto-io/adapter-api": "0.3.48",
-    "@salto-io/adapter-components": "0.3.48",
-    "@salto-io/adapter-creator": "0.3.48",
-    "@salto-io/adapter-utils": "0.3.48",
-    "@salto-io/logging": "0.3.48",
-    "@salto-io/lowerdash": "0.3.48",
+    "@salto-io/adapter-api": "0.3.50",
+    "@salto-io/adapter-components": "0.3.50",
+    "@salto-io/adapter-creator": "0.3.50",
+    "@salto-io/adapter-utils": "0.3.50",
+    "@salto-io/logging": "0.3.50",
+    "@salto-io/lowerdash": "0.3.50",
     "form-data": "^4.0.0",
     "axios": "^0.26.1",
     "axios-cookiejar-support": "^4.0.7",
@@ -43,7 +43,7 @@
     "lodash": "^4.17.21"
   },
   "devDependencies": {
-    "@salto-io/test-utils": "0.3.48",
+    "@salto-io/test-utils": "0.3.50",
     "@types/jest": "^27.4.0",
     "@types/lodash": "^4.14.168",
     "@typescript-eslint/eslint-plugin": "4.22.1",
