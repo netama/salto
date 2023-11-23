@@ -72,6 +72,7 @@ Use the `--login-parameters` option in order to execute them in non interactive 
 
 Supported login parameters per service type:
 [salesforce](/packages/salesforce-adapter/specific-cli-options.md#non-interactive-login-parameters),
+[SAP](/packages/sap-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [netsuite](/packages/netsuite-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [jira](/packages/jira-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [workato](/packages/workato-adapter/specific-cli-options.md#non-interactive-login-parameters),
@@ -79,7 +80,6 @@ Supported login parameters per service type:
 [zendesk](/packages/zendesk-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [zuora billing](/packages/zuora-billing-adapter/specific-cli-options.md#non-interactive-login-parameters)
 [okta](/packages/okta-adapter/specific-cli-options.md#non-interactive-login-parameters),
-[SAP](/packages/sap-adapter/specific-cli-options.md#non-interactive-login-parameters),
 
 ### **salto env \<command>**
 

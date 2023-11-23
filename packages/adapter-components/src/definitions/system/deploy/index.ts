@@ -13,8 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export { serviceUrlFilterCreator, addUrlToInstance } from './service_url'
-export { referencedInstanceNamesFilterCreator } from './referenced_instance_names'
-export { queryFilterCreator, createParentChildGraph } from './query'
-export { hideTypesFilterCreator } from './hide_types'
-export { defaultDeployFilterCreator } from './default_deploy'
+export {
+  DeployApiDefinitions,
+  DeployApiDefinitionsNoDefault,
+  DeployableRequestDefinition,
+  InstanceDeployApiDefinitions,
+  ValueReferenceResolver,
+} from './deploy'
+export { DeployRequestDefinition, DeployRequestEndpointDefinition, DeployAdjustRequest } from './request'
+export { InstanceChangeAndGroup } from './types'

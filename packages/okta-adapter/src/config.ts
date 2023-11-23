@@ -23,7 +23,7 @@ import {
   createRestriction,
   BuiltinTypes,
 } from '@salto-io/adapter-api'
-import { createMatchingObjectType } from '@salto-io/adapter-utils'
+import { createMatchingObjectType, naclCase } from '@salto-io/adapter-utils'
 import { config as configUtils, definitions, elements } from '@salto-io/adapter-components'
 import {
   ACCESS_POLICY_TYPE_NAME,
@@ -85,11 +85,22 @@ const DEFAULT_FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'lastUpdated' },
   { fieldName: 'createdBy' },
   { fieldName: 'lastUpdatedBy' },
+  { fieldName: naclCase('$schema') },
 ]
 const TRANSFORMATION_DEFAULTS: configUtils.TransformationDefaultConfig = {
   idFields: DEFAULT_ID_FIELDS,
   fieldsToOmit: DEFAULT_FIELDS_TO_OMIT,
   nestStandaloneInstances: true,
+}
+
+const fileTypeFieldDefs: configUtils.TransformationConfig = {
+  fieldTypeOverrides: [
+    { fieldName: 'id', fieldType: 'string' },
+    { fieldName: 'content', fieldType: 'string' },
+    { fieldName: 'contentType', fieldType: 'string' },
+    { fieldName: 'fileName', fieldType: 'string' },
+  ],
+  fieldsToHide: [{ fieldName: 'id' }],
 }
 
 // Policy type is split to different kinds of policies
@@ -477,11 +488,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     transformation: {
       idFields: [], // the parent name is being used
       dataField: '.',
-      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat(
-        { fieldName: '$schema' },
-        { fieldName: 'type' },
-        { fieldName: 'properties' },
-      ),
+      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat({ fieldName: 'type' }, { fieldName: 'properties' }),
       fieldsToHide: [{ fieldName: 'id' }, { fieldName: 'name' }],
       serviceUrl: '/admin/universaldirectory#app/{_parent.0.id}',
     },
@@ -506,6 +513,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   AppLogo: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/apps/{appId}/logo',
@@ -582,14 +590,13 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
         { fieldName: 'userType', fieldType: 'string' },
       ],
       serviceIdField: 'id',
-      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat(
+      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat([
         { fieldName: '_links' },
-        { fieldName: '$schema' },
         { fieldName: 'type' },
         { fieldName: 'title' },
         { fieldName: 'description' },
         { fieldName: 'properties' },
-      ),
+      ]),
       fieldsToHide: [{ fieldName: 'id' }, { fieldName: 'name' }],
       serviceUrl: '/admin/universaldirectory#okta/{_parent.0.id}',
     },
@@ -824,7 +831,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     transformation: {
       idFields: ['title'],
       serviceIdField: 'id',
-      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat({ fieldName: '_links' }, { fieldName: '$schema' }),
+      fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat({ fieldName: '_links' }),
       fieldsToHide: [{ fieldName: 'id' }],
     },
     deployRequests: {
@@ -935,6 +942,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   BrandLogo: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/brands/{brandId}/themes/{themeId}/logo',
@@ -964,6 +972,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   FavIcon: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/brands/{brandId}/themes/{themeId}/favicon',
@@ -1553,20 +1562,16 @@ export const SUPPORTED_TYPES = {
   Application: ['api__v1__apps'],
   Authenticator: ['api__v1__authenticators'],
   AuthorizationServer: ['api__v1__authorizationServers'],
-  AuthorizationServerPolicy: ['api__v1__authorizationServers___authServerId___policies@uuuuuu_00123_00125uu'],
   Brand: ['api__v1__brands'],
-  BrandTheme: ['api__v1__brands___brandId___themes@uuuuuu_00123_00125uu'],
   EventHook: ['api__v1__eventHooks'],
   Feature: ['api__v1__features'],
   Group: ['api__v1__groups'],
-  RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
   GroupRule: ['api__v1__groups__rules'],
   IdentityProvider: ['api__v1__idps'],
   InlineHook: ['api__v1__inlineHooks'],
   ProfileMapping: ['api__v1__mappings'],
   LinkedObjectDefinitions: ['api__v1__meta__schemas__user__linkedObjects'],
   GroupSchema: ['GroupSchema'],
-  UserSchema: ['UserSchema'],
   UserType: ['api__v1__meta__types__user'],
   OrgSettings: ['OrgSetting'],
   ...Object.fromEntries(
@@ -1583,6 +1588,12 @@ export const SUPPORTED_TYPES = {
   RateLimitAdmin: ['RateLimitAdminNotifications'],
   ResourceSet: ['ResourceSets'],
   DeviceAssurance: ['api__v1__device_assurances@uuuub'],
+
+  // needed for recurseInto
+  AuthorizationServerPolicy: ['api__v1__authorizationServers___authServerId___policies@uuuuuu_00123_00125uu'],
+  BrandTheme: ['api__v1__brands___brandId___themes@uuuuuu_00123_00125uu'],
+  RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
+  UserSchema: ['UserSchema'], // fetched in user_schema.ts
 }
 
 const DUCKTYPE_TYPES: OktaDuckTypeApiConfig['types'] = {
