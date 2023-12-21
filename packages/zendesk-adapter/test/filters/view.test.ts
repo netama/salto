@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -210,85 +210,6 @@ describe('views filter', () => {
     })
     it('should keep execution', async () => {
       expect(clonedView.value.execution).toBeDefined()
-    })
-  })
-
-  describe('deploy', () => {
-    it('should pass the correct params to deployChange on create', async () => {
-      const id = 2
-      const clonedView = view.clone()
-      mockDeployChange.mockImplementation(async () => ({ view: { id } }))
-      const res = await filter.deploy([{ action: 'add', data: { after: clonedView } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'add', data: { after: clonedView } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['conditions', 'execution'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(1)
-      expect(res.deployResult.appliedChanges)
-        .toEqual([{ action: 'add', data: { after: clonedView } }])
-    })
-
-    it('should pass the correct params to deployChange on update', async () => {
-      const id = 2
-      const clonedViewBefore = view.clone()
-      const clonedViewAfter = view.clone()
-      clonedViewBefore.value.id = id
-      clonedViewAfter.value.id = id
-      clonedViewAfter.value.description = 'edited'
-      mockDeployChange.mockImplementation(async () => ({}))
-      const res = await filter
-        .deploy([{ action: 'modify', data: { before: clonedViewBefore, after: clonedViewAfter } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'modify', data: { before: clonedViewBefore, after: clonedViewAfter } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['conditions', 'execution'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(1)
-      expect(res.deployResult.appliedChanges)
-        .toEqual([
-          {
-            action: 'modify',
-            data: { before: clonedViewBefore, after: clonedViewAfter },
-          },
-        ])
-    })
-
-    it('should pass the correct params to deployChange on remove', async () => {
-      const id = 2
-      const clonedView = view.clone()
-      clonedView.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
-      const res = await filter.deploy([{ action: 'remove', data: { before: clonedView } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(0)
-      expect(res.leftoverChanges).toHaveLength(1)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(0)
-    })
-
-    it('should return error if deployChange failed', async () => {
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
-      const res = await filter.deploy([{ action: 'add', data: { after: view } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'add', data: { after: view } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['conditions', 'execution'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(1)
-      expect(res.deployResult.appliedChanges).toHaveLength(0)
     })
   })
 })

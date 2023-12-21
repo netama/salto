@@ -25,7 +25,7 @@ import {
   Values,
 } from '@salto-io/adapter-api'
 import {
-  config as configUtils, deployment, client as clientUtils,
+  config as configUtils, deployment as deploymentUtils, client as clientUtils,
 } from '@salto-io/adapter-components'
 import { logger } from '@salto-io/logging'
 import { collections } from '@salto-io/lowerdash'
@@ -35,40 +35,6 @@ import { ZendeskApiConfig } from './config'
 
 const log = logger(module)
 const { awu } = collections.asynciterable
-
-
-export const addId = ({
-  change, apiDefinitions, response, dataField, addAlsoOnModification = false,
-}: {
-  change: Change<InstanceElement>
-  apiDefinitions: configUtils.AdapterApiConfig
-  response: deployment.ResponseResult
-  dataField?: string
-  addAlsoOnModification?: boolean
-}): void => {
-  const { transformation } = apiDefinitions
-    .types[getChangeData(change).elemID.typeName]
-  if (isAdditionChange(change) || addAlsoOnModification) {
-    if (Array.isArray(response)) {
-      log.warn(
-        'Received an array for the response of the deploy. Not updating the id of the element. Action: add. ID: %s',
-        getChangeData(change).elemID.getFullName()
-      )
-      return
-    }
-    const transformationConfig = configUtils.getConfigWithDefault(
-      transformation,
-      apiDefinitions.typeDefaults.transformation,
-    )
-    const idField = transformationConfig.serviceIdField ?? 'id'
-    const idValue = dataField
-      ? (response?.[dataField] as Values)?.[idField]
-      : response?.[idField]
-    if (idValue !== undefined) {
-      getChangeData(change).value[idField] = idValue
-    }
-  }
-}
 
 const getMatchedChild = ({
   change, response, childFieldName, dataField, childUniqueFieldName,
@@ -99,7 +65,7 @@ const getMatchedChild = ({
 export const addIdsToChildrenUponAddition = ({
   response, parentChange, childrenChanges, apiDefinitions, childFieldName, childUniqueFieldName,
 }: {
-  response: deployment.ResponseResult
+  response: deploymentUtils.ResponseResult
   parentChange: Change<InstanceElement>
   childrenChanges: Change<InstanceElement>[]
   apiDefinitions: ZendeskApiConfig
@@ -117,7 +83,7 @@ export const addIdsToChildrenUponAddition = ({
           change, response, dataField, childFieldName, childUniqueFieldName,
         })
         if (child) {
-          addId({
+          deploymentUtils.assignServiceId({
             change, apiDefinitions, response: child,
           })
         }
@@ -131,27 +97,16 @@ export const deployChange = async (
   client: ZendeskClient,
   apiDefinitions: configUtils.AdapterApiConfig,
   fieldsToIgnore?: string[],
-): Promise<deployment.ResponseResult> => {
-  const { deployRequests } = apiDefinitions.types[getChangeData(change).elemID.typeName]
-  try {
-    const response = await deployment.deployChange({
-      change,
-      client,
-      endpointDetails: deployRequests,
-      fieldsToIgnore,
-    })
-    addId({
-      change,
-      apiDefinitions,
-      response,
-      dataField: deployRequests?.add?.deployAsField,
-    })
-    return response
-  } catch (err) {
-    throw getZendeskError(getChangeData(change).elemID, err)
-  }
-}
+): Promise<deploymentUtils.ResponseResult> => deploymentUtils.defaultDeployChange({
+  change,
+  client,
+  apiDefinitions,
+  fieldsToIgnore,
+  convertError: getZendeskError,
+  deployEqualValues: true,
+})
 
+// TODON consolidate with other adapters and move to shared
 const deployChangesHelper = async <T extends Change<ChangeDataType>>(
   change: T,
   deployChangeFunc: (change: T) => Promise<void | T[]>
@@ -167,6 +122,7 @@ const deployChangesHelper = async <T extends Change<ChangeDataType>>(
   }
 }
 
+// TODON consolidate with other adapters and move to shared
 export const deployChanges = async <T extends Change<ChangeDataType>>(
   changes: T[],
   deployChangeFunc: (change: T) => Promise<void | T[]>

@@ -13,11 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import {
-  Change,
-  getChangeData,
-  InstanceElement, isInstanceChange,
-} from '@salto-io/adapter-api'
+import { getChangeData } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { FilterCreator } from '../filter'
 import { MACRO_TYPE_NAME } from '../constants'
 
@@ -26,20 +23,18 @@ import { MACRO_TYPE_NAME } from '../constants'
  */
 const filterCreator: FilterCreator = () => ({
   name: 'macroFilter',
-  preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(isInstanceChange)
-      .filter(change => getChangeData(change).elemID.typeName === MACRO_TYPE_NAME)
-      .filter(change => getChangeData(change).value.restriction === undefined)
-      .forEach(change => { getChangeData(change).value.restriction = null })
-  },
-  onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(isInstanceChange)
-      .filter(change => getChangeData(change).elemID.typeName === MACRO_TYPE_NAME)
-      .filter(change => getChangeData(change).value.restriction === null)
-      .forEach(change => { delete getChangeData(change).value.restriction })
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: [MACRO_TYPE_NAME],
+    additionalCondition: change => getChangeData(change).value.restriction === undefined,
+    func: inst => { inst.value.restriction = null },
+  }),
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // restore
+    changes,
+    typeNames: [MACRO_TYPE_NAME],
+    additionalCondition: change => getChangeData(change).value.restriction === null,
+    func: inst => { delete inst.value.restriction },
+  }),
 })
 
 export default filterCreator

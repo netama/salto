@@ -21,10 +21,9 @@ import {
 } from '@salto-io/adapter-api'
 import _ from 'lodash'
 import Joi from 'joi'
-import { createSchemeGuard, createSchemeGuardForInstance } from '@salto-io/adapter-utils'
+import { applyInPlaceforInstanceChangesOfType, createSchemeGuard, createSchemeGuardForInstance } from '@salto-io/adapter-utils'
 import { FilterCreator } from '../filter'
 import { deployChange, deployChanges } from '../deployment'
-import { BRAND_FIELD, SECTIONS_FIELD, TRANSLATIONS_FIELD } from '../constants'
 
 export const TRANSLATION_PARENT_TYPE_NAMES = ['section', 'category']
 const CATEGORY_TYPE_NAME = 'category'
@@ -74,16 +73,16 @@ export const isParent = createSchemeGuardForInstance<ParentType>(
  * duplication. For the deployment to work these fields need to be added back to the section
  * instance.
  */
-const addTranslationValues = (change: Change<InstanceElement>): void => {
-  const currentLocale = getChangeData(change).value.source_locale
-  const translation = getChangeData(change).value.translations
+const addTranslationValues = (inst: InstanceElement): void => {
+  const currentLocale = inst.value.source_locale
+  const translation = inst.value.translations
     .filter(isTranslation) // the translation is not a reference it is already the value
     .find((tran: TranslationType) => (isReferenceExpression(tran.locale)
       ? tran.locale.value.value.locale === currentLocale
       : tran.locale === currentLocale))
   if (translation !== undefined) {
-    getChangeData(change).value.name = translation.title
-    getChangeData(change).value.description = translation.body ?? ''
+    inst.value.name = translation.title
+    inst.value.description = translation.body ?? ''
   }
 }
 
@@ -107,13 +106,11 @@ export const addRemovalChangesId = (changes: Change<InstanceElement>[]): void =>
  */
 const filterCreator: FilterCreator = ({ client, config }) => ({
   name: 'guideSectionCategoryFilter',
-  preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(change => TRANSLATION_PARENT_TYPE_NAMES.includes(
-        getChangeData(change).elemID.typeName
-      ))
-      .forEach(addTranslationValues)
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({ // custom
+    changes,
+    typeNames: TRANSLATION_PARENT_TYPE_NAMES,
+    func: addTranslationValues,
+  }),
   // deploy only category, section is deployed in guide_parent_to_section filter since
   // parent_section_id needs to be deployed separately
   deploy: async (changes: Change<InstanceElement>[]) => {
@@ -121,22 +118,21 @@ const filterCreator: FilterCreator = ({ client, config }) => ({
       changes,
       change => CATEGORY_TYPE_NAME === getChangeData(change).elemID.typeName,
     )
+    // TODON custom logic for other location, follow later - maybe can move to preDeploy and eliminate?
     addRemovalChangesId(parentChanges)
     const deployResult = await deployChanges(
       parentChanges,
-      async change => {
-        await deployChange(change, client, config.apiDefinitions, [TRANSLATIONS_FIELD, SECTIONS_FIELD, BRAND_FIELD])
+      async change => { // ignore fields
+        await deployChange(change, client, config.apiDefinitions)
       }
     )
     return { deployResult, leftoverChanges }
   },
-  onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(change => TRANSLATION_PARENT_TYPE_NAMES.includes(
-        getChangeData(change).elemID.typeName
-      ))
-      .forEach(change => removeNameAndDescription(getChangeData(change)))
-  },
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // restore
+    changes,
+    typeNames: TRANSLATION_PARENT_TYPE_NAMES,
+    func: removeNameAndDescription,
+  }),
 })
 
 export default filterCreator

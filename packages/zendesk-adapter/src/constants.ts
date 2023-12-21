@@ -110,3 +110,7 @@ export const ORDER_TYPE_NAMES = [
   VIEW_ORDER_TYPE_NAME,
   WORKSPACE_ORDER_TYPE_NAME,
 ]
+export const DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME = 'default_custom_field_option'
+export const DEFAULT_LOCALE = 'default_locale'
+export const PARENT_SECTION_ID_FIELD = 'parent_section_id'
+export const LOGO_FIELD = 'logo'

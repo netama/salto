@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 import {
-  ObjectType, ElemID, InstanceElement, toChange,
+  ObjectType, ElemID, InstanceElement, toChange, getChangeData,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, mockDefaultDeployChangeThrow } from '../utils'
 import { CUSTOM_ROLE_TYPE_NAME, ZENDESK } from '../../src/constants'
 import filterCreator from '../../src/filters/custom_role_deploy'
 
@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -77,9 +77,12 @@ describe('customRoleDeploy filter', () => {
 
   describe('deploy', () => {
     it('should pass the correct params to deployChange for modification change', async () => {
-      mockDeployChange.mockImplementation(async () => ({ [CUSTOM_ROLE_TYPE_NAME]: {
-        ...customRoleAfterInstnace1.value,
-      } }))
+      mockDeployChange.mockImplementationOnce(async ({ change }) => {
+        getChangeData<InstanceElement>(change).value.id = customRoleAfterInstnace1.value.id
+        return ({ [CUSTOM_ROLE_TYPE_NAME]: {
+          ...customRoleAfterInstnace1.value,
+        } })
+      })
       const res = await filter.deploy([
         toChange({ before: customRoleBeforeInstnace1, after: customRoleAfterInstnace1 }),
       ])
@@ -100,7 +103,9 @@ describe('customRoleDeploy filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: toChange({ before: customRoleBeforeInstnace1, after: newDataInstance }),
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -109,7 +114,7 @@ describe('customRoleDeploy filter', () => {
         .toEqual([toChange({ before: customRoleBeforeInstnace1, after: customRoleAfterInstnace1 })])
     })
     it('should do nothing for addition and removal changes', async () => {
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([
           toChange({ before: customRoleBeforeInstnace1 }),
@@ -121,7 +126,7 @@ describe('customRoleDeploy filter', () => {
       expect(res.deployResult.appliedChanges).toHaveLength(0)
     })
     it('should return an error iF the deploy did not work', async () => {
-      mockDeployChange.mockImplementation(async () => { throw new Error('ERR') })
+      mockDeployChange.mockImplementationOnce(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([
         toChange({ before: customRoleBeforeInstnace1, after: customRoleAfterInstnace1 }),
       ])
@@ -142,7 +147,9 @@ describe('customRoleDeploy filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: toChange({ before: customRoleBeforeInstnace1, after: newDataInstance }),
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)

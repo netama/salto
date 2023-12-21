@@ -38,7 +38,7 @@ export const AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA: Record<string, unknown> = {
  */
 const filterCreator: FilterCreator = ({ config, client }) => ({
   name: 'webhookFilter',
-  deploy: async (changes: Change<InstanceElement>[]) => {
+  deploy: async (changes: Change<InstanceElement>[]) => { // TODON another case of manipulations before the deploy
     const [webhookModificationChanges, leftoverChanges] = _.partition(
       changes,
       change =>
@@ -57,12 +57,12 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
             clonedChange.data.before.value.authentication,
             clonedChange.data.after.value.authentication,
           )) {
-            delete instance.value.authentication
+            delete instance.value.authentication // TODON omit on equality
           } else if (instance.value.authentication === undefined) {
-            instance.value.authentication = null
+            instance.value.authentication = null // TODON undefined to null? one-off?
           }
         }
-        if (instance.value.authentication) {
+        if (instance.value.authentication) { // TODON custom code...
           const placeholder = AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA[
             instance.value.authentication.type
           ]
@@ -75,8 +75,7 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
           }
           instance.value.authentication.data = placeholder
         }
-        // Ignore external_source because it is impossible to deploy, the user was warned at externalSourceWebhook.ts
-        await deployChange(clonedChange, client, config.apiDefinitions, ['external_source'])
+        await deployChange(clonedChange, client, config.apiDefinitions)
         getChangeData(change).value.id = getChangeData(clonedChange).value.id
       },
     )

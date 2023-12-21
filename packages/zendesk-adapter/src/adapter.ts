@@ -101,14 +101,12 @@ import usersFilter from './filters/user'
 import addFieldOptionsFilter from './filters/add_field_options'
 import appOwnedConvertListToMapFilter from './filters/app_owned_convert_list_to_map'
 import appInstallationsFilter from './filters/app_installations'
-import routingAttributeFilter from './filters/routing_attribute'
 import serviceUrlFilter from './filters/service_url'
 import slaPolicyFilter from './filters/sla_policy'
 import macroAttachmentsFilter from './filters/macro_attachments'
 import tagsFilter from './filters/tag'
 import guideLocalesFilter from './filters/guide_locale'
 import webhookFilter from './filters/webhook'
-import targetFilter from './filters/target'
 import defaultDeployFilter from './filters/default_deploy'
 import commonFilters from './filters/common'
 import handleTemplateExpressionFilter from './filters/handle_template_expressions'
@@ -117,14 +115,12 @@ import brandLogoFilter from './filters/brand_logo'
 import articleFilter from './filters/article/article'
 import articleBodyFilter from './filters/article/article_body'
 import { dependencyChanger } from './dependency_changers'
-import deployBrandedGuideTypesFilter from './filters/deploy_branded_guide_types'
 import { Credentials } from './auth'
 import guideSectionCategoryFilter from './filters/guide_section_and_category'
 import guideTranslationFilter from './filters/guide_translation'
 import fetchCategorySection from './filters/guide_fetch_article_section_and_category'
 import guideParentSection, { addParentFields } from './filters/guide_parent_to_section'
 import guideGuideSettings from './filters/guide_guide_settings'
-import removeBrandLogoFilter from './filters/remove_brand_logo_field'
 import categoryOrderFilter from './filters/guide_order/category_order'
 import sectionOrderFilter from './filters/guide_order/section_order'
 import articleOrderFilter from './filters/guide_order/article_order'
@@ -172,90 +168,87 @@ const { concatObjects } = objects
 const SECTIONS_TYPE_NAME = 'sections'
 
 const DEFAULT_FILTERS = [
-  ticketStatusCustomStatusDeployFilter,
-  ticketFieldFilter,
-  userFieldFilter,
-  viewFilter,
-  workspaceFilter,
-  ticketFormOrderFilter,
-  userFieldOrderFilter,
-  organizationFieldOrderFilter,
-  workspaceOrderFilter,
-  slaPolicyOrderFilter,
-  automationOrderFilter,
-  triggerOrderFilter,
-  viewOrderFilter,
-  businessHoursScheduleFilter,
-  accountSettingsFilter,
-  dynamicContentFilter,
+  ticketStatusCustomStatusDeployFilter, // RUNS ON ticket_field (only the custom_status one)
+  ticketFieldFilter, // RUNS ON ticekt_field + options
+  userFieldFilter, // RUNS ON user_field + options
+  viewFilter, // RUNS ON view
+  workspaceFilter, // RUNS ON workspace
+  ticketFormOrderFilter, // RUNS ON ticket_form + order?
+  userFieldOrderFilter, // RUNS ON user_field + order?
+  organizationFieldOrderFilter, // RUNS ON organization + order?
+  workspaceOrderFilter, // RUNS ON workspace + order?
+  slaPolicyOrderFilter, // RUNS ON sla_policy + order?
+  automationOrderFilter, // RUNS ON automation + order?
+  triggerOrderFilter, // RUNS ON trigger + order?
+  viewOrderFilter, // RUNS ON view + order?
+  businessHoursScheduleFilter, // RUNS ON business_hours_schedule
+  accountSettingsFilter, // RUNS ON account_settings
+  dynamicContentFilter, // RUNS ON dynamic_content_item + variants
   restrictionFilter,
-  organizationFieldFilter,
+  organizationFieldFilter, // RUNS ON organization_field + options
   hardcodedChannelFilter,
   auditTimeFilter, // needs to be before userFilter as it uses the ids of the users
   // removeDefinitionInstancesFilter should be after hardcodedChannelFilter
   removeDefinitionInstancesFilter,
-  usersFilter,
-  organizationsFilter,
-  tagsFilter,
+  usersFilter, // RUNS ON many - and one-way. consolidate these as another "resolve"? but notice fallbacks
+  organizationsFilter, // RUNS ON many - and one-way
+  tagsFilter, // RUNS ON many - and one-way
   localeFilter,
   // supportAddress should run before referencedIdFieldsFilter
-  supportAddress,
-  customStatus,
+  supportAddress, // RUNS ON support_address
+  customStatus, // RUNS ON custom_status, default_custom_statuses
   guideAddBrandToArticleTranslation,
-  macroFilter,
-  macroAttachmentsFilter,
-  ticketFormDeploy,
-  customRoleDeployFilter,
+  macroFilter, // RUNS ON macro
+  macroAttachmentsFilter, // RUNS ON macro, macro_attachment
+  ticketFormDeploy, // RUNS ON ticket_form
+  customRoleDeployFilter, // RUNS ON custom_role
   sideConversationsFilter,
-  brandLogoFilter,
-  // removeBrandLogoFilter should be after brandLogoFilter
-  removeBrandLogoFilter,
-  categoryOrderFilter,
-  sectionOrderFilter,
-  articleOrderFilter,
+  brandLogoFilter, // RUNS ON brand_logo
+  categoryOrderFilter, // RUNS ON category_order
+  sectionOrderFilter, // RUNS ON section_order
+  articleOrderFilter, // RUNS ON article_order
   // help center filters need to be before fieldReferencesFilter (assume fields are strings)
   // everyoneUserSegmentFilter needs to be before articleFilter
   everyoneUserSegmentFilter,
-  articleFilter,
-  guideSectionCategoryFilter,
-  guideTranslationFilter,
+  articleFilter, // RUNS ON article, article_attachment (maybe also article_translation?)
+  guideSectionCategoryFilter, // RUNS ON category, section
+  guideTranslationFilter, // RUNS ON article_translation / section_translation / category_translation? (double check)
   guideGuideSettings,
-  guideDefaultLanguage, // needs to be after guideGuideSettings
+  guideDefaultLanguage, // RUNS ON guide_settings // needs to be after guideGuideSettings
   guideServiceUrl,
   guideLocalesFilter, // Needs to be after guideServiceUrl
-  customObjectFilter,
-  customObjectFieldsOrderFilter,
-  customObjectFieldOptionsFilter,
-  customObjectFieldFilter, // need to be after customObjectFieldOptionsFilter
+  customObjectFilter, // RUNS ON custom_object
+  customObjectFieldsOrderFilter, // RUNS ON custom_object_field_order
+  customObjectFieldOptionsFilter, // RUNS ON custom_object_field, custom_object_field__options
+  // need to be after customObjectFieldOptionsFilter
+  customObjectFieldFilter, // RUNS ON trigger, ticket_field, custom_object_field, <something else?>
   // fieldReferencesFilter should be after:
   // usersFilter, macroAttachmentsFilter, tagsFilter, guideLocalesFilter, customObjectFilter, customObjectFieldFilter
   fieldReferencesFilter,
   addAliasFilter, // should run after fieldReferencesFilter
   // listValuesMissingReferencesFilter should be after fieldReferencesFilter
   listValuesMissingReferencesFilter,
-  appInstallationsFilter,
+  appInstallationsFilter, // RUNS ON app_installation
   appOwnedConvertListToMapFilter,
-  slaPolicyFilter,
-  routingAttributeFilter,
-  routingAttributeValueDeployFilter,
-  addFieldOptionsFilter,
-  webhookFilter,
-  targetFilter,
+  slaPolicyFilter, // RUNS ON sla_policy
+  routingAttributeValueDeployFilter, // RUNS ON routing_attribute_value
+  addFieldOptionsFilter, // RUNS ON organization_field, user_field
+  webhookFilter, // RUNS ON webhook
   // unorderedListsFilter should run after fieldReferencesFilter
   unorderedListsFilter,
-  dynamicContentReferencesFilter,
-  guideParentSection,
-  serviceUrlFilter,
+  dynamicContentReferencesFilter, // RUNS ON everything
+  guideParentSection, // RUNS ON section
+  serviceUrlFilter, // RUNS ON <everything>
   // referencedIdFieldsFilter and queryFilter should run after element references are resolved
   ...Object.values(commonFilters),
-  handleAppInstallationsFilter,
-  handleTemplateExpressionFilter,
-  articleBodyFilter, // needs to be after handleTemplateExpressionFilter
+  handleAppInstallationsFilter, // RUNS ON app_installation, TODON check if overlaps with template expression filter
+  handleTemplateExpressionFilter, // RUNS ON <everything>
+  // needs to be after handleTemplateExpressionFilter
+  articleBodyFilter, // RUNS ON article_translation
   // handleIdenticalAttachmentConflicts needs to be before collisionErrorsFilter and after referencedIdFieldsFilter
   // and articleBodyFilter
   handleIdenticalAttachmentConflicts,
   omitCollisionFilter, // needs to be after referencedIdFieldsFilter (which is part of the common filters)
-  deployBrandedGuideTypesFilter,
   guideArrangePaths,
   hideAccountFeatures,
   fetchCategorySection, // need to be after arrange paths as it uses the 'name'/'title' field

@@ -27,11 +27,10 @@ import {
   Change,
   getChangeData,
   isModificationChange,
-  isInstanceChange,
   SaltoError, createSaltoElementError, isSaltoError,
 } from '@salto-io/adapter-api'
 import { elements as elementsUtils, config as configUtils } from '@salto-io/adapter-components'
-import { applyFunctionToChangeData, pathNaclCase, inspectValue } from '@salto-io/adapter-utils'
+import { applyFunctionToChangeData, pathNaclCase, inspectValue, applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { FilterCreator } from '../../filter'
 import { ZENDESK } from '../../constants'
 import { deployChange } from '../../deployment'
@@ -121,25 +120,22 @@ export const createReorderFilterCreator = (
     _.remove(elements, element => element.elemID.isEqual(type.elemID))
     elements.push(type, instance)
   },
-  preDeploy: async changes => {
-    changes
-      .filter(isInstanceChange)
-      .map(getChangeData)
-      .filter(instance => instance.elemID.typeName === createOrderTypeName(typeName))
-      .forEach(instance => {
-        instance.value[orderFieldName] = (instance.value.active ?? [])
-          .concat(instance.value.inactive ?? [])
-      })
-  },
-  onDeploy: async changes => {
-    changes
-      .filter(isInstanceChange)
-      .map(getChangeData)
-      .filter(instance => instance.elemID.typeName === createOrderTypeName(typeName))
-      .forEach(instance => {
-        delete instance.value[orderFieldName]
-      })
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    // TODON confirm no need to run on removals
+    typeNames: [createOrderTypeName(typeName)],
+    func: instance => {
+      instance.value[orderFieldName] = (instance.value.active ?? [])
+        .concat(instance.value.inactive ?? [])
+    },
+  }),
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON reverse
+    changes,
+    typeNames: [createOrderTypeName(typeName)],
+    func: instance => {
+      delete instance.value[orderFieldName]
+    },
+  }),
   deploy: async (changes: Change<InstanceElement>[]) => {
     const orderTypeName = createOrderTypeName(typeName)
     const [relevantChanges, leftoverChanges] = _.partition(
@@ -189,7 +185,7 @@ const idsAreNumbers = (ids: unknown): ids is number[] => (
   _.isArray(ids) && ids.every(Number.isInteger)
 )
 
-export const deployFuncCreator = (fieldName: string): DeployFuncType =>
+export const deployFuncCreator = (fieldName: string): DeployFuncType => // custom
   async (change, client, apiDefinitions) => {
     const clonedChange = await applyFunctionToChangeData(change, inst => inst.clone())
     const instance = getChangeData(clonedChange)

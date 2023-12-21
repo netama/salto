@@ -19,9 +19,9 @@ import {
   CORE_ANNOTATIONS, getChangeData, createSaltoElementError,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
-import filterCreator, { BRAND_LOGO_TYPE, LOGO_FIELD } from '../../src/filters/brand_logo'
+import filterCreator, { BRAND_LOGO_TYPE } from '../../src/filters/brand_logo'
 import ZendeskClient from '../../src/client/client'
-import { BRAND_LOGO_TYPE_NAME, BRAND_TYPE_NAME, ZENDESK } from '../../src/constants'
+import { BRAND_LOGO_TYPE_NAME, BRAND_TYPE_NAME, LOGO_FIELD, ZENDESK } from '../../src/constants'
 import { createFilterCreatorParams } from '../utils'
 
 jest.useFakeTimers()

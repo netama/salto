@@ -113,10 +113,10 @@ const connectAppOwnedToInstallation = (instances: InstanceElement[]): void => {
 const filterCreator: FilterCreator = ({ config, client }) => ({
   name: 'appInstallationsFilter',
   onFetch: async (elements: Element[]) => {
-    elements
+    elements // TODON applyForInstancesOfType?
       .filter(isInstanceElement)
       .filter(e => e.elemID.typeName === APP_INSTALLATION_TYPE_NAME).forEach(e => {
-        delete e.value.settings_objects
+        delete e.value.settings_objects // TODON move to config (after done? need to check why)
       })
 
     connectAppOwnedToInstallation(elements.filter(isInstanceElement))
@@ -130,15 +130,16 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
     const deployResult = await deployChanges(
       relevantChanges,
       async change => {
-        const response = await deployChange(change, client, config.apiDefinitions, ['app', 'settings.title', 'settings_objects'])
+        const response = await deployChange(change, client, config.apiDefinitions)
         if (isAdditionChange(change)) {
-          if (response == null || _.isArray(response) || !_.isString(response.pending_job_id)) {
+          if (response == null || _.isArray(response) || !_.isString(response.pending_job_id)) { // add custom errors?
             throw createSaltoElementError({ // caught by deployChanges
               message: 'Got an invalid response when tried to install app',
               severity: 'Error',
               elemID: getChangeData(change).elemID,
             })
           }
+          // generalize as well? async deploy operations
           await waitTillJobIsDone(client, response.pending_job_id, change)
         }
       }

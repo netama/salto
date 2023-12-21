@@ -18,12 +18,21 @@ import { ElemID, CORE_ANNOTATIONS, BuiltinTypes, ListType } from '@salto-io/adap
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { client as clientUtils, config as configUtils, elements } from '@salto-io/adapter-components'
 import {
+  ARTICLES_FIELD,
   ARTICLE_ATTACHMENT_TYPE_NAME,
   ARTICLE_ORDER_TYPE_NAME,
+  BRAND_FIELD,
   BRAND_TYPE_NAME,
+  CATEGORIES_FIELD,
   CATEGORY_ORDER_TYPE_NAME, EVERYONE_USER_TYPE,
+  SECTIONS_FIELD,
   SECTION_ORDER_TYPE_NAME,
+  TRANSLATIONS_FIELD,
   ZENDESK,
+  DEFAULT_LOCALE,
+  PARENT_SECTION_ID_FIELD,
+  LOGO_FIELD,
+  DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME,
 } from './constants'
 
 const { defaultMissingUserFallbackField } = configUtils
@@ -220,6 +229,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/views',
         deployAsField: 'view',
         method: 'post',
+        fieldsToIgnore: ['conditions', 'execution'],
       },
       modify: {
         url: '/api/v2/views/{viewId}',
@@ -228,6 +238,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           viewId: 'id',
         },
+        fieldsToIgnore: ['conditions', 'execution'],
       },
       remove: {
         url: '/api/v2/views/{viewId}',
@@ -463,6 +474,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/targets',
         deployAsField: 'target',
         method: 'post',
+        // TODON we don't get the password, maybe just not have the field instead? but not now
+        fieldsToIgnore: ['username', 'password'],
       },
       modify: {
         url: '/api/v2/targets/{targetId}',
@@ -471,6 +484,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           targetId: 'id',
         },
+        // TODON we don't get the password, maybe just not have the field instead? but not now
+        fieldsToIgnore: ['username', 'password'],
       },
       remove: {
         url: '/api/v2/targets/{targetId}',
@@ -564,6 +579,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/brands',
         deployAsField: 'brand',
         method: 'post',
+        // Ignores the logo field from brand instances when deploying, for they are covered as brand_logo instances
+        fieldsToIgnore: [LOGO_FIELD, CATEGORIES_FIELD],
       },
       modify: {
         url: '/api/v2/brands/{brandId}',
@@ -572,6 +589,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           brandId: 'id',
         },
+        // Ignores the logo field from brand instances when deploying, for they are covered as brand_logo instances
+        fieldsToIgnore: [LOGO_FIELD, CATEGORIES_FIELD],
       },
       remove: {
         url: '/api/v2/brands/{brandId}',
@@ -620,6 +639,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/business_hours/schedules',
         deployAsField: 'schedule',
         method: 'post',
+        fieldsToIgnore: ['holidays'],
       },
       modify: {
         url: '/api/v2/business_hours/schedules/{scheduleId}',
@@ -628,6 +648,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           scheduleId: 'id',
         },
+        fieldsToIgnore: ['holidays'],
       },
       remove: {
         url: '/api/v2/business_hours/schedules/{scheduleId}',
@@ -843,6 +864,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/ticket_fields',
         deployAsField: 'ticket_field',
         method: 'post',
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       modify: {
         url: '/api/v2/ticket_fields/{ticketFieldId}',
@@ -851,6 +873,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           ticketFieldId: 'id',
         },
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       remove: {
         url: '/api/v2/ticket_fields/{ticketFieldId}',
@@ -937,6 +960,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/user_fields',
         deployAsField: 'user_field',
         method: 'post',
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       modify: {
         url: '/api/v2/user_fields/{userFieldId}',
@@ -945,6 +969,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           userFieldId: 'id',
         },
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       remove: {
         url: '/api/v2/user_fields/{userFieldId}',
@@ -1030,6 +1055,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/organization_fields',
         deployAsField: 'organization_field',
         method: 'post',
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       modify: {
         url: '/api/v2/organization_fields/{organizationFieldId}',
@@ -1038,6 +1064,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           organizationFieldId: 'id',
         },
+        fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
       },
       remove: {
         url: '/api/v2/organization_fields/{organizationFieldId}',
@@ -1087,6 +1114,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/routing/attributes',
         deployAsField: 'attribute',
         method: 'post',
+        fieldsToIgnore: ['values'],
       },
       modify: {
         url: '/api/v2/routing/attributes/{attributeId}',
@@ -1095,6 +1123,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           attributeId: 'id',
         },
+        fieldsToIgnore: ['values'],
       },
       remove: {
         url: '/api/v2/routing/attributes/{attributeId}',
@@ -1128,6 +1157,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/workspaces',
         deployAsField: 'workspace',
         method: 'post',
+        fieldsToIgnore: ['selected_macros'],
       },
       modify: {
         url: '/api/v2/workspaces/{workspaceId}',
@@ -1136,6 +1166,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           workspaceId: 'id',
         },
+        fieldsToIgnore: ['selected_macros'],
       },
       remove: {
         url: '/api/v2/workspaces/{workspaceId}',
@@ -1189,6 +1220,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
       add: {
         url: '/api/v2/apps/installations',
         method: 'post',
+        fieldsToIgnore: ['app', 'settings.title', 'settings_objects'],
       },
       modify: {
         url: '/api/v2/apps/installations/{appInstallationId}',
@@ -1196,6 +1228,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           appInstallationId: 'id',
         },
+        fieldsToIgnore: ['app', 'settings.title', 'settings_objects'],
       },
       remove: {
         url: '/api/v2/apps/installations/{appInstallationId}',
@@ -1479,7 +1512,10 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
       url: '/api/v2/dynamic_content/items',
     },
     transformation: {
-      dataField: '.',
+      // TODON unrelated, needed for the previous infra changes - merge separately
+      sourceTypeName: 'dynamic_content_item__items',
+      dataField: 'items',
+
       standaloneFields: [{ fieldName: 'variants' }],
       fieldsToHide: FIELDS_TO_HIDE.concat({ fieldName: 'id', fieldType: 'number' }),
       fieldTypeOverrides: [{ fieldName: 'id', fieldType: 'number' }],
@@ -1826,6 +1862,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/webhooks',
         deployAsField: 'webhook',
         method: 'post',
+        // Ignore external_source because it is impossible to deploy, the user was warned at externalSourceWebhook.ts
+        fieldsToIgnore: ['external_source'],
       },
       modify: {
         url: '/api/v2/webhooks/{webhookId}',
@@ -1834,6 +1872,8 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           webhookId: 'id',
         },
+        // Ignore external_source because it is impossible to deploy, the user was warned at externalSourceWebhook.ts
+        fieldsToIgnore: ['external_source'],
       },
       remove: {
         url: '/api/v2/webhooks/{webhookId}',
@@ -1907,6 +1947,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           sectionId: 'section_id',
         },
+        fieldsToIgnore: ['translations', 'attachments', 'brand'],
       },
       modify: {
         url: '/api/v2/help_center/articles/{articleId}',
@@ -1915,6 +1956,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           articleId: 'id',
         },
+        fieldsToIgnore: ['translations', 'attachments', 'brand'],
       },
       remove: {
         url: '/api/v2/help_center/articles/{articleId}',
@@ -1998,6 +2040,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           article_id: '_parent.0.id',
         },
+        fieldsToIgnore: ['brand'],
       },
       modify: {
         url: '/api/v2/help_center/articles/{article_id}/translations/{locale}',
@@ -2007,6 +2050,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
           article_id: '_parent.0.id',
           locale: 'locale',
         },
+        fieldsToIgnore: ['brand'],
       },
       remove: {
         url: '/api/v2/help_center/translations/{translation_id}',
@@ -2037,11 +2081,13 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           locale: 'locale',
         },
+        fieldsToIgnore: ['brand'],
       },
       add: {
         url: '/hc/api/internal/help_center_translations',
         method: 'post',
         deployAsField: 'locales',
+        fieldsToIgnore: ['brand'],
       },
       remove: {
         url: '/hc/api/internal/help_center_translations/{locale}',
@@ -2072,11 +2118,15 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
       modify: {
         url: '/hc/api/internal/general_settings',
         method: 'put',
+        // Deploying with the default_locale field does nothing, but we ignore it for safety
+        // TODON remove comment during review - brand should not be ignored, it is needed
+        fieldsToIgnore: [DEFAULT_LOCALE],
       },
       // TO DO - check what happens when help center (guide) is created or removed (SALTO-2914)
       // add: {
       //   url: '/hc/api/internal/general_settings',
       //   method: 'post',
+      //   fieldsToIgnore: [DEFAULT_LOCALE],
       // },
       // remove: {
       //   url: '/hc/api/internal/general_settings',
@@ -2161,6 +2211,10 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           category_id: 'category_id',
         },
+        // parent_section_id is modified after addition, see guide_parent_to_section filter
+        fieldsToIgnore: [
+          TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, PARENT_SECTION_ID_FIELD, BRAND_FIELD,
+        ],
       },
       modify: {
         url: '/api/v2/help_center/sections/{section_id}',
@@ -2169,6 +2223,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           section_id: 'id',
         },
+        fieldsToIgnore: [TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, BRAND_FIELD],
       },
       remove: {
         url: '/api/v2/help_center/sections/{section_id}',
@@ -2229,6 +2284,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           section_id: '_parent.0.id',
         },
+        fieldsToIgnore: ['brand'],
       },
       modify: {
         url: '/api/v2/help_center/sections/{section_id}/translations/{locale}',
@@ -2238,6 +2294,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
           section_id: '_parent.0.id',
           locale: 'locale',
         },
+        fieldsToIgnore: ['brand'],
       },
       remove: {
         url: '/api/v2/help_center/translations/{translation_id}',
@@ -2287,6 +2344,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         url: '/api/v2/help_center/categories',
         method: 'post',
         deployAsField: 'category',
+        fieldsToIgnore: [TRANSLATIONS_FIELD, SECTIONS_FIELD, BRAND_FIELD],
       },
       modify: {
         url: '/api/v2/help_center/categories/{category_id}',
@@ -2295,6 +2353,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           category_id: 'id',
         },
+        fieldsToIgnore: [TRANSLATIONS_FIELD, SECTIONS_FIELD, BRAND_FIELD],
       },
       remove: {
         url: '/api/v2/help_center/categories/{category_id}',
@@ -2337,6 +2396,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
         urlParamsToFields: {
           category_id: '_parent.0.id',
         },
+        fieldsToIgnore: ['brand'],
       },
       modify: {
         url: '/api/v2/help_center/categories/{category_id}/translations/{locale}',
@@ -2346,6 +2406,7 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
           category_id: '_parent.0.id',
           locale: 'locale',
         },
+        fieldsToIgnore: ['brand'],
       },
       remove: {
         url: '/api/v2/help_center/translations/{translation_id}',

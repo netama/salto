@@ -429,6 +429,7 @@ const filterCreator: FilterCreator = ({ config, client, elementsSource, brandIdT
         .filter(change => getChangeData(change).elemID.typeName === ARTICLE_TYPE_NAME)
         .forEach(async change => {
           // We add the title and the body values for articles creation
+          // custom? (can generalize but might be too specific)
           await addPlaceholderTitleAndBodyValues(change)
         })
     },
@@ -444,12 +445,13 @@ const filterCreator: FilterCreator = ({ config, client, elementsSource, brandIdT
       const articleRemovalChanges = otherChanges
         .filter(change => getChangeData(change).elemID.typeName === ARTICLE_TYPE_NAME)
       addRemovalChangesId(articleRemovalChanges)
+      // probably a bug if we expect this to be everyone?
       setUserSegmentIdForAdditionChanges(articleAdditionAndModificationChanges)
       const articleDeployResult = await deployChanges(
         articleAdditionAndModificationChanges,
         async change => {
           await deployChange(
-            change, client, config.apiDefinitions, ['translations', 'attachments'],
+            change, client, config.apiDefinitions,
           )
           const articleInstance = getChangeData(change)
           if (isAdditionOrModificationChange(change) && haveAttachmentsBeenAdded(change)) {
@@ -476,6 +478,7 @@ const filterCreator: FilterCreator = ({ config, client, elementsSource, brandIdT
     },
 
     onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
+      // restore? assuming everyone user segment is covered correctly elsewhere
       const relevantChanges = changes.filter(change => getChangeData(change).elemID.typeName === ARTICLE_TYPE_NAME)
       if (relevantChanges.length === 0) {
         return

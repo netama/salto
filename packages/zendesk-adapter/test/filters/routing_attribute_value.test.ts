@@ -19,7 +19,7 @@ import {
 import { filterUtils } from '@salto-io/adapter-components'
 import { ROUTING_ATTRIBUTE_VALUE_TYPE_NAME, ZENDESK } from '../../src/constants'
 import filterCreator from '../../src/filters/routing_attribute_value'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../utils'
 
 const mockDeployChange = jest.fn()
 jest.mock('@salto-io/adapter-components', () => {
@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -51,13 +51,15 @@ describe('routing attribute value filter', () => {
     it('should pass the correct params to deployChange', async () => {
       const id = 2
       const clonedAttributeValue = routingAttributeValue.clone()
-      mockDeployChange.mockImplementation(async () => ({ attribute: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedAttributeValue } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedAttributeValue } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -68,15 +70,15 @@ describe('routing attribute value filter', () => {
 
     it('should return error if deployChange failed', async () => {
       const clonedAttributeValue = routingAttributeValue.clone()
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
+      mockDeployChange.mockImplementation(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([{ action: 'add', data: { after: clonedAttributeValue } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedAttributeValue } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)

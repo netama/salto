@@ -38,8 +38,8 @@ jest.mock('@salto-io/adapter-components', () => {
       deployChange: jest.fn().mockImplementation(actual.elements.swagger.deployChange),
     },
     elements: {
-      getAllElements: jest.fn().mockImplementation(() => { throw new Error('getAllElements called without a mock') }),
       ...actual.elements,
+      getAllElements: jest.fn().mockImplementation(() => { throw new Error('getAllElements called without a mock') }),
       swagger: {
         flattenAdditionalProperties: actual.elements.swagger.flattenAdditionalProperties,
         generateTypes: jest.fn().mockImplementation(() => { throw new Error('generateTypes called without a mock') }),
@@ -86,7 +86,7 @@ describe('Okta adapter', () => {
           parsedConfigs: { OktaTest: { request: { url: 'okta' } } },
         });
       (getAllElements as jest.MockedFunction<typeof getAllElements>)
-        .mockResolvedValue({ elements: [testInstance] })
+        .mockResolvedValue({ elements: [oktaTestType, testInstance] })
       mockAxiosAdapter = new MockAdapter(axios)
       // mock as there are gets of users during fetch
       mockAxiosAdapter.onGet().reply(200, { })

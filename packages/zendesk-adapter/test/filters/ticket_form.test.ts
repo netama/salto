@@ -36,7 +36,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -182,14 +182,16 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: beforeTicketForm, after: intermediateTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: beforeTicketForm, after: afterTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -216,8 +218,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'remove', data: { before: clonedElement } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -262,8 +265,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: validTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -306,8 +310,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: validTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -326,8 +331,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: fixedTicketForm, after: fixedTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -346,8 +352,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: fixedTicketForm } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -373,8 +380,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedElement, after: clonedElement } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -393,8 +401,9 @@ describe('ticket form filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedElement } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)

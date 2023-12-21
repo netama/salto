@@ -92,10 +92,8 @@ describe('groupSchemaModifyBaseValidator', () => {
             },
           },
           custom: {
-            properties: {
-              additionalProperties: {
-                field1: {},
-              },
+            properties: { // TODON related to another fix, don't merge without it
+              field1: {},
             },
           },
         },

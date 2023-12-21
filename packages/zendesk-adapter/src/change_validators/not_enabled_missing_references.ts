@@ -30,7 +30,7 @@ import { sideConversationsOnFetch as sideConversationsFilter } from '../filters/
 import { fieldReferencesOnFetch as fieldReferencesFilter } from '../filters/field_references'
 import { listValuesMissingReferencesOnFetch as listValuesMissingReferencesFilter } from '../filters/references/list_values_missing_references'
 import { handleTemplateExpressionsOnFetch as handleTemplateExpressionFilter } from '../filters/handle_template_expressions'
-import { DynamicContentReferencesOnFetch as dynamicContentReferencesFilter } from '../filters/dynamic_content_references'
+import { dynamicContentReferencesOnFetch as dynamicContentReferencesFilter } from '../filters/dynamic_content_references'
 import { articleBodyOnFetch as articleBodyFilter } from '../filters/article/article_body'
 import { FETCH_CONFIG, ZendeskConfig } from '../config'
 

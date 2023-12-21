@@ -13,37 +13,30 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import {
-  Change,
-  getChangeData,
-  InstanceElement,
-  isAdditionOrModificationChange,
-  isInstanceChange,
-} from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { FilterCreator } from '../../filter'
 import { CUSTOM_OBJECT_TYPE_NAME } from '../../constants'
 
-const getCustomObjectInstances = (changes: Change[]): InstanceElement[] =>
-  changes
-    .filter(isInstanceChange)
-    .filter(isAdditionOrModificationChange)
-    .map(getChangeData)
-    .filter(instance => instance.elemID.typeName === CUSTOM_OBJECT_TYPE_NAME)
-
 const customObjectFilter: FilterCreator = () => ({
   name: 'addFieldOptionsFilter',
-  preDeploy: async changes =>
-    getCustomObjectInstances(changes).forEach(instance => {
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: [CUSTOM_OBJECT_TYPE_NAME],
+    func: instance => { // copy values (seen in other places -> pattern?)
       instance.value.title = instance.value.raw_title
       instance.value.title_pluralized = instance.value.raw_title_pluralized
       instance.value.description = instance.value.raw_description
-    }),
-  onDeploy: async changes =>
-    getCustomObjectInstances(changes).forEach(instance => {
+    },
+  }),
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: [CUSTOM_OBJECT_TYPE_NAME],
+    func: instance => { // restore
       delete instance.value.title
       delete instance.value.title_pluralized
       delete instance.value.description
-    }),
+    },
+  }),
 })
 
 export default customObjectFilter

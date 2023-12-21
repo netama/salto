@@ -30,7 +30,7 @@ import {
   getChangeData, TemplateExpression, isObjectType,
 } from '@salto-io/adapter-api'
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
-import { elements as elementsUtils } from '@salto-io/adapter-components'
+import { elements as elementsUtils, deployment as deploymentUtils } from '@salto-io/adapter-components'
 import defaultBrandMockReplies from './mock_replies/myBrand_mock_replies.json'
 import brandWithGuideMockReplies from './mock_replies/brandWithGuide_mock_replies.json'
 import { adapter } from '../src/adapter_creator'
@@ -44,7 +44,7 @@ import {
 } from '../src/constants'
 import { createEveryoneUserSegmentInstance } from '../src/filters/everyone_user_segment'
 import ZendeskAdapter from '../src/adapter'
-import { createFilterCreatorParams } from './utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId } from './utils'
 
 type MockReply = {
   url: string
@@ -59,7 +59,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -2156,19 +2156,29 @@ describe('adapter', () => {
         mockAxiosAdapter.onGet(url, !_.isEmpty(params) ? { params } : undefined)
           .replyOnce(200, response)
       })
-      mockDeployChange.mockImplementation(async ({ change }) => {
+      mockDeployChange.mockImplementation(async ({
+        change, convertError,
+      }: Parameters<typeof deploymentUtils.defaultDeployChange>[0]) => {
         if (isRemovalChange(change)) {
-          throw new Error('some error')
+          throw convertError(getChangeData(change).elemID, new Error('some error'))
         }
         if (getChangeData<InstanceElement>(change).elemID.typeName === 'group') {
+          createMockDefaultDeployChangeAddId(1)({ change })
           return { group: { id: 1 } }
         }
         if (getChangeData<InstanceElement>(change).elemID.typeName === 'brand') {
+          createMockDefaultDeployChangeAddId(2, 'key')({ change })
           return { brand: { key: 2 } }
         }
         if (getChangeData<InstanceElement>(change).elemID.typeName === TICKET_FORM_TYPE_NAME) {
+          createMockDefaultDeployChangeAddId(3)({ change })
           return { ticket_form: { id: 3 } }
         }
+        if (getChangeData<InstanceElement>(change).elemID.typeName === 'anotherType') {
+          createMockDefaultDeployChangeAddId(2, 'key')({ change })
+          return { key: 2 }
+        }
+        createMockDefaultDeployChangeAddId(2, 'key')({ change })
         return { key: 2 }
       })
       operations = adapter.operations({
@@ -2306,21 +2316,21 @@ describe('adapter', () => {
       // Mind that brands have filter that deploys them before the default instances
       expect(deployRes.appliedChanges).toEqual([
         toChange({ after: new InstanceElement(
-          'inst3',
-          brandType,
-          { key: 2, ref: expect.any(ReferenceExpression) },
-          undefined,
-          { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/account/brand_management/brands' },
-        ) }),
-        modificationChange,
-        toChange({ after: new InstanceElement(
           'inst',
           groupType,
           { id: 1 },
           undefined,
           { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
         ) }),
+        toChange({ after: new InstanceElement(
+          'inst3',
+          brandType,
+          { key: 2, ref: expect.any(ReferenceExpression) },
+          undefined,
+          { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/account/brand_management/brands' },
+        ) }),
         toChange({ after: new InstanceElement('inst4', anotherType, { key: 2 }) }),
+        modificationChange,
       ])
     })
 
@@ -2346,26 +2356,27 @@ describe('adapter', () => {
     it('should have change validator', () => {
       expect(operations.deployModifiers?.changeValidator).toBeDefined()
     })
-    it('should not update id if deployChange result is an array', async () => {
-      mockDeployChange.mockImplementation(async () => [{ id: 2 }])
-      const deployRes = await operations.deploy({
-        changeGroup: {
-          groupID: 'group',
-          changes: [
-            toChange({ after: new InstanceElement('inst', groupType) }),
-          ],
-        },
-      })
-      expect(deployRes.appliedChanges).toEqual([
-        toChange({ after: new InstanceElement(
-          'inst',
-          groupType,
-          undefined,
-          undefined,
-          { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
-        ) }),
-      ])
-    })
+    // TODON move to tests of shared function
+    // it('should not update id if deployChange result is an array', async () => {
+    //   mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(2))
+    //   const deployRes = await operations.deploy({
+    //     changeGroup: {
+    //       groupID: 'group',
+    //       changes: [
+    //         toChange({ after: new InstanceElement('inst', groupType) }),
+    //       ],
+    //     },
+    //   })
+    //   expect(deployRes.appliedChanges).toEqual([
+    //     toChange({ after: new InstanceElement(
+    //       'inst',
+    //       groupType,
+    //       undefined,
+    //       undefined,
+    //       { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
+    //     ) }),
+    //   ])
+    // })
     it('should omit reference in array if the reference does not have an id', async () => {
       const ticketFieldWithId = new InstanceElement('withId', ticketFieldType, { id: 5 })
       const ticketFieldWithoutId = new InstanceElement('withoutId', ticketFieldType)
@@ -2410,46 +2421,47 @@ describe('adapter', () => {
         appliedChanges,
       ])
     })
-    it('should not update id if the response is primitive', async () => {
-      mockDeployChange.mockImplementation(async () => 2)
-      const deployRes = await operations.deploy({
-        changeGroup: {
-          groupID: 'group',
-          changes: [
-            toChange({ after: new InstanceElement('inst', groupType) }),
-          ],
-        },
-      })
-      expect(deployRes.appliedChanges).toEqual([
-        toChange({ after: new InstanceElement(
-          'inst',
-          groupType,
-          undefined,
-          undefined,
-          { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
-        ) }),
-      ])
-    })
-    it('should not update id field if it does not exist in the response', async () => {
-      mockDeployChange.mockImplementation(async () => ({ test: 2 }))
-      const deployRes = await operations.deploy({
-        changeGroup: {
-          groupID: 'group',
-          changes: [
-            toChange({ after: new InstanceElement('inst', groupType) }),
-          ],
-        },
-      })
-      expect(deployRes.appliedChanges).toEqual([
-        toChange({ after: new InstanceElement(
-          'inst',
-          groupType,
-          undefined,
-          undefined,
-          { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
-        ) }),
-      ])
-    })
+    // TODON move to tests of new function
+    // it('should not update id if the response is primitive', async () => {
+    //   mockDeployChange.mockImplementation(async () => 2)
+    //   const deployRes = await operations.deploy({
+    //     changeGroup: {
+    //       groupID: 'group',
+    //       changes: [
+    //         toChange({ after: new InstanceElement('inst', groupType) }),
+    //       ],
+    //     },
+    //   })
+    //   expect(deployRes.appliedChanges).toEqual([
+    //     toChange({ after: new InstanceElement(
+    //       'inst',
+    //       groupType,
+    //       undefined,
+    //       undefined,
+    //       { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
+    //     ) }),
+    //   ])
+    // })
+    // it('should not update id field if it does not exist in the response', async () => {
+    //   mockDeployChange.mockImplementation(async () => ({ test: 2 }))
+    //   const deployRes = await operations.deploy({
+    //     changeGroup: {
+    //       groupID: 'group',
+    //       changes: [
+    //         toChange({ after: new InstanceElement('inst', groupType) }),
+    //       ],
+    //     },
+    //   })
+    //   expect(deployRes.appliedChanges).toEqual([
+    //     toChange({ after: new InstanceElement(
+    //       'inst',
+    //       groupType,
+    //       undefined,
+    //       undefined,
+    //       { [CORE_ANNOTATIONS.SERVICE_URL]: 'https://mybrand.zendesk.com/admin/people/team/groups' },
+    //     ) }),
+    //   ])
+    // })
     it('should call deploy with the fixed type', async () => {
       const instance = new InstanceElement('inst', groupType, { name: 'test' })
       await operations.deploy({
@@ -2498,11 +2510,13 @@ describe('adapter', () => {
           ),
         }),
         client: expect.anything(),
-        endpointDetails: expect.anything(),
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
     })
     it('should not try to deploy instances', async () => {
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation(() => ({}))
       const deployRes = await operations.deploy({
         changeGroup: {
           groupID: 'group',
@@ -2545,8 +2559,9 @@ describe('adapter', () => {
           }),
         ) }),
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(deployRes.appliedChanges).toEqual([
         toChange({ before: new InstanceElement('inst', groupType) }),

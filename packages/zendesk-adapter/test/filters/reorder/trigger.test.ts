@@ -30,7 +30,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -191,8 +191,9 @@ describe('trigger reorder filter', () => {
           },
         },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
     })
     it('should return an error if there are multiple order changes', async () => {

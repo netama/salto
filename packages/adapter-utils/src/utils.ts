@@ -28,6 +28,7 @@ import {
   ChangeData, ListType, CoreAnnotationTypes, isMapType, MapType, isContainerType, isTypeReference,
   ReadOnlyElementsSource, ReferenceMap, TypeReference, createRefToElmWithValue, isElement,
   compareSpecialValues, getChangeData, isTemplateExpression, PlaceholderObjectType, UnresolvedReference, FieldMap,
+  isAdditionOrModificationChange, isInstanceChange, AdditionChange, ModificationChange,
 } from '@salto-io/adapter-api'
 import Joi from 'joi'
 import { walkOnElement, WalkOnFunc, WALK_NEXT_STEP } from './walk_element'
@@ -63,7 +64,9 @@ type TransformValuesArgs = TransformValuesBaseArgs & {
 }
 
 export const applyFunctionToChangeData = async <T extends Change<unknown>>(
-  change: T, func: (arg: ChangeData<T>) => Promise<ChangeData<T>> | ChangeData<T>,
+  change: T,
+  func: (arg: ChangeData<T>) => Promise<ChangeData<T>> | ChangeData<T>,
+  onlyChangeData = false,
 ): Promise<T> => {
   if (isAdditionChange(change)) {
     return { ...change, data: { after: await func(change.data.after) } }
@@ -75,13 +78,58 @@ export const applyFunctionToChangeData = async <T extends Change<unknown>>(
     return {
       ...change,
       data: {
-        before: await func(change.data.before),
+        before: onlyChangeData ? change.data.before : await func(change.data.before), // TODON add test
         after: await func(change.data.after),
       },
     }
   }
   return change
 }
+
+export type ChangeGuardWithAfter = <T extends Change<unknown>>(
+  change: T
+) => change is T & (AdditionChange<ChangeData<T>> | ModificationChange<ChangeData<T>>)
+
+// TODON add tests
+export const applyForInstanceChangesOfType = async ({
+  changes, typeNames, func, changeGuard = isAdditionOrModificationChange, onlyChangeData = false,
+}: {
+  changes: Change<ChangeDataType>[]
+  typeNames: string[]
+  func: (arg: InstanceElement) => Promise<InstanceElement> | InstanceElement
+  changeGuard?: ChangeGuardWithAfter
+  onlyChangeData?: boolean
+  // TODON add option to control parallelism (awu vs Promise.all() vs chunks)
+}): Promise<Change<ChangeDataType>[]> => (
+  awu(changes)
+    .filter(changeGuard)
+    .filter(isInstanceChange)
+    .filter(change => typeNames.includes(getChangeData(change).elemID.typeName))
+    .map(change => applyFunctionToChangeData<Change<InstanceElement>>(
+      change,
+      func,
+      onlyChangeData,
+    ))
+    .toArray()
+)
+
+export const applyInPlaceforInstanceChangesOfType = async ({
+  changes, typeNames, func, changeGuard = isAdditionOrModificationChange, additionalCondition,
+}: {
+  changes: Change<ChangeDataType>[]
+  typeNames: string[]
+  func: (arg: InstanceElement) => Promise<void> | void
+  changeGuard?: ChangeGuardWithAfter
+  additionalCondition?: (change: Change<InstanceElement>) => boolean
+  // TODON add option to control parallelism (awu vs Promise.all() vs chunks)
+}): Promise<void> => (
+  awu(changes)
+    .filter(changeGuard)
+    .filter(isInstanceChange)
+    .filter(additionalCondition ?? (() => true))
+    .filter(change => typeNames.includes(getChangeData(change).elemID.typeName))
+    .forEach(async change => func(getChangeData(change)))
+)
 
 /**
  * Generate synthetic object types for validating / transforming map type values.

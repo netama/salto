@@ -19,6 +19,7 @@ import {
   InstanceElement,
   isAdditionOrModificationChange, toChange, Values,
 } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { FilterCreator } from '../filter'
 import { deployChange, deployChanges } from '../deployment'
@@ -26,16 +27,11 @@ import { addRemovalChangesId } from './guide_section_and_category'
 import {
   CATEGORY_TYPE_NAME,
   SECTION_TYPE_NAME,
-  ARTICLES_FIELD,
-  SECTIONS_FIELD,
-  TRANSLATIONS_FIELD,
-  BRAND_FIELD,
+  PARENT_SECTION_ID_FIELD,
 } from '../constants'
 
-const PARENT_SECTION_ID_FIELD = 'parent_section_id'
-
 const deleteParentFields = (elem: InstanceElement): void => {
-  delete elem.value.direct_parent_id
+  delete elem.value.direct_parent_id // TODON why not just ignore?
   delete elem.value.direct_parent_type
 }
 
@@ -54,18 +50,17 @@ export const addParentFields = (value: Values): void => {
 // 'parent_section_id' is ignored and is deployed as modification change separately later.
 const filterCreator: FilterCreator = ({ client, config }) => ({
   name: 'guideParentSection',
-  preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(change => getChangeData(change).elemID.typeName === SECTION_TYPE_NAME)
-      .map(getChangeData)
-      .forEach(deleteParentFields)
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: [SECTION_TYPE_NAME],
+    func: deleteParentFields,
+  }),
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [parentChanges, leftoverChanges] = _.partition(
       changes,
       change => SECTION_TYPE_NAME === getChangeData(change).elemID.typeName
     )
-    addRemovalChangesId(parentChanges)
+    addRemovalChangesId(parentChanges) // TODON custom logic for other location - follow later
     const deployResult = await deployChanges(
       parentChanges,
       async change => {
@@ -73,17 +68,17 @@ const filterCreator: FilterCreator = ({ client, config }) => ({
           change,
           client,
           config.apiDefinitions,
-          [TRANSLATIONS_FIELD, PARENT_SECTION_ID_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD]
         )
       }
     )
     // need to deploy separately parent_section_id if exists since zendesk API does not support
     // parent_section_id if the data request has more fields in it.
-    await deployChanges(
+    await deployChanges( // TODO adjustments before deploy - custom, but should align with the rest of the one-way work
       parentChanges,
       async change => {
         if (isAdditionOrModificationChange(change)
           && getChangeData(change).value.parent_section_id !== undefined) {
+        // TODON two-step deploy for picked fields - can generalize?
           const parentSectionInstanceAfter = new InstanceElement(
             getChangeData(change).elemID.name,
             await getChangeData(change).getType(),
@@ -109,11 +104,10 @@ const filterCreator: FilterCreator = ({ client, config }) => ({
     )
     return { deployResult, leftoverChanges }
   },
-  onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-    changes
-      .filter(change => getChangeData(change).elemID.typeName === SECTION_TYPE_NAME)
-      .map(getChangeData)
-      .forEach(elem => addParentFields(elem.value))
-  },
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // restore
+    changes,
+    typeNames: [SECTION_TYPE_NAME],
+    func: inst => addParentFields(inst.value),
+  }),
 })
 export default filterCreator

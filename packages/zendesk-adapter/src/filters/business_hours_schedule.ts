@@ -57,13 +57,13 @@ const shouldDeployIntervals = (change: Change<InstanceElement>): boolean => {
 const deployIntervals = async (client: ZendeskClient, change: Change<InstanceElement>):
 Promise<void> => {
   const changedElement = getChangeData(change)
-  const { intervals } = changedElement.value
+  const { intervals } = changedElement.value // TODON deploy by field? as multiple steps
   if (shouldDeployIntervals(change)) {
     if (isValidIntervals(intervals)) {
       try {
         await client.put({
           url: `/api/v2/business_hours/schedules/${changedElement.value.id}/workweek`,
-          data: { workweek: { intervals } },
+          data: { workweek: { intervals } }, // TODON can be added with pick and structuring as another step?
         })
       } catch (e) {
         throw getZendeskError(changedElement.elemID.createNestedID('intervals'), e) // caught in deployChanges
@@ -91,14 +91,14 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
       })
   },
   deploy: async (changes: Change<InstanceElement>[]) => {
-    const [scheduleChanges, leftoverChanges] = _.partition(
+    const [scheduleChanges, leftoverChanges] = _.partition( // TODON add helper as well?
       changes,
       change => getChangeData(change).elemID.typeName === BUSINESS_HOURS_SCHEDULE_TYPE_NAME,
     )
     const deployResult = await deployChanges(
       scheduleChanges,
       async change => {
-        await deployChange(change, client, config.apiDefinitions, ['holidays'])
+        await deployChange(change, client, config.apiDefinitions)
         await deployIntervals(client, change)
       }
     )

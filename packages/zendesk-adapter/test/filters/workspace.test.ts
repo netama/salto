@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -105,90 +105,6 @@ describe('workspace filter', () => {
 
     it('should have selected_macros', async () => {
       expect(clonedWorkspace.value.selected_macros).toBeDefined()
-    })
-  })
-
-  describe('deploy', () => {
-    beforeEach(async () => {
-      workspace.value.macros = [1]
-      const change = toChange({ after: workspace })
-      await filter?.onDeploy([change])
-    })
-
-    it('should pass the correct params to deployChange on create', async () => {
-      const id = 2
-      mockDeployChange.mockImplementation(async () => ({ workspace: { id } }))
-      const res = await filter.deploy([{ action: 'add', data: { after: workspace } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'add', data: { after: workspace } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['selected_macros'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(1)
-      expect(res.deployResult.appliedChanges)
-        .toEqual([{ action: 'add', data: { after: workspace } }])
-    })
-
-    it('should pass the correct params to deployChange on update', async () => {
-      const id = 2
-      const clonedWSBefore = workspace.clone()
-      const clonedWSAfter = workspace.clone()
-      clonedWSBefore.value.id = id
-      clonedWSAfter.value.id = id
-      clonedWSAfter.value.description = 'edited'
-      mockDeployChange.mockImplementation(async () => ({}))
-      const res = await filter
-        .deploy([{ action: 'modify', data: { before: clonedWSBefore, after: clonedWSAfter } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'modify', data: { before: clonedWSBefore, after: clonedWSAfter } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['selected_macros'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(1)
-      expect(res.deployResult.appliedChanges)
-        .toEqual([
-          {
-            action: 'modify',
-            data: { before: clonedWSBefore, after: clonedWSAfter },
-          },
-        ])
-    })
-
-    it('should pass the correct params to deployChange on remove', async () => {
-      const id = 2
-      const clonedWorkspace = workspace.clone()
-      clonedWorkspace.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
-      const res = await filter.deploy([{ action: 'remove', data: { before: clonedWorkspace } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(0)
-      expect(res.leftoverChanges).toHaveLength(1)
-      expect(res.deployResult.errors).toHaveLength(0)
-      expect(res.deployResult.appliedChanges).toHaveLength(0)
-    })
-
-    it('should return error if deployChange failed', async () => {
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
-      const res = await filter.deploy([{ action: 'add', data: { after: workspace } }])
-      expect(mockDeployChange).toHaveBeenCalledTimes(1)
-      expect(mockDeployChange).toHaveBeenCalledWith({
-        change: { action: 'add', data: { after: workspace } },
-        client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['selected_macros'],
-      })
-      expect(res.leftoverChanges).toHaveLength(0)
-      expect(res.deployResult.errors).toHaveLength(1)
-      expect(res.deployResult.appliedChanges).toHaveLength(0)
     })
   })
 })

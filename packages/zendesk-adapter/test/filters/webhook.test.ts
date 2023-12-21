@@ -17,7 +17,7 @@ import { ObjectType, ElemID, InstanceElement } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
 import { WEBHOOK_TYPE_NAME, ZENDESK } from '../../src/constants'
 import filterCreator, { AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA } from '../../src/filters/webhook'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../utils'
 
 const mockDeployChange = jest.fn()
 jest.mock('@salto-io/adapter-components', () => {
@@ -26,7 +26,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -88,14 +88,15 @@ describe('webhook filter', () => {
         deployedWebhook.value.authentication.type
       ]
       deployedWebhook.value.id = id
-      mockDeployChange.mockImplementation(async () => ({ webhook: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedWebhook } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: deployedWebhook } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -111,14 +112,15 @@ describe('webhook filter', () => {
         deployedWebhook.value.authentication.type
       ]
       deployedWebhook.value.id = id
-      mockDeployChange.mockImplementation(async () => ({ webhook: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedWebhook } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: deployedWebhook } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -132,14 +134,15 @@ describe('webhook filter', () => {
       delete clonedWebhook.value.authentication
       const deployedWebhook = clonedWebhook.clone()
       deployedWebhook.value.id = id
-      mockDeployChange.mockImplementation(async () => ({ webhook: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedWebhook } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: deployedWebhook } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -159,15 +162,16 @@ describe('webhook filter', () => {
       deployedWebhookAfter.value.authentication.data = AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA[
         deployedWebhookAfter.value.authentication.type
       ]
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedWebhookBefore, after: clonedWebhookAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedWebhookBefore, after: deployedWebhookAfter } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -189,15 +193,16 @@ describe('webhook filter', () => {
       clonedWebhookAfter.value.description = 'edited'
       const deployedWebhookAfter = clonedWebhookAfter.clone()
       delete deployedWebhookAfter.value.authentication
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedWebhookBefore, after: clonedWebhookAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedWebhookBefore, after: deployedWebhookAfter } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -220,15 +225,16 @@ describe('webhook filter', () => {
       delete clonedWebhookAfter.value.authentication
       const deployedWebhookAfter = clonedWebhookAfter.clone()
       deployedWebhookAfter.value.authentication = null
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedWebhookBefore, after: deployedWebhookAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedWebhookBefore, after: deployedWebhookAfter } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -246,7 +252,7 @@ describe('webhook filter', () => {
       const id = 2
       const clonedWebhook = webhook.clone()
       clonedWebhook.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter.deploy([{ action: 'remove', data: { before: clonedWebhook } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(0)
       expect(res.leftoverChanges).toHaveLength(1)
@@ -255,9 +261,7 @@ describe('webhook filter', () => {
     })
 
     it('should return error if deployChange failed', async () => {
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
+      mockDeployChange.mockImplementationOnce(mockDefaultDeployChangeThrow)
       const clonedWebhook = webhook.clone()
       const deployedWebhook = webhook.clone()
       deployedWebhook.value.authentication.data = AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA[
@@ -268,8 +272,9 @@ describe('webhook filter', () => {
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: deployedWebhook } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: ['external_source'],
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)
@@ -280,7 +285,7 @@ describe('webhook filter', () => {
       const id = 2
       const clonedWebhook = webhook.clone()
       delete clonedWebhook.value.authentication.type
-      mockDeployChange.mockImplementation(async () => ({ webhook: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedWebhook } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(0)
       expect(res.leftoverChanges).toHaveLength(0)

@@ -17,7 +17,7 @@ import {
   ObjectType, ElemID, InstanceElement,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../utils'
 import { SLA_POLICY_TYPE_NAME, ZENDESK } from '../../src/constants'
 import filterCreator from '../../src/filters/sla_policy'
 
@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -92,14 +92,15 @@ describe('sla policy filter', () => {
       clonedSlaPolicyToDeploy.value.filter = { all: [], any: [] }
       // It's actually not deployed with id but its added to the element that we check
       clonedSlaPolicyToDeploy.value.id = id
-      mockDeployChange.mockImplementation(async () => ({ sla_policy: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedSlaPolicy } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedSlaPolicyToDeploy } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -111,14 +112,15 @@ describe('sla policy filter', () => {
     it('should pass the correct params to deployChange on create - with filter', async () => {
       const id = 2
       const clonedSlaPolicy = slaPolicyWithFilter.clone()
-      mockDeployChange.mockImplementation(async () => ({ sla_policy: { id } }))
+      mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(id))
       const res = await filter.deploy([{ action: 'add', data: { after: clonedSlaPolicy } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedSlaPolicy } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -136,15 +138,16 @@ describe('sla policy filter', () => {
       clonedSlaPolicyToDeploy.value.id = id
       clonedSlaPolicyBefore.value.id = id
       clonedSlaPolicyAfter.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedSlaPolicyBefore, after: clonedSlaPolicyAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedSlaPolicyBefore, after: clonedSlaPolicyToDeploy } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -165,15 +168,16 @@ describe('sla policy filter', () => {
       clonedSlaPolicyBefore.value.id = id
       clonedSlaPolicyAfter.value.id = id
       clonedSlaPolicyAfter.value.title = 'edited'
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter
         .deploy([{ action: 'modify', data: { before: clonedSlaPolicyBefore, after: clonedSlaPolicyAfter } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'modify', data: { before: clonedSlaPolicyBefore, after: clonedSlaPolicyAfter } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -191,7 +195,7 @@ describe('sla policy filter', () => {
       const id = 2
       const clonedSlaPolicy = slaPolicyWithoutFilter.clone()
       clonedSlaPolicy.value.id = id
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter.deploy([{ action: 'remove', data: { before: clonedSlaPolicy } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(0)
       expect(res.leftoverChanges).toHaveLength(1)
@@ -201,16 +205,15 @@ describe('sla policy filter', () => {
 
     it('should return error if deployChange failed', async () => {
       const clonedSlaPolicy = slaPolicyWithFilter.clone()
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
+      mockDeployChange.mockImplementation(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([{ action: 'add', data: { after: clonedSlaPolicy } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedSlaPolicy } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        fieldsToIgnore: undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)

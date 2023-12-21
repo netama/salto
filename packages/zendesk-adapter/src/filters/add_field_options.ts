@@ -13,10 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { InstanceElement } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { collections } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
-import { applyforInstanceChangesOfType } from './utils'
 import { CUSTOM_FIELD_OPTIONS_FIELD_NAME, ORG_FIELD_TYPE_NAME, USER_FIELD_TYPE_NAME } from '../constants'
 
 const { makeArray } = collections.array
@@ -25,36 +24,30 @@ const RELEVANT_TYPE_NAMES = [ORG_FIELD_TYPE_NAME, USER_FIELD_TYPE_NAME]
 
 const filterCreator: FilterCreator = () => ({
   name: 'addFieldOptionsFilter',
-  preDeploy: async changes => {
-    await applyforInstanceChangesOfType(
-      changes,
-      RELEVANT_TYPE_NAMES,
-      (instance: InstanceElement) => {
-        makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
-          .forEach(option => {
-            if (option.id === undefined) {
-              option.id = null
-            }
-          })
-        return instance
-      }
-    )
-  },
-  onDeploy: async changes => {
-    await applyforInstanceChangesOfType(
-      changes,
-      RELEVANT_TYPE_NAMES,
-      (instance: InstanceElement) => {
-        makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
-          .forEach(option => {
-            if (option.id === null) {
-              delete option.id
-            }
-          })
-        return instance
-      }
-    )
-  },
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: RELEVANT_TYPE_NAMES,
+    func: instance => {
+      makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
+        .forEach(option => {
+          if (option.id === undefined) { // undefined-to-null
+            option.id = null
+          }
+        })
+    },
+  }),
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // restore
+    changes,
+    typeNames: RELEVANT_TYPE_NAMES,
+    func: instance => {
+      makeArray(instance.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME])
+        .forEach(option => {
+          if (option.id === null) {
+            delete option.id
+          }
+        })
+    },
+  }),
 })
 
 export default filterCreator

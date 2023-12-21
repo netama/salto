@@ -15,7 +15,7 @@
 */
 import _ from 'lodash'
 import Joi from 'joi'
-import { Change, ChangeDataType, DeployResult, getChangeData, InstanceElement, isAdditionChange, isModificationChange, isEqualValues, ModificationChange, AdditionChange, ElemID, createSaltoElementError, isSaltoError, SaltoError } from '@salto-io/adapter-api'
+import { Change, ChangeDataType, DeployResult, getChangeData, InstanceElement, isAdditionChange, isModificationChange, ModificationChange, AdditionChange, ElemID, createSaltoElementError, isSaltoError, SaltoError } from '@salto-io/adapter-api'
 import { config as configUtils, deployment, elements as elementUtils, client as clientUtils } from '@salto-io/adapter-components'
 import { createSchemeGuard } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
@@ -111,21 +111,6 @@ export const deployStatusChange = async (
   }
 }
 
-export const assignServiceIdToAdditionChange = (
-  response: deployment.ResponseResult,
-  change: AdditionChange<InstanceElement>,
-  apiDefinitions: configUtils.AdapterApiConfig,
-): void => {
-  if (!Array.isArray(response)) {
-    const serviceIdField = apiDefinitions.types[getChangeData(change).elemID.typeName]?.transformation?.serviceIdField ?? 'id'
-    if (response?.[serviceIdField] !== undefined) {
-      getChangeData(change).value[serviceIdField] = response[serviceIdField]
-    }
-  } else {
-    log.warn('Received unexpected response, could not assign service id to change: %o', response)
-  }
-}
-
 /**
  * Deploy change with the standard "add", "modify", "remove" endpoints
  */
@@ -135,42 +120,14 @@ export const defaultDeployChange = async (
   apiDefinitions: OktaSwaggerApiConfig,
   fieldsToIgnore?: string[],
   queryParams?: Record<string, string>,
-): Promise<deployment.ResponseResult> => {
-  if (isModificationChange(change)) {
-    const valuesBefore = (await deployment.filterIgnoredValues(
-      change.data.before.clone(),
-      fieldsToIgnore ?? [],
-      [],
-    )).value
-    const valuesAfter = (await deployment.filterIgnoredValues(
-      change.data.after.clone(),
-      fieldsToIgnore ?? [],
-      [],
-    )).value
-
-    if (isEqualValues(valuesBefore, valuesAfter)) {
-      return undefined
-    }
-  }
-
-  const { deployRequests } = apiDefinitions.types[getChangeData(change).elemID.typeName]
-  try {
-    const response = await deployment.deployChange({
-      change,
-      client,
-      endpointDetails: deployRequests,
-      fieldsToIgnore,
-      queryParams,
-    })
-
-    if (isAdditionChange(change)) {
-      assignServiceIdToAdditionChange(response, change, apiDefinitions)
-    }
-    return response
-  } catch (err) {
-    throw getOktaError(getChangeData(change).elemID, err)
-  }
-}
+): Promise<deployment.ResponseResult> => deployment.defaultDeployChange({
+  change,
+  client,
+  apiDefinitions,
+  fieldsToIgnore,
+  queryParams,
+  convertError: getOktaError,
+})
 
 /**
  * Deploy change with "add", "modify", "remove", "activation" and "deactivation" endpoints

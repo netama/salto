@@ -54,9 +54,14 @@ client.getSinglePage = jest.fn().mockResolvedValue({ data: 'def' })
 describe('guideDefaultLanguage', () => {
   const config = { ...DEFAULT_CONFIG }
   config[FETCH_CONFIG].guide = { brands: ['.*'] }
-  const filter = guideDefaultLanguage(
-    createFilterCreatorParams({ config, client, brandIdToClient: { 1: client, 2: client } })
-  ) as filterUtils.FilterWith<'onFetch' | 'deploy'>
+  let filter: filterUtils.FilterWith<'onFetch' | 'deploy'>
+
+  beforeEach(async () => {
+    jest.clearAllMocks()
+    filter = guideDefaultLanguage(
+      createFilterCreatorParams({ config, client, brandIdToClient: { 1: client, 2: client } })
+    ) as filterUtils.FilterWith<'onFetch' | 'deploy'>
+  })
 
   it('onFetch', async () => {
     const notDefaultSettings1 = createSettings('notDefault', 'notDef', brand1)

@@ -14,11 +14,10 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { Change, getChangeData, InstanceElement, isRemovalChange, Value, Values } from '@salto-io/adapter-api'
+import { InstanceElement, Value, Values } from '@salto-io/adapter-api'
+import { applyInPlaceforInstanceChangesOfType } from '@salto-io/adapter-utils'
 import { values } from '@salto-io/lowerdash'
 import { FilterCreator } from '../filter'
-import { deployChange, deployChanges } from '../deployment'
-import { applyforInstanceChangesOfType } from './utils'
 import { VIEW_TYPE_NAME } from '../constants'
 
 const valToString = (val: Value): string | string[] => (_.isArray(val) ? val.map(String) : val?.toString())
@@ -26,58 +25,35 @@ const valToString = (val: Value): string | string[] => (_.isArray(val) ? val.map
 /**
  * Deploys views
  */
-const filterCreator: FilterCreator = ({ config, client }) => ({
+const filterCreator: FilterCreator = () => ({
   name: 'viewFilter',
-  preDeploy: async changes => {
-    await applyforInstanceChangesOfType(
-      changes,
-      [VIEW_TYPE_NAME],
-      (instance: InstanceElement) => {
-        instance.value = {
-          ...instance.value,
-          all: (instance.value.conditions.all ?? [])
-            .map((e: Values) => ({ ...e, value: valToString(e.value) })),
-          any: (instance.value.conditions.any ?? [])
-            .map((e: Values) => ({ ...e, value: valToString(e.value) })),
-          output: {
-            ...instance.value.execution,
-            group_by: instance.value.execution.group_by?.toString(),
-            sort_by: instance.value.execution.sort_by?.toString(),
-            columns: instance.value.execution.columns?.filter(_.isPlainObject)
-              .map((c: Values) => c.id).filter(values.isDefined) ?? [],
-          },
-        }
-        return instance
+  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    changes,
+    typeNames: [VIEW_TYPE_NAME],
+    func: (instance: InstanceElement) => {
+      instance.value = {
+        ...instance.value,
+        all: (instance.value.conditions.all ?? []) // transformation? keep as custom code (for transformation)?
+          .map((e: Values) => ({ ...e, value: valToString(e.value) })),
+        any: (instance.value.conditions.any ?? [])
+          .map((e: Values) => ({ ...e, value: valToString(e.value) })),
+        output: { // same - can either transform as pick + some mapping, or keep custom
+          ...instance.value.execution,
+          group_by: instance.value.execution.group_by?.toString(),
+          sort_by: instance.value.execution.sort_by?.toString(),
+          columns: instance.value.execution.columns?.filter(_.isPlainObject)
+            .map((c: Values) => c.id).filter(values.isDefined) ?? [],
+        },
       }
-    )
-  },
-  onDeploy: async changes => {
-    await applyforInstanceChangesOfType(
-      changes,
-      [VIEW_TYPE_NAME],
-      (instance: InstanceElement) => {
-        instance.value = _.omit(instance.value, ['all', 'any', 'output'])
-        return instance
-      }
-    )
-  },
-  deploy: async (changes: Change<InstanceElement>[]) => {
-    const [viewChanges, leftoverChanges] = _.partition(
-      changes,
-      change =>
-        (getChangeData(change).elemID.typeName === VIEW_TYPE_NAME)
-        && !isRemovalChange(change),
-    )
-    const deployResult = await deployChanges(
-      viewChanges,
-      async change => {
-        await deployChange(
-          change, client, config.apiDefinitions, ['conditions', 'execution'],
-        )
-      },
-    )
-    return { deployResult, leftoverChanges }
-  },
+    },
+  }),
+  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON one-way, can skip
+    changes,
+    typeNames: [VIEW_TYPE_NAME],
+    func: (instance: InstanceElement) => {
+      instance.value = _.omit(instance.value, ['all', 'any', 'output'])
+    },
+  }),
 })
 
 export default filterCreator

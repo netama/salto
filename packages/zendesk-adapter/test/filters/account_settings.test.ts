@@ -19,7 +19,7 @@ import {
 import { filterUtils } from '@salto-io/adapter-components'
 import { ZENDESK } from '../../src/constants'
 import filterCreator from '../../src/filters/account_settings'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, mockDefaultDeployChangeThrow } from '../utils'
 
 const mockDeployChange = jest.fn()
 jest.mock('@salto-io/adapter-components', () => {
@@ -28,7 +28,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -62,7 +62,7 @@ describe('account settings filter', () => {
   it('should remove autorouting_tag if it is empty', async () => {
     const clonedAfter = accountSettings.clone()
     clonedAfter.value.branding.header_color = 'FFFFFF'
-    mockDeployChange.mockImplementation(async () => ({ }))
+    mockDeployChange.mockImplementation()
     const res = await filter.deploy(
       [{ action: 'modify', data: { before: accountSettings, after: clonedAfter } }]
     )
@@ -70,7 +70,9 @@ describe('account settings filter', () => {
     expect(mockDeployChange).toHaveBeenCalledWith({
       change: { action: 'modify', data: { before: accountSettings, after: clonedAfter } },
       client: expect.anything(),
-      endpointDetails: expect.anything(),
+      apiDefinitions: expect.anything(),
+      convertError: expect.anything(),
+      deployEqualValues: true,
       fieldsToIgnore: ['routing.autorouting_tag'],
     })
     expect(res.leftoverChanges).toHaveLength(0)
@@ -84,7 +86,7 @@ describe('account settings filter', () => {
     const clonedAfter = accountSettings.clone()
     clonedAfter.value.branding.header_color = 'FFFFFF'
     clonedAfter.value.routing.autorouting_tag = 'myTag'
-    mockDeployChange.mockImplementation(async () => ({ }))
+    mockDeployChange.mockImplementation()
     const res = await filter.deploy(
       [{ action: 'modify', data: { before: accountSettings, after: clonedAfter } }]
     )
@@ -92,8 +94,9 @@ describe('account settings filter', () => {
     expect(mockDeployChange).toHaveBeenCalledWith({
       change: { action: 'modify', data: { before: accountSettings, after: clonedAfter } },
       client: expect.anything(),
-      endpointDetails: expect.anything(),
-      fieldsToIgnore: [],
+      apiDefinitions: expect.anything(),
+      convertError: expect.anything(),
+      deployEqualValues: true,
     })
     expect(res.leftoverChanges).toHaveLength(0)
     expect(res.deployResult.errors).toHaveLength(0)
@@ -117,7 +120,7 @@ describe('account settings filter', () => {
   it('should return error if deployChange request failed', async () => {
     const clonedAfter = accountSettings.clone()
     clonedAfter.value.branding.header_color = 'FFFFFF'
-    mockDeployChange.mockImplementation(async () => { throw new Error('err') })
+    mockDeployChange.mockImplementationOnce(mockDefaultDeployChangeThrow)
     const res = await filter.deploy(
       [{ action: 'modify', data: { before: accountSettings, after: clonedAfter } }]
     )
@@ -125,8 +128,10 @@ describe('account settings filter', () => {
     expect(mockDeployChange).toHaveBeenCalledWith({
       change: { action: 'modify', data: { before: accountSettings, after: clonedAfter } },
       client: expect.anything(),
-      endpointDetails: expect.anything(),
       fieldsToIgnore: ['routing.autorouting_tag'],
+      apiDefinitions: expect.anything(),
+      convertError: expect.anything(),
+      deployEqualValues: true,
     })
     expect(res.leftoverChanges).toHaveLength(0)
     expect(res.deployResult.errors).toHaveLength(1)

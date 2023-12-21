@@ -15,15 +15,14 @@
 */
 import {
   ObjectType, ElemID, InstanceElement, isObjectType, isInstanceElement,
-  ReferenceExpression, CORE_ANNOTATIONS, toChange, isReferenceExpression,
+  ReferenceExpression, CORE_ANNOTATIONS, toChange, isReferenceExpression, getChangeData,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
 import { createTemplateExpression } from '@salto-io/adapter-utils'
 import { elementSource } from '@salto-io/workspace'
-import { ZENDESK, CUSTOM_FIELD_OPTIONS_FIELD_NAME } from '../../../src/constants'
+import { ZENDESK, CUSTOM_FIELD_OPTIONS_FIELD_NAME, DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../../src/constants'
 import filterCreator from '../../../src/filters/custom_field_options/ticket_field'
-import { DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../../src/filters/custom_field_options/creator'
-import { createFilterCreatorParams } from '../../utils'
+import { createFilterCreatorParams, createMockDefaultDeployChangeAddId, mockDefaultDeployChangeThrow } from '../../utils'
 
 const mockDeployChange = jest.fn()
 jest.mock('@salto-io/adapter-components', () => {
@@ -32,7 +31,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -251,17 +250,20 @@ describe('ticket field filter', () => {
     describe('changes in both parent and child', () => {
       it('should pass the correct params to deployChange when we add both parent and children', async () => {
         const clonedElements = [ticketField, option1, option2].map(e => e.clone())
-        mockDeployChange
-          .mockImplementation(async () => ({
+        mockDeployChange.mockImplementationOnce(async ({ change }) => {
+          getChangeData<InstanceElement>(change).value.id = 1
+          return {
             ticket_field: { id: 1, custom_field_options: [{ id: 2, value: 'v3' }, { id: 3, value: 'v4' }] },
-          }))
+          }
+        })
         const res = await filter.deploy(clonedElements.map(e => ({ action: 'add', data: { after: e } })))
         expect(mockDeployChange).toHaveBeenCalledTimes(1)
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'add', data: { after: clonedElements[0] } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
@@ -286,18 +288,21 @@ describe('ticket field filter', () => {
             inst.value.name = `${inst.value.name} - edited`
             return inst
           })
-        mockDeployChange
-          .mockImplementation(async () => ({
+        mockDeployChange.mockImplementationOnce(async ({ change }) => {
+          getChangeData<InstanceElement>(change).value.id = 111
+          return {
             ticket_field: { id: 111, custom_field_options: [{ id: 222, value: 'v3' }, { id: 333, value: 'v4' }] },
-          }))
+          }
+        })
         const res = await filter.deploy(clonedElements.map((e, index) =>
           ({ action: 'modify', data: { before: e, after: clonedElementsAfter[index] } })))
         expect(mockDeployChange).toHaveBeenCalledTimes(1)
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'modify', data: { before: clonedElements[0], after: clonedElementsAfter[0] } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
@@ -313,16 +318,16 @@ describe('ticket field filter', () => {
             inst.value.id = index
             return inst
           })
-        mockDeployChange
-          .mockImplementation(async () => ({ }))
+        mockDeployChange.mockImplementation()
         const res = await filter.deploy(clonedElements.map(e =>
           ({ action: 'remove', data: { before: e } })))
         expect(mockDeployChange).toHaveBeenCalledTimes(1)
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'remove', data: { before: clonedElements[0] } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
@@ -333,16 +338,15 @@ describe('ticket field filter', () => {
       })
       it('should return error if deployChange failed', async () => {
         const clonedTicketField = ticketField.clone()
-        mockDeployChange.mockImplementation(async () => {
-          throw new Error('err')
-        })
+        mockDeployChange.mockImplementationOnce(mockDefaultDeployChangeThrow)
         const res = await filter.deploy([{ action: 'add', data: { after: clonedTicketField } }])
         expect(mockDeployChange).toHaveBeenCalledTimes(1)
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'add', data: { after: clonedTicketField } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(1)
@@ -350,17 +354,20 @@ describe('ticket field filter', () => {
       })
       it('should not add id to children if response is invalid', async () => {
         const clonedElements = [ticketField, option1, option2].map(e => e.clone())
-        mockDeployChange
-          .mockImplementation(async () => ({
+        mockDeployChange.mockImplementationOnce(async ({ change }) => {
+          getChangeData<InstanceElement>(change).value.id = 1
+          return {
             ticket_field: { id: 1, custom_field_options: [{ id: 2, value: 'v3' }, { id: 3, value: 'v4' }, 'bla'] },
-          }))
+          }
+        })
         const res = await filter.deploy(clonedElements.map(e => ({ action: 'add', data: { after: e } })))
         expect(mockDeployChange).toHaveBeenCalledTimes(1)
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'add', data: { after: clonedElements[0] } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
@@ -375,7 +382,7 @@ describe('ticket field filter', () => {
       it('should deploy regularly if there is no options in parent', async () => {
         const clonedTicketField = ticketField.clone()
         delete clonedTicketField.value[CUSTOM_FIELD_OPTIONS_FIELD_NAME]
-        mockDeployChange.mockImplementation(async () => ({ ticket_field: { id: 1 } }))
+        mockDeployChange.mockImplementationOnce(createMockDefaultDeployChangeAddId(1))
         const res = await filter.deploy([
           { action: 'add', data: { after: clonedTicketField } },
         ])
@@ -383,8 +390,9 @@ describe('ticket field filter', () => {
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'add', data: { after: clonedTicketField } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
@@ -404,7 +412,7 @@ describe('ticket field filter', () => {
         clonedChildBefore.value.id = id
         clonedChildAfter.value.id = id
         clonedChildAfter.value.value = 'v33'
-        mockDeployChange.mockImplementation(async () => ({ }))
+        mockDeployChange.mockImplementation()
         const res = await filter.deploy([
           { action: 'modify', data: { before: clonedChildBefore, after: clonedChildAfter } },
         ])
@@ -412,8 +420,9 @@ describe('ticket field filter', () => {
         expect(mockDeployChange).toHaveBeenCalledWith({
           change: { action: 'modify', data: { before: clonedChildBefore, after: clonedChildAfter } },
           client: expect.anything(),
-          endpointDetails: expect.anything(),
-          fieldsToIgnore: undefined,
+          apiDefinitions: expect.anything(),
+          convertError: expect.anything(),
+          deployEqualValues: true,
         })
         expect(res.leftoverChanges).toHaveLength(0)
         expect(res.deployResult.errors).toHaveLength(0)
