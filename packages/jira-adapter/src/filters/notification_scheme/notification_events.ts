@@ -39,7 +39,7 @@ export type NotificationEvent = {
   notifications?: {
     notificationType: string
     user?: unknown
-    additionalProperties?: unknown
+    // additionalProperties?: unknown
     id?: number
   }[]
 }

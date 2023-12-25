@@ -14,12 +14,12 @@
 * limitations under the License.
 */
 
-import { Change, InstanceElement, ObjectType, isInstanceElement, getChangeData, SaltoError } from '@salto-io/adapter-api'
+import { Change, InstanceElement, ObjectType, isInstanceElement, getChangeData, SaltoError, isObjectType } from '@salto-io/adapter-api'
 import { getParents } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { BRAND_LOGO_TYPE_NAME, BRAND_THEME_TYPE_NAME, FAV_ICON_TYPE_NAME } from '../constants'
 import { FilterCreator } from '../filter'
-import { LOGO_TYPES_TO_VALUES, createFileType, deployLogo, getLogo } from '../logo'
+import { LOGO_TYPES_TO_VALUES, deployLogo, getLogo } from '../logo'
 import OktaClient from '../client/client'
 import { deployChanges } from '../deployment'
 
@@ -59,8 +59,15 @@ const brandThemeFilesFilter: FilterCreator = ({ client }) => ({
       .filter(isInstanceElement)
       .filter(instance => instance.elemID.typeName === BRAND_THEME_TYPE_NAME)
 
-    const [logoType, faviconType] = [createFileType(BRAND_LOGO_TYPE_NAME), createFileType(FAV_ICON_TYPE_NAME)]
-    elements.push(logoType, faviconType)
+    const objectTypes = elements.filter(isObjectType)
+    const logoType = objectTypes.find(e => e.elemID.typeName === BRAND_LOGO_TYPE_NAME)
+    const faviconType = objectTypes.find(e => e.elemID.typeName === FAV_ICON_TYPE_NAME)
+    if (logoType === undefined || faviconType === undefined) {
+      return { errors: [{
+        message: 'Failed to brand theme files. Could not find type',
+        severity: 'Warning',
+      }] }
+    }
 
     const brandLogosInstances = await Promise.all(brandThemes.map(async brand => {
       const logoInstance = await getBrandThemeFile(client, brand, logoType)

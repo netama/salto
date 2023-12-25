@@ -15,7 +15,7 @@
 */
 import _ from 'lodash'
 import { ElemID, CORE_ANNOTATIONS, ActionName, BuiltinTypes, ObjectType, Field } from '@salto-io/adapter-api'
-import { createMatchingObjectType } from '@salto-io/adapter-utils'
+import { createMatchingObjectType, naclCase } from '@salto-io/adapter-utils'
 import { client as clientUtils, config as configUtils, elements } from '@salto-io/adapter-components'
 import { ACCESS_POLICY_TYPE_NAME, CUSTOM_NAME_FIELD, IDP_POLICY_TYPE_NAME, MFA_POLICY_TYPE_NAME, OKTA, PASSWORD_POLICY_TYPE_NAME, PROFILE_ENROLLMENT_POLICY_TYPE_NAME, SIGN_ON_POLICY_TYPE_NAME, AUTOMATION_TYPE_NAME } from './constants'
 
@@ -64,12 +64,26 @@ const DEFAULT_FIELDS_TO_OMIT: configUtils.FieldToOmitType[] = [
   { fieldName: 'lastUpdated' },
   { fieldName: 'createdBy' },
   { fieldName: 'lastUpdatedBy' },
+  { fieldName: naclCase('$schema') },
 ]
 const TRANSFORMATION_DEFAULTS: configUtils.TransformationDefaultConfig = {
   idFields: DEFAULT_ID_FIELDS,
   fieldsToOmit: DEFAULT_FIELDS_TO_OMIT,
   nestStandaloneInstances: true,
 }
+
+const fileTypeFieldDefs: configUtils.TransformationConfig = {
+  fieldTypeOverrides: [
+    { fieldName: 'id', fieldType: 'string' },
+    { fieldName: 'content', fieldType: 'string' },
+    { fieldName: 'contentType', fieldType: 'string' },
+    { fieldName: 'fileName', fieldType: 'string' },
+  ],
+  fieldsToHide: [
+    { fieldName: 'id' },
+  ],
+}
+
 
 // Policy type is split to different kinds of policies
 // The full list of policy types is taken from here:
@@ -424,7 +438,6 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
       extendsParentId: true,
       dataField: '.',
       fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat(
-        { fieldName: '$schema' },
         { fieldName: 'type' },
         { fieldName: 'properties' }
       ),
@@ -455,6 +468,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   AppLogo: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/apps/{appId}/logo',
@@ -534,7 +548,13 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
       ],
       serviceIdField: 'id',
       fieldsToOmit: DEFAULT_FIELDS_TO_OMIT
-        .concat({ fieldName: '_links' }, { fieldName: '$schema' }, { fieldName: 'type' }, { fieldName: 'title' }, { fieldName: 'description' }, { fieldName: 'properties' }),
+        .concat([
+          { fieldName: '_links' },
+          { fieldName: 'type' },
+          { fieldName: 'title' },
+          { fieldName: 'description' },
+          { fieldName: 'properties' },
+        ]),
       fieldsToHide: [{ fieldName: 'id' }, { fieldName: 'name' }],
       // serviceUrl is created in service_url filter
     },
@@ -764,7 +784,6 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
       serviceIdField: 'id',
       fieldsToOmit: DEFAULT_FIELDS_TO_OMIT.concat(
         { fieldName: '_links' },
-        { fieldName: '$schema' }
       ),
       fieldsToHide: [{ fieldName: 'id' }],
     },
@@ -883,6 +902,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   BrandLogo: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/brands/{brandId}/themes/{themeId}/logo',
@@ -912,6 +932,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
     },
   },
   FavIcon: {
+    transformation: fileTypeFieldDefs,
     deployRequests: {
       add: {
         url: '/api/v1/brands/{brandId}/themes/{themeId}/favicon',

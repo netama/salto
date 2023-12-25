@@ -132,9 +132,15 @@ const typeAdder = ({
 
     const { allProperties, additionalProperties } = extractProperties(schemaDef, refs)
 
+
+    // TODON would be better to use toNormalizedRefName but will require too many changes
+    // TODON (not here) make sure transformElement takes into account additionalProperties
+    // TODON need to reverse for deploy! maybe mark the fields?
+    const naclProperties = _.mapKeys(allProperties, (_val, key) => naclCase(key))
+
     Object.assign(
       type.fields,
-      _.mapValues(allProperties, (fieldSchema, fieldName) => {
+      _.mapValues(naclProperties, (fieldSchema, fieldName) => {
         const toNestedTypeName = ({ allOf, anyOf, oneOf }: SchemaObject): string => {
           const xOf = [allOf, anyOf, oneOf].filter(isDefined).flat()
           if (xOf.length > 0 && isArrayOfType(xOf, isReferenceObject)) {

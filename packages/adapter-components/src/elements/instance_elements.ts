@@ -18,7 +18,7 @@ import {
   InstanceElement, Values, ObjectType, ReferenceExpression, CORE_ANNOTATIONS, ElemID,
   ElemIdGetter, OBJECT_SERVICE_ID, OBJECT_NAME, toServiceIdsString, ServiceIds,
 } from '@salto-io/adapter-api'
-import { pathNaclCase, naclCase, transformValues, TransformFunc } from '@salto-io/adapter-utils'
+import { pathNaclCase, naclCase, TransformFunc, transformValuesSync } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { RECORDS_PATH, SETTINGS_NESTED_PATH } from './constants'
 import { TransformationConfig, TransformationDefaultConfig, getConfigWithDefault, shouldNestFiles,
@@ -125,12 +125,12 @@ export const generateInstanceNameFromConfig = (
     ? getNameMapping(instanceName, nameMapping) : instanceName
 }
 
-export const removeNullValues = async (
+export const removeNullValues = (
   values: Values,
   type: ObjectType,
   allowEmpty = false,
-): Promise<Values> =>
-  await transformValues({
+): Values =>
+  transformValuesSync({
     values,
     type,
     transformFunc: ({ value }) => (value === null ? undefined : value),
@@ -216,7 +216,7 @@ export const toBasicInstance = async ({
     }
     return value
   }
-  const entryData = await transformValues({
+  const entryData = transformValuesSync({
     values: entry,
     type,
     transformFunc: omitFields,
@@ -266,7 +266,7 @@ export const toBasicInstance = async ({
   return new InstanceElement(
     type.isSettings ? ElemID.CONFIG_NAME : naclName,
     type,
-    entryData !== undefined ? await removeNullValues(entryData, type) : {},
+    entryData !== undefined ? removeNullValues(entryData, type) : {},
     filePath,
     parent
       ? { [CORE_ANNOTATIONS.PARENT]: [new ReferenceExpression(parent.elemID, parent)] }

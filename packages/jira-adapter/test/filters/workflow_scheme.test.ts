@@ -94,7 +94,7 @@ describe('workflowScheme', () => {
         workflowSchemeType,
         {
           issueTypeMappings: {
-            additionalProperties: {
+            additionalProperties: { // TODON
               1234: 'workflow name',
             },
           },

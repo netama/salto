@@ -350,9 +350,9 @@ const filter: FilterCreator = ({ client }) => {
         .filter(isInstanceElement)
         .filter(instance => instance.elemID.typeName === AUTOMATION_TYPE)
         .forEach(async instance => {
-          instance.value = await elementUtils.removeNullValues(
+          instance.value = elementUtils.removeNullValues(
             instance.value,
-            await instance.getType(),
+            instance.getTypeSync(),
             true,
           )
           if (client.isDataCenter) {

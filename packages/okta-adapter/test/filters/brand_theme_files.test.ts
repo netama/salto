@@ -30,6 +30,7 @@ describe('brand files filter', () => {
   const brandThemeType = new ObjectType({ elemID: new ElemID(OKTA, BRAND_THEME_TYPE_NAME) })
   const brandType = new ObjectType({ elemID: new ElemID(OKTA, BRAND_TYPE_NAME) })
   const brandLogoType = new ObjectType({ elemID: new ElemID(OKTA, BRAND_LOGO_TYPE_NAME) })
+  const favIconType = new ObjectType({ elemID: new ElemID(OKTA, FAV_ICON_TYPE_NAME) })
   const fileName = 'brandLogo.png'
   const content = Buffer.from('test')
   const brandInstance = new InstanceElement(
@@ -73,7 +74,7 @@ describe('brand files filter', () => {
       })
     })
     it('should create brandLogo type favIcon type and brandLogo instance and favIcon instance', async () => {
-      const elements = [brandThemeType, brandThemeInstance].map(e => e.clone())
+      const elements = [brandThemeType, brandLogoType, favIconType, brandThemeInstance].map(e => e.clone())
       await filter.onFetch(elements)
       expect(elements.map(e => e.elemID.getFullName()).sort())
         .toEqual([
@@ -86,7 +87,7 @@ describe('brand files filter', () => {
         ])
     })
     it('check that brandLogo instance and the favicon instance have the correct values', async () => {
-      const elements = [brandThemeType, brandThemeInstance].map(e => e.clone())
+      const elements = [brandThemeType, brandLogoType, favIconType, brandThemeInstance].map(e => e.clone())
       await filter.onFetch(elements)
       const instances = elements.filter(isInstanceElement)
       const logo = instances.find(e => e.elemID.typeName === BRAND_LOGO_TYPE_NAME)
@@ -111,7 +112,7 @@ describe('brand files filter', () => {
     it('should return fetch errors for broken link', async () => {
       const clonedBrandThemeInstance = brandThemeInstance.clone()
       clonedBrandThemeInstance.value.logo = 'https://ok12static.oktacdn.com/bc/image/error'
-      const elements = [brandThemeType, clonedBrandThemeInstance]
+      const elements = [brandThemeType, brandLogoType, favIconType, clonedBrandThemeInstance]
       const res = await filter.onFetch(elements) as FilterResult
       expect(res.errors).toHaveLength(1)
       expect(res.errors?.[0]).toEqual({
