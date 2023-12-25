@@ -16,7 +16,7 @@
 import _ from 'lodash'
 import { InstanceElement, isObjectType, isInstanceElement, Values, CORE_ANNOTATIONS, ReferenceExpression, isInstanceChange, getChangeData, Change, isRemovalChange, isAdditionChange, AdditionChange } from '@salto-io/adapter-api'
 import { elements as elementUtils, config as configUtils, client as clientUtils } from '@salto-io/adapter-components'
-import { applyFunctionToChangeData, getParents } from '@salto-io/adapter-utils'
+import { applyFunctionToChangeData, getParents, naclCase } from '@salto-io/adapter-utils'
 import { values } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../filter'
@@ -48,9 +48,12 @@ const getUserSchemaId = (instance: InstanceElement): string | undefined => {
 const getUserSchema = async (
   userSchemaId: string,
   client: OktaClient
-): Promise<Values> => (await client.getSinglePage({
-  url: `/api/v1/meta/schemas/user/${userSchemaId}`,
-})).data as Values[]
+): Promise<Values> => _.mapKeys(
+  (await client.getSinglePage({
+    url: `/api/v1/meta/schemas/user/${userSchemaId}`,
+  })).data,
+  (_val, key) => naclCase(key),
+)
 
 const deployUserSchemaRemoval = async (
   change: Change<InstanceElement>,

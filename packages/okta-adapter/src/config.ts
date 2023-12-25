@@ -391,6 +391,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
       add: {
         url: '/api/v1/apps',
         method: 'post',
+        // TODON support "nonDeployableFields"
       },
       modify: {
         url: '/api/v1/apps/{applicationId}',
@@ -1512,13 +1513,10 @@ export const SUPPORTED_TYPES = {
   ],
   Authenticator: ['api__v1__authenticators'],
   AuthorizationServer: ['api__v1__authorizationServers'],
-  // AuthorizationServerPolicy: ['api__v1__authorizationServers___authServerId___policies@uuuuuu_00123_00125uu'],
   Brand: ['api__v1__brands'],
-  // BrandTheme: ['api__v1__brands___brandId___themes@uuuuuu_00123_00125uu'],
   EventHook: ['api__v1__eventHooks'],
   Feature: ['api__v1__features'],
   Group: ['api__v1__groups'],
-  // RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
   GroupRule: ['api__v1__groups__rules'],
   IdentityProvider: [
     'api__v1__idps',
@@ -1527,7 +1525,6 @@ export const SUPPORTED_TYPES = {
   ProfileMapping: ['api__v1__mappings'],
   LinkedObjectDefinitions: ['api__v1__meta__schemas__user__linkedObjects'],
   GroupSchema: ['GroupSchema'],
-  // UserSchema: ['UserSchema'],
   UserType: ['api__v1__meta__types__user'],
   OrgSettings: ['OrgSetting'],
   ...Object.fromEntries(
@@ -1544,6 +1541,12 @@ export const SUPPORTED_TYPES = {
   RateLimitAdmin: ['RateLimitAdminNotifications'],
   ResourceSet: ['ResourceSets'],
   DeviceAssurance: ['api__v1__device_assurances@uuuub'],
+
+  // needed for recurseInto - TODON avoid fetching if excluded
+  AuthorizationServerPolicy: ['api__v1__authorizationServers___authServerId___policies@uuuuuu_00123_00125uu'],
+  BrandTheme: ['api__v1__brands___brandId___themes@uuuuuu_00123_00125uu'],
+  RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
+  UserSchema: ['UserSchema'],
 }
 
 const DUCKTYPE_TYPES: OktaDuckTypeApiConfig['types'] = {
