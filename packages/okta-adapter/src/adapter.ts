@@ -21,7 +21,7 @@ import { logger } from '@salto-io/logging'
 import { collections, objects } from '@salto-io/lowerdash'
 import OktaClient from './client/client'
 import changeValidator from './change_validators'
-import { OktaConfig, API_DEFINITIONS_CONFIG, CLIENT_CONFIG } from './config'
+import { OktaConfig, API_DEFINITIONS_CONFIG, CLIENT_CONFIG, PRIVATE_API_DEFINITIONS_CONFIG } from './config'
 import fetchCriteria from './fetch_criteria'
 import { paginate } from './client/pagination'
 import { dependencyChanger } from './dependency_changers'
@@ -61,8 +61,8 @@ import { getLookUpName } from './reference_mapping'
 const { awu } = collections.asynciterable
 
 const { generateTypes } = elementUtils.swagger
-const { getAllElements } = elementUtils
-const { findDataField, computeGetArgs } = elementUtils
+const { getAllElements, findDataField, computeGetArgs } = elementUtils
+const { addRemainingTypes } = elementUtils.ducktype
 const { createPaginator } = clientUtils
 const log = logger(module)
 
@@ -203,6 +203,7 @@ export default class OktaAdapter implements AdapterOperations {
       paginator: this.paginator,
       objectTypes: _.pickBy(allTypes, isObjectType),
       apiConfig: updatedApiDefinitionsConfig,
+      shouldAddRemainingTypes: false,
       fetchQuery: this.fetchQuery,
       supportedTypes: this.userConfig.apiDefinitions.supportedTypes,
       getElemIdFunc: this.getElemIdFunc,
@@ -251,6 +252,19 @@ export default class OktaAdapter implements AdapterOperations {
       ...swaggerElements,
       ...privateApiElements.elements,
     ]
+
+    // Remaining types should be added once to avoid overlaps between the generated elements,
+    // so we add them once after all elements are generated
+    addRemainingTypes({
+      adapterName: OKTA,
+      elements,
+      typesConfig: this.userConfig.apiDefinitions.types,
+      supportedTypes: _.merge(
+        this.userConfig[API_DEFINITIONS_CONFIG].supportedTypes,
+        this.userConfig[PRIVATE_API_DEFINITIONS_CONFIG].supportedTypes
+      ),
+      typeDefaultConfig: this.userConfig.apiDefinitions.typeDefaults,
+    })
     return { elements, errors: (errors ?? []).concat(privateApiElements.errors ?? []) }
   }
 

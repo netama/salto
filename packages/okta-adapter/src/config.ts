@@ -1481,7 +1481,7 @@ const DEFAULT_TYPE_CUSTOMIZATIONS: OktaSwaggerApiConfig['types'] = {
 
 const DEFAULT_SWAGGER_CONFIG: OktaSwaggerApiConfig['swagger'] = {
   url: 'https://raw.githubusercontent.com/salto-io/adapter-swaggers/main/okta/management-swagger-v3.yaml',
-  additionalTypes: [
+  additionalTypes: [ // TODON when combining with ducktype, avoid these duplications where not helping
     ...Object.keys(POLICY_TYPE_NAME_TO_PARAMS)
       .map(policyTypeName => ({ typeName: getPolicyItemsName(policyTypeName), cloneFrom: 'api__v1__policies' })),
     ...Object.values(POLICY_TYPE_NAME_TO_PARAMS)
@@ -1546,7 +1546,7 @@ export const SUPPORTED_TYPES = {
   AuthorizationServerPolicy: ['api__v1__authorizationServers___authServerId___policies@uuuuuu_00123_00125uu'],
   BrandTheme: ['api__v1__brands___brandId___themes@uuuuuu_00123_00125uu'],
   RoleAssignment: ['api__v1__groups___groupId___roles@uuuuuu_00123_00125uu'],
-  UserSchema: ['UserSchema'],
+  UserSchema: ['UserSchema'], // fetched in user_schema.ts
 }
 
 const DUCKTYPE_TYPES: OktaDuckTypeApiConfig['types'] = {
