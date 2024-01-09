@@ -241,7 +241,7 @@ export const generateType = ({
     return typeWithNested.type
   }
 
-  const fields: Record<string, FieldDefinition> = hasDynamicFields
+  const fields: Record<string, FieldDefinition> = hasDynamicFields // TODON use additionalProperties
     ? {
       value: {
         refType: new MapType(addNestedType(generateNestedType({

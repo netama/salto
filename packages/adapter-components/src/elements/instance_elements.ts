@@ -216,7 +216,7 @@ export const toBasicInstance = async ({
     }
     return value
   }
-  const entryData = transformValuesSync({
+  const entryData = transformValuesSync({ // TODON should omit fields even if they're not in the type!
     values: entry,
     type,
     transformFunc: omitFields,

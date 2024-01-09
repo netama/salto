@@ -15,7 +15,7 @@
 */
 import { ObjectType, ElemID, BuiltinTypes, ListType, CORE_ANNOTATIONS } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
-import { FieldReferenceDefinition, FieldReferenceSourceDefinition } from '../references'
+import { FieldReferenceDefinition, FieldReferenceSourceDefinition } from '../../references'
 
 export type ReferencesConfig = {
   // TODON switch never once shared context exists (maybe already?)

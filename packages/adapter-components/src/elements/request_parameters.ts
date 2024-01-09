@@ -81,6 +81,8 @@ const getContextInstances = (
     .filter(instance => (itemTypes !== undefined ? itemTypes.includes(instance.elemID.typeName) : true))
 }
 
+export class MissingContextError extends Error {}
+
 const computeDependsOnURLs = (
   {
     url,
@@ -98,7 +100,7 @@ const computeDependsOnURLs = (
   }
 
   if (contextElements === undefined || dependsOn === undefined || _.isEmpty(dependsOn)) {
-    throw new Error(`cannot resolve endpoint ${url} - missing context`)
+    throw new MissingContextError(`cannot resolve endpoint ${url} - missing context`)
   }
 
   const potentialParamsByArg = urlParams.map(urlParam => {

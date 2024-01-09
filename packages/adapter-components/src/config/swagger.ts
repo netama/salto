@@ -52,6 +52,12 @@ export type SwaggerDefinitionBaseConfig = {
   prefix?: string // TODON implement when defining types!
   // avoid importing parts of the swagger (in order to avoid conflicts)
   // filter?: RegExp
+
+  // when true, the sources are only used for finding the endpoints but types are generated from responses
+  endpointsOnly?: boolean // TODON or: alwaysDuckType?
+
+  // the endpoints will be loaded into the default client (when missing, the default client)
+  client?: string // TODON
 }
 
 export type TypeSwaggerConfig = TypeConfig

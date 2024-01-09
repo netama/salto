@@ -13,21 +13,26 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ObjectType, ElemID, CORE_ANNOTATIONS, ListType, BuiltinTypes } from '@salto-io/adapter-api'
+import { ObjectType, ElemID, CORE_ANNOTATIONS, ListType, BuiltinTypes, ActionName } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { createDucktypeAdapterApiConfigType } from './ducktype'
 import { SwaggerDefinitionBaseConfig, createSwaggerDefinitionsBaseConfigType } from './swagger'
 import { AdapterApiConfig } from './shared'
+import { TransformationConfig, TransformationDefaultConfig } from './transformation'
 
 // TODON merge logic of ducktype+swagger and refactor this
-export type ApiComponentsConfig = {
+export type ApiComponentsConfig<
+  T extends TransformationConfig = TransformationConfig,
+  TD extends TransformationDefaultConfig = TransformationDefaultConfig,
+  A extends string = ActionName,
+> = {
   sources?: {
     swagger?: SwaggerDefinitionBaseConfig[]
     // when true, the sources are only used for finding the endpoints but types are generated from responses
     alwaysDuckType?: boolean
   }
   // clients: {} // TODON define
-  definitions: AdapterApiConfig
+  definitions: AdapterApiConfig<T, TD, A>
   // TODON when on, will also log info and suggestions for initializing the adapter
   initializing?: boolean
 }

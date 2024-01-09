@@ -1,0 +1,78 @@
+/*
+*                      Copyright 2023 Salto Labs Ltd.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with
+* the License.  You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+import { FieldDefinition } from '@salto-io/adapter-api'
+import { NameMappingOptions } from '../../transformation' // TODON move
+import { ArgsWithCustomizer, GeneratedItem } from '../shared'
+
+export type FieldIDPart = ArgsWithCustomizer<
+  string | undefined,
+  {
+    fieldName: string
+    condition?: () => boolean
+    // TODON adjust, but should allow at least lowercase / uppercase and maybe some customizations
+    mapping?: NameMappingOptions
+    isReference?: boolean
+    // allowNull?: boolean
+  }
+>
+
+export type ElementFieldCustomization = {
+  custom: () => FieldDefinition
+} | {
+  fieldType?: 'number' // TODON also convert to service id?
+  // TODON avoid hiding when nested somehow - can use Alon's filter / just omit when should hide?
+  hide?: boolean // TODON instead of fieldsToHide
+  // omit: false,
+  // TODON usually not written
+  // customizeField: ({ field }: { field: Field }) => field,
+  // customizeValue: ({ value }: { value: Value }) => value,
+  standalone?: { // undefined means not standalone
+    addParentAnnotation: boolean
+    referenceFromParent: boolean
+  }
+} | {
+  drop: true
+}
+
+// TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
+export type FetchTransformationConfig = ArgsWithCustomizer<
+  Element[], // TODON divide into type elements and instance elements?
+  {
+    serviceIDFields?: string[] // TODON inherit from resource? since maybe not only top-level
+    elemID?: {
+      // default - true when parent annotation exists?
+      // set to false when not needed? TODO check what's needed for Shir's regeneration, maybe have all we need now?
+      extendsParent?: boolean
+      // extendsDefault?: boolean, // when true, also include the "default" id fields? doesn't seem needed
+      parts: FieldIDPart[]
+    }
+    path?: { // instead of fileName
+      nestUnderParent?: boolean // TODON may need two booleans to decide if to create the parent's folder or not?
+      alwaysCreateFolder?: boolean
+      // when missing, inherited from elemID
+      fields?: FieldIDPart[]
+    }
+    hardCodedType?: boolean // when false, extend the "defined" type (if exists) with ducktype
+    // replaces: fieldsToHide, fieldsToOmit, standaloneFields
+    // all values are optional? make sure can "define" a field without customizing it?
+    fieldCustomizations?: Record<string, ElementFieldCustomization>
+    // fieldsToOmit?: FieldToOmitType[] // TODON should not be under customizations since contradicts the rest?
+    serviceUrl?: ArgsWithCustomizer<string, string, Element> // TODON maybe expand functionality (today string)
+    // alias, important attributes, ?
+  },
+  GeneratedItem[] // TODON not sure about type?
+>

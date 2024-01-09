@@ -24,7 +24,7 @@ import { toInstance } from './instance_elements'
 import { getConfigWithDefault, getTransformationConfigByType } from '../../config'
 import { FindNestedFieldFunc, findDataField } from '../field_finder'
 import { TypeDuckTypeDefaultsConfig, TypeDuckTypeConfig, DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig } from '../../config/ducktype'
-import { computeGetArgs as defaultComputeGetArgs, ComputeGetArgsFunc } from '../request_parameters'
+import { computeGetArgs as defaultComputeGetArgs, ComputeGetArgsFunc, MissingContextError } from '../request_parameters'
 import { FetchElements, getElementsWithContext } from '../element_getter'
 import { extractStandaloneFields } from './standalone_field_extractor'
 import { shouldRecurseIntoEntry } from '../instance_elements'
@@ -384,6 +384,7 @@ export const getAllElements = async ({
   isErrorTurnToConfigSuggestion,
   customInstanceFilter,
   additionalRequestContext,
+  // TODON support multiple clients / base urls as part of the config
 }: {
   adapterName: string
   fetchQuery: ElementQuery
@@ -466,6 +467,10 @@ export const getAllElements = async ({
         }
         if (e instanceof AdapterFetchError) {
           return { elements: [], errors: [{ message: e.message, severity: e.severity }] }
+        }
+        if (e instanceof MissingContextError) {
+          log.warn('Resource %s:%s missing context: %s', adapterName, args.typeName, e)
+          return { elements: [] }
         }
         throw e
       }

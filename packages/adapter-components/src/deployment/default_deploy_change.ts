@@ -30,7 +30,7 @@ export const defaultDeployChange = async <
 >({
   change,
   client,
-  apiDefinitions,
+  apiDefinitions, // TODON switch to new config
   fieldsToIgnore,
   queryParams,
   convertError,
