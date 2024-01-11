@@ -21,7 +21,7 @@ type PageCallInput = { // TODON TBD
 }
 
 type PaginationConfig = {
-  type: string | PaginationFuncCreator // TODON enum coming from adapter - e.g. cursor, ?
+  type?: string | PaginationFuncCreator // TODON enum coming from adapter - e.g. cursor, ?
   // TODON have a list of pagination definitnions with relevant args?
   args: Record<string, unknown> // TODON maybe request type as well?
 } | {
@@ -35,7 +35,6 @@ export type HTTPEndpointIdentifier = {
   // TODO add safeties in fetch when using a non-get/head endpoint
   // TODON decide: verb/method?
   method: HTTPMethod
-
 }
 
 // TODON avoid having to write everything explicitly, and assume exists by default?

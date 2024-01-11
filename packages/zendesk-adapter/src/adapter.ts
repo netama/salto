@@ -142,7 +142,6 @@ import macroFilter from './filters/macro'
 import customRoleDeployFilter from './filters/custom_role_deploy'
 import routingAttributeValueDeployFilter from './filters/routing_attribute_value'
 import localeFilter from './filters/locale'
-import ticketStatusCustomStatusDeployFilter from './filters/ticket_status_custom_status'
 import { filterOutInactiveInstancesForType } from './inactive'
 import handleIdenticalAttachmentConflicts from './filters/handle_identical_attachment_conflicts'
 import addImportantValuesFilter from './filters/add_important_values'
@@ -168,7 +167,7 @@ const { concatObjects } = objects
 const SECTIONS_TYPE_NAME = 'sections'
 
 const DEFAULT_FILTERS = [
-  ticketStatusCustomStatusDeployFilter, // RUNS ON ticket_field (only the custom_status one)
+  // ticketStatusCustomStatusDeployFilter, // replaced by config
   ticketFieldFilter, // RUNS ON ticekt_field + options
   userFieldFilter, // RUNS ON user_field + options
   viewFilter, // RUNS ON view

@@ -13,7 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
+import { types } from '@salto-io/lowerdash'
+import { Change, InstanceElement } from '@salto-io/adapter-api'
 import { ArgsWithCustomizer, ContextParams, ExtractionConfig } from '../shared'
 import { HTTPEndpointIdentifier } from '../client'
 
@@ -24,7 +25,12 @@ export type ContextParamsConfig = ArgsWithCustomizer<ContextParams, ContextParam
 //   // context?: ContextParamsConfig // TODON if not here, later need to align fetch
 // }
 // TODON experimenting with flattening for simplicity (but check customization!)
-export type HTTPRequest = HTTPEndpointIdentifier & ExtractionConfig
+export type HTTPRequest = types.XOR<
+  HTTPEndpointIdentifier & ExtractionConfig<{ change: Change<InstanceElement> }>,
+  // TODON add a warning for changes matching this?
+  { succeedWithoutRequest: true }
+>
 
+export type HTTPTransformRequest = HTTPRequest['transform']
 
 export type HTTPRequestConfig = ArgsWithCustomizer<HTTPRequest, HTTPRequest>

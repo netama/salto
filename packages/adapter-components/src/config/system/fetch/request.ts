@@ -16,27 +16,69 @@
 
 import { types } from '@salto-io/lowerdash'
 import { ArgsWithCustomizer, ContextParams } from '../shared'
-import { HTTPEndpoint } from '../client'
+import { HTTPEndpointIdentifier } from '../client'
 
-export type ContextParamsConfig = ArgsWithCustomizer<ContextParams, ContextParams>
+type DependsOnConfig = {
+  typeName: string
+  fieldName: string
+  addParentAnnotation?: boolean // TODON or markAsParent?
+}
+
+type ContextWithDependencies = Record<string, string | DependsOnConfig>
+
+// TODON move to dependencies file?
+
+// TODON see if used and if should change structure
+type RecurseIntoConditionBase = { match: string[] }
+type RecurseIntoConditionByField = RecurseIntoConditionBase & {
+  fromField: string
+}
+type RecurseIntoConditionByContext = RecurseIntoConditionBase & {
+  fromContext: string
+}
+
+export type RecurseIntoCondition = RecurseIntoConditionByField | RecurseIntoConditionByContext
+
+export const isRecurseIntoConditionByField = (
+  condition: RecurseIntoCondition
+): condition is RecurseIntoConditionByField => (
+  'fromField' in condition
+)
+
+type RecurseIntoConfig = {
+  type: string
+  isSingle?: boolean // TODON rename to single to align
+  context: ContextParamsConfig
+  conditions?: RecurseIntoCondition[]
+  skipOnError?: boolean
+  // if the type requires additional context retrieved from another recursed-into field, list it here
+  // cycles will result in all fields being omitted (TODON add safeties)
+  recurseAfter?: string[]
+}
+
+type RecurseIntoByField = Record<string, RecurseIntoConfig>
+
+// TODON decide if similarly relevant in deploy?
+export type ContextParamsConfig = ArgsWithCustomizer<ContextParams[], ContextWithDependencies>
 
 export type HTTPRequest = {
   // TODON default get - warn when other than get/head?
-  endpoint: types.PickyRequired<Partial<HTTPEndpoint>, 'path'>
-  context: ContextParamsConfig
+  endpoint: types.PickyRequired<Partial<HTTPEndpointIdentifier>, 'path'>
+
+  // context arg name to type info
+  // no need to specify context received from a parent's recurseInto context
+  // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
+  context?: ContextParamsConfig
   // TODON maybe add later - a way to pass filtering info throughout the pipeline
   // to allow for earlier filtering in/out e.g. by name/active
   // filtering?: ContextParamsConfig
-  onlyForContext?: boolean
+  onlyForContext?: boolean // TODON see if needed or if can conclude (based on dependsOn etc)
   toNestedPath?: string
 
-  // can only be made when context is available? so will be triggered once fields are populated
-  // TODON decide if/how to customize later
-  dependsOn?: {
-    // names of other requests for the same element, TODON make sure no cycles
-    requests?: string[]
-    fields?: string[]
-  }
+  // target field name to type info
+  // should be used to add nested fields containing other fetched types' responses (after the response was received)
+  recurseInto?: RecurseIntoByField
+
 }
 
 export type HTTPRequestConfig = ArgsWithCustomizer<HTTPRequest, HTTPRequest>

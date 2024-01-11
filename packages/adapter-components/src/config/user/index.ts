@@ -13,11 +13,5 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { deployment } from '@salto-io/adapter-components'
-import { CHANGE_GROUP_CONFIG } from './config/deploy/change_groups'
 
-const { getChangeGroupIdsFuncWithConfig } = deployment.grouping
-
-export const getChangeGroupIds = getChangeGroupIdsFuncWithConfig(CHANGE_GROUP_CONFIG)
-
-// TODON will disappear with zendesk is rebased on the adapter creator
+export { UserFetchConfig, UserDeployConfig } from './user_config'

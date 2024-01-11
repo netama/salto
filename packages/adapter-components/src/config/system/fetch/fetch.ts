@@ -21,7 +21,10 @@ import { FetchTransformationConfig } from './transformation'
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
 export type InstanceFetchApiConfig = {
   isTopLevel: boolean
-  requests?: Record<string, HTTPRequestConfig> // TODON decide on terminology
+  // by default, will contain all requests that list this type as responseExtractors in a responseExtractor
+  // if need more logic / dependencies, can customize
+  // TODON default name is bulk if only one? or doesn't matter?
+  requests?: DefaultWithCustomizations<HTTPRequestConfig>
   transformation?: FetchTransformationConfig
 }
 

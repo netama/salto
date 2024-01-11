@@ -15,7 +15,7 @@
 */
 
 import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, GeneratedItem } from '../shared'
+import { ArgsWithCustomizer, InstanceChangeAndGroup } from '../shared'
 
 export type DeployResponseTransformationConfig = ArgsWithCustomizer<
   Values, // TODON adjust, allow nesting etc? but detailed changes require too much...
@@ -25,5 +25,5 @@ export type DeployResponseTransformationConfig = ArgsWithCustomizer<
     fieldsToUpdateFromResponse?: string[] // TODON generalize if needed
     // TODON decide on updating service url etc on deploy
   },
-  GeneratedItem[]
+  InstanceChangeAndGroup
 >

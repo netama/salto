@@ -14,25 +14,34 @@
 * limitations under the License.
 */
 import { ActionName, Values } from '@salto-io/adapter-api'
-import { DefaultWithCustomizations } from '../shared'
+import { DefaultWithCustomizations, FilterCondition } from '../shared'
 import { HTTPRequest } from './request'
 import { DeployResponseTransformationConfig } from './transformation'
+import { ChangeIdFunction } from 'src/deployment/grouping'
 
-type ValueReferenceResolver = (args: { value: Values }) => Values
+export type ValueReferenceResolver = (args: { value: Values }) => Values
 
 export type DeployableRequestConfig = {
   // TODON decide if and how to resolve template expressions - maybe add this in default?
   // TODON decide if also to resolve references here + whether to "fail" if there are any leftover references
   // after this step is done?
   additionalResolvers?: ValueReferenceResolver[]
+  // when provided, only changes matching the condition will be used in this request
+  condition?: FilterCondition
   // dependsOn: string[] // resource names that should be deployed successfully before this one
   request: HTTPRequest
   fromResponse?: DeployResponseTransformationConfig // TODON rename type
+
+  // when true (and matched condition), do not proceed to next requests
+  earlyReturn?: boolean
+  // TODON also add in - change validators? (already added change group id)
 }
 
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
 export type InstanceDeployApiConfig<A extends string = ActionName> = {
-  requestsByAction: DefaultWithCustomizations<DeployableRequestConfig | DeployableRequestConfig[], A>
+  requestsByAction?: DefaultWithCustomizations<DeployableRequestConfig | DeployableRequestConfig[], A>
+  // TODON use getChangeGroupIdsFunc first with the assigned ones, then with the rest
+  changeGroupId?: ChangeIdFunction
   // TODON decide if worth adding here or keep as filter format with filtering by type (so can keep order)
   // preDeploy
   // onDeploy

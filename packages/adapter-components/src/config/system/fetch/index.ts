@@ -15,3 +15,4 @@
 */
 
 export { FetchApiConfig } from './fetch'
+export { ElementFieldCustomization, FieldIDPart } from './transformation'

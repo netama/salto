@@ -13,8 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-import { FieldDefinition } from '@salto-io/adapter-api'
+import { types } from '@salto-io/lowerdash'
+import { FieldDefinition, RestrictionAnnotationType } from '@salto-io/adapter-api'
 import { NameMappingOptions } from '../../transformation' // TODON move
 import { ArgsWithCustomizer, GeneratedItem } from '../shared'
 
@@ -33,7 +33,7 @@ export type FieldIDPart = ArgsWithCustomizer<
 export type ElementFieldCustomization = {
   custom: () => FieldDefinition
 } | {
-  fieldType?: 'number' // TODON also convert to service id?
+  fieldType?: string // TODON also convert to service id?
   // TODON avoid hiding when nested somehow - can use Alon's filter / just omit when should hide?
   hide?: boolean // TODON instead of fieldsToHide
   // omit: false,
@@ -44,22 +44,30 @@ export type ElementFieldCustomization = {
     addParentAnnotation: boolean
     referenceFromParent: boolean
   }
+  restrictions?: RestrictionAnnotationType
 } | {
-  drop: true
+  omit: true
 }
+
+type ElemIDOrSingleton = types.XOR<
+  {
+    // default - true when parent annotation exists?
+    // set to false when not needed? TODO check what's needed for Shir's regeneration, maybe have all we need now?
+    extendsParent?: boolean
+    // extendsDefault?: boolean, // when true, also include the "default" id fields? doesn't seem needed
+    parts?: FieldIDPart[]
+  },
+  {
+    singleton: true
+  }
+>
 
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
 export type FetchTransformationConfig = ArgsWithCustomizer<
   Element[], // TODON divide into type elements and instance elements?
   {
     serviceIDFields?: string[] // TODON inherit from resource? since maybe not only top-level
-    elemID?: {
-      // default - true when parent annotation exists?
-      // set to false when not needed? TODO check what's needed for Shir's regeneration, maybe have all we need now?
-      extendsParent?: boolean
-      // extendsDefault?: boolean, // when true, also include the "default" id fields? doesn't seem needed
-      parts: FieldIDPart[]
-    }
+    elemID?: ElemIDOrSingleton
     path?: { // instead of fileName
       nestUnderParent?: boolean // TODON may need two booleans to decide if to create the parent's folder or not?
       alwaysCreateFolder?: boolean
@@ -70,9 +78,14 @@ export type FetchTransformationConfig = ArgsWithCustomizer<
     // replaces: fieldsToHide, fieldsToOmit, standaloneFields
     // all values are optional? make sure can "define" a field without customizing it?
     fieldCustomizations?: Record<string, ElementFieldCustomization>
+    // when true, do not extend default definitions for field customizations
+    ignoreDefaultFieldCustomizations?: boolean
     // fieldsToOmit?: FieldToOmitType[] // TODON should not be under customizations since contradicts the rest?
     serviceUrl?: ArgsWithCustomizer<string, string, Element> // TODON maybe expand functionality (today string)
     // alias, important attributes, ?
+
+    // TODON adding for now, see if can avoid with field type overrides
+    // sourceTypeName?: string
   },
   GeneratedItem[] // TODON not sure about type?
 >

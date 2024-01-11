@@ -13,11 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { types } from '@salto-io/lowerdash'
+import { Change, ChangeGroup, InstanceElement, Values } from '@salto-io/adapter-api'
 
 // TODON see if can "flatten" by using some symbol for default (and strings for the rest) - but think about runtime!
 // TODON can also use some "magic" placeholder, e.g. __default__ but ugly...
 export type DefaultWithCustomizations<T, K extends string = string> = {
-  default?: Partial<T extends (infer U)[] ? U : T> // TODON allow requiring/omitting specific fields?
+  default?: types.RecursivePartial<T extends (infer U)[] ? U : T> // TODON allow requiring/omitting specific fields?
   customizations?: Partial<Record<K, T>>
 }
 
@@ -30,36 +32,47 @@ export type ArgsWithCustomizer<ResponseType, Args, Input = unknown> = Args
 
 export type ContextParams = Record<string, unknown>
 
-export type GeneratedItem = {
+export type GeneratedItem<TContext = ContextParams> = {
   typeName: string
-  value: unknown
+  value: Values // TODON see if always works or if also need arrays
   // identifier: string[] // TODON maybe can use additionalContext instead?
-  readonly context: ContextParams // TODON decide between context and input and align
+  readonly context: ContextParams & TContext // TODON decide between context and input and align
 }
 
-export type ExtractionParams = {
+export type TransformFunction<TContext = ContextParams> = (item: GeneratedItem<TContext>) => GeneratedItem<TContext>
+
+export type ExtractionParams<TContext = ContextParams> = {
   // return field name (can customize e.g. to "type => types")
   root?: ArgsWithCustomizer<
     string | undefined,
-    { typeName: string }
+    string,
+    TContext
   >
   toType?: string // TODON not needed in deploy change-to-request, decide if worth customizing
   nestUnderField?: string // TODON replaces deployAsField
   flatten?: boolean
-  // on fetch - singleton, on deploy - whether to split to individual requests or batch
-  single?: boolean
+  // // on fetch - singleton, on deploy - whether to split to individual requests or batch
+  // single?: boolean // moved to transformation
   // TODON expand similarly to pickBy
   pick?: string[]
   omit?: string[]
-  transform?: (item: GeneratedItem) => GeneratedItem
+  transform?: (item: GeneratedItem<ContextParams & TContext>) => GeneratedItem<TContext>
 
   // context to pass to request
   // TODON not working with ArgsWithCustomizer, probably because of the Record
-  context?: ContextParams // TODON see if needed
+  // TODON for now assuming all args are nested paths inside the value, and anything else will be a function
+  context?: Partial<ContextParams & TContext> // TODON see if needed
 }
 
-export type ExtractionConfig = ArgsWithCustomizer<
-  GeneratedItem[], // TODON decide if should be a generator
-  ExtractionParams,
-  GeneratedItem[]
+export type InstanceChangeAndGroup = {
+  change: Change<InstanceElement>
+  changeGroup: ChangeGroup<Change<InstanceElement>>
+}
+
+export type FilterCondition = (args: InstanceChangeAndGroup) => boolean
+
+export type ExtractionConfig<TContext = ContextParams> = ArgsWithCustomizer<
+  GeneratedItem<TContext>[], // TODON decide if should be a generator
+  ExtractionParams<TContext>,
+  GeneratedItem<TContext>[]
 >

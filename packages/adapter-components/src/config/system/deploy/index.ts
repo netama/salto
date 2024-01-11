@@ -14,4 +14,5 @@
 * limitations under the License.
 */
 
-export { DeployApiConfig } from './deploy'
+export { DeployApiConfig, InstanceDeployApiConfig, ValueReferenceResolver } from './deploy'
+export { HTTPRequest, HTTPTransformRequest } from './request'

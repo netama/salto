@@ -28,6 +28,7 @@ import { Filter, filtersRunner } from '../filter'
 import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
 import { analyzeConfig } from '../utils/config_initializer'
+import { getChangeGroupIdsFuncWithConfig } from '@salto-io/adapter-components/src/deployment/grouping'
 
 const { createPaginator } = clientUtils
 const { computeGetArgs, findDataField, getAllElements } = elementUtils
@@ -183,6 +184,7 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
   public get deployModifiers(): DeployModifiers {
     return {
       changeValidator,
+      getChangeGroupIds: getChangeGroupIdsFuncWithConfig(this.userConfig), // TODON upgrade config and use correct part, allow for adding more
     }
   }
 }
