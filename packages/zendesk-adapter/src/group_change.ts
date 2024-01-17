@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { deployment } from '@salto-io/adapter-components'
-import { CHANGE_GROUP_CONFIG } from './config/deploy/change_groups'
+import { CHANGE_GROUP_CONFIG } from './components/deploy/change_groups'
 
 const { getChangeGroupIdsFuncWithConfig } = deployment.grouping
 

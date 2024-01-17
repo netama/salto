@@ -71,114 +71,114 @@ export const createReorderFilterCreator = (
   }: ReorderFilterCreatorParams
 ): FilterCreator => ({ config, client }) => ({
   name: filterName,
-  onFetch: async (elements: Element[]): Promise<void> => {
-    const orderTypeName = createOrderTypeName(typeName)
-    const objType = elements
-      .filter(isObjectType)
-      .find(e => e.elemID.name === typeName)
-    if (objType === undefined) {
-      return
-    }
-    const instancesReferences = _.sortBy(
-      elements
-        .filter(isInstanceElement)
-        .filter(e => e.elemID.typeName === typeName),
-      ...iterateesToSortBy,
-    )
-      .map(inst => {
-        delete inst.value.position
-        return inst
-      })
-      .map(refInst => new ReferenceExpression(refInst.elemID, refInst))
-    const typeNameNaclCase = pathNaclCase(orderTypeName)
-    const type = new ObjectType({
-      elemID: new ElemID(ZENDESK, orderTypeName),
-      fields: {
-        active: {
-          refType: new ListType(BuiltinTypes.NUMBER),
-        },
-        inactive: {
-          refType: new ListType(BuiltinTypes.NUMBER),
-        },
-      },
-      isSettings: true,
-      path: [ZENDESK, TYPES_PATH, SUBTYPES_PATH, typeNameNaclCase],
-    })
-    const instance = new InstanceElement(
-      ElemID.CONFIG_NAME,
-      type,
-      activeFieldName
-        ? {
-          active: instancesReferences.filter(ref => ref.value.value[activeFieldName]),
-          inactive: instancesReferences.filter(ref => !ref.value.value[activeFieldName]),
-        }
-        : { active: instancesReferences },
-      [ZENDESK, RECORDS_PATH, SETTINGS_NESTED_PATH, typeNameNaclCase],
-    )
-    // Those types already exist since we added the empty version of them
-    //  via the add remaining types mechanism. So we first need to remove the old versions
-    _.remove(elements, element => element.elemID.isEqual(type.elemID))
-    elements.push(type, instance)
-  },
-  preDeploy: changes => applyInPlaceforInstanceChangesOfType({
-    changes,
-    // TODON confirm no need to run on removals
-    typeNames: [createOrderTypeName(typeName)],
-    func: instance => {
-      instance.value[orderFieldName] = (instance.value.active ?? [])
-        .concat(instance.value.inactive ?? [])
-    },
-  }),
-  onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON reverse
-    changes,
-    typeNames: [createOrderTypeName(typeName)],
-    func: instance => {
-      delete instance.value[orderFieldName]
-    },
-  }),
-  deploy: async (changes: Change<InstanceElement>[]) => {
-    const orderTypeName = createOrderTypeName(typeName)
-    const [relevantChanges, leftoverChanges] = _.partition(
-      changes,
-      change => getChangeData(change).elemID.typeName === orderTypeName,
-    )
-    if (relevantChanges.length === 0) {
-      return {
-        deployResult: { appliedChanges: [], errors: [] },
-        leftoverChanges,
-      }
-    }
-    try {
-      if (relevantChanges.length > 1) {
-        const saltoError: SaltoError = {
-          message: `${orderTypeName} element is a singleton and should have only on instance. Found multiple: ${relevantChanges.length}`,
-          severity: 'Error',
-        }
-        throw saltoError // in try block
-      }
-      const [change] = relevantChanges
-      if (!isModificationChange(change)) {
-        throw createSaltoElementError({ // in try block
-          message: `only modify change is allowed on ${orderTypeName}. Found ${change.action} action`,
-          severity: 'Error',
-          elemID: getChangeData(change).elemID,
-        })
-      }
-      await deployFunc(change, client, config[API_DEFINITIONS_CONFIG])
-    } catch (err) {
-      if (!isSaltoError(err)) {
-        throw err
-      }
-      return {
-        deployResult: { appliedChanges: [], errors: [err] },
-        leftoverChanges,
-      }
-    }
-    return {
-      deployResult: { appliedChanges: relevantChanges, errors: [] },
-      leftoverChanges,
-    }
-  },
+  // onFetch: async (elements: Element[]): Promise<void> => {
+  //   const orderTypeName = createOrderTypeName(typeName)
+  //   const objType = elements
+  //     .filter(isObjectType)
+  //     .find(e => e.elemID.name === typeName)
+  //   if (objType === undefined) {
+  //     return
+  //   }
+  //   const instancesReferences = _.sortBy(
+  //     elements
+  //       .filter(isInstanceElement)
+  //       .filter(e => e.elemID.typeName === typeName),
+  //     ...iterateesToSortBy,
+  //   )
+  //     .map(inst => {
+  //       delete inst.value.position
+  //       return inst
+  //     })
+  //     .map(refInst => new ReferenceExpression(refInst.elemID, refInst)) // TODON can replace by ids and add a "standard" reference instead
+  //   const typeNameNaclCase = pathNaclCase(orderTypeName)
+  //   const type = new ObjectType({
+  //     elemID: new ElemID(ZENDESK, orderTypeName),
+  //     fields: {
+  //       active: {
+  //         refType: new ListType(BuiltinTypes.NUMBER),
+  //       },
+  //       inactive: {
+  //         refType: new ListType(BuiltinTypes.NUMBER),
+  //       },
+  //     },
+  //     isSettings: true,
+  //     path: [ZENDESK, TYPES_PATH, SUBTYPES_PATH, typeNameNaclCase],
+  //   })
+  //   const instance = new InstanceElement(
+  //     ElemID.CONFIG_NAME,
+  //     type,
+  //     activeFieldName
+  //       ? {
+  //         active: instancesReferences.filter(ref => ref.value.value[activeFieldName]),
+  //         inactive: instancesReferences.filter(ref => !ref.value.value[activeFieldName]),
+  //       }
+  //       : { active: instancesReferences },
+  //     [ZENDESK, RECORDS_PATH, SETTINGS_NESTED_PATH, typeNameNaclCase],
+  //   )
+  //   // Those types already exist since we added the empty version of them
+  //   //  via the add remaining types mechanism. So we first need to remove the old versions
+  //   _.remove(elements, element => element.elemID.isEqual(type.elemID))
+  //   elements.push(type, instance)
+  // },
+  // preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+  //   changes,
+  //   // TODON confirm no need to run on removals
+  //   typeNames: [createOrderTypeName(typeName)],
+  //   func: instance => {
+  //     instance.value[orderFieldName] = (instance.value.active ?? [])
+  //       .concat(instance.value.inactive ?? [])
+  //   },
+  // }),
+  // onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // TODON reverse
+  //   changes,
+  //   typeNames: [createOrderTypeName(typeName)],
+  //   func: instance => {
+  //     delete instance.value[orderFieldName]
+  //   },
+  // }),
+  // deploy: async (changes: Change<InstanceElement>[]) => {
+  //   const orderTypeName = createOrderTypeName(typeName)
+  //   const [relevantChanges, leftoverChanges] = _.partition(
+  //     changes,
+  //     change => getChangeData(change).elemID.typeName === orderTypeName,
+  //   )
+  //   if (relevantChanges.length === 0) {
+  //     return {
+  //       deployResult: { appliedChanges: [], errors: [] },
+  //       leftoverChanges,
+  //     }
+  //   }
+  //   try { // TODON just general safeties that only allow modification? check if can move to "standard" logic
+  //     if (relevantChanges.length > 1) {
+  //       const saltoError: SaltoError = { // TODON singleton error - reuse / see if handled by core?
+  //         message: `${orderTypeName} element is a singleton and should have only on instance. Found multiple: ${relevantChanges.length}`,
+  //         severity: 'Error',
+  //       }
+  //       throw saltoError // in try block
+  //     }
+  //     const [change] = relevantChanges
+  //     if (!isModificationChange(change)) {
+  //       throw createSaltoElementError({ // in try block
+  //         message: `only modify change is allowed on ${orderTypeName}. Found ${change.action} action`,
+  //         severity: 'Error',
+  //         elemID: getChangeData(change).elemID,
+  //       })
+  //     }
+  //     await deployFunc(change, client, config[API_DEFINITIONS_CONFIG])
+  //   } catch (err) {
+  //     if (!isSaltoError(err)) {
+  //       throw err
+  //     }
+  //     return {
+  //       deployResult: { appliedChanges: [], errors: [err] },
+  //       leftoverChanges,
+  //     }
+  //   }
+  //   return {
+  //     deployResult: { appliedChanges: relevantChanges, errors: [] },
+  //     leftoverChanges,
+  //   }
+  // },
 })
 
 const idsAreNumbers = (ids: unknown): ids is number[] => (

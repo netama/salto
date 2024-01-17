@@ -217,7 +217,7 @@ export const articleBodyOnFetch = (elements: Element[], config: ZendeskConfig): 
  * Process body value in article translation instances to reference other objects
  */
 const filterCreator: FilterCreator = ({ config }) => {
-  const deployTemplateMapping: Record<string, TemplateExpression> = {}
+  // const deployTemplateMapping: Record<string, TemplateExpression> = {}
   return {
     name: 'articleBodyFilter',
     onFetch: async (elements: Element[]) => {
@@ -226,31 +226,32 @@ const filterCreator: FilterCreator = ({ config }) => {
       }
       return articleBodyOnFetch(elements, config) // custom
     },
-    preDeploy: changes => applyInPlaceforInstanceChangesOfType({
-      changes,
-      typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
-      func: instance => {
-        try {
-          replaceTemplatesWithValues( // templates
-            { values: [instance.value], fieldName: 'body' },
-            deployTemplateMapping,
-            prepRef,
-          )
-        } catch (e) {
-          log.error(`Error serializing article translation body in deployment for ${instance.elemID.getFullName()}: ${e}, stack: ${e.stack}`)
-        }
-      },
-    }),
-    onDeploy: changes => applyInPlaceforInstanceChangesOfType({
-      changes,
-      typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
-      func: instance => {
-        resolveTemplates(
-          { values: [instance.value], fieldName: 'body' },
-          deployTemplateMapping,
-        )
-      },
-    }),
+    // replaced by deploy config as articleBodyPrepRef
+    // preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    //   changes,
+    //   typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
+    //   func: instance => {
+    //     try {
+    //       replaceTemplatesWithValues( // templates
+    //         { values: [instance.value], fieldName: 'body' },
+    //         deployTemplateMapping,
+    //         prepRef,
+    //       )
+    //     } catch (e) {
+    //       log.error(`Error serializing article translation body in deployment for ${instance.elemID.getFullName()}: ${e}, stack: ${e.stack}`)
+    //     }
+    //   },
+    // }),
+    // onDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    //   changes,
+    //   typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
+    //   func: instance => {
+    //     resolveTemplates(
+    //       { values: [instance.value], fieldName: 'body' },
+    //       deployTemplateMapping,
+    //     )
+    //   },
+    // }),
   }
 }
 

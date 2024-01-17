@@ -20,7 +20,7 @@ import { createConfigType, ConfigTypeCreator } from '@salto-io/adapter-creator'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 
 // TODON add oauth support separately + allow additional params
-type AuthConfig = {
+type AuthDefinitions = {
   type: 'custom' | 'basic' // TODON add oauth
   // TODON formalize basic language and placeholders
   headers?: Record<string, string>
@@ -40,12 +40,12 @@ type CredentialsConfig = {
 }
 
 export type Config = adapterCreator.Config & {
-  client: clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig> & { auth: AuthConfig }
+  client: clientUtils.ClientBaseConfig<clientUtils.ClientRateLimitConfig> & { auth: AuthDefinitions }
   credentials?: CredentialsConfig // TODON use to validate input?
 }
 
 const createAuthConfigType = ({ adapterName }: { adapterName: string }): ObjectType => {
-  const authConfigType = createMatchingObjectType<AuthConfig>({
+  const authConfigType = createMatchingObjectType<AuthDefinitions>({
     elemID: new ElemID(adapterName, 'authConfig'),
     fields: {
       type: {

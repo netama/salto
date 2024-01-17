@@ -66,6 +66,8 @@ export type RecurseIntoConfig = {
 type BaseRequestConfig = {
   url: string
   queryParams?: Record<string, string>
+  // default 'get', TODON add warning for non-get fetch
+  method?: 'get' | 'post' | 'put' | 'delete' | 'patch' | 'head'
 }
 
 export type FetchRequestConfig = BaseRequestConfig & {
@@ -84,12 +86,16 @@ export type UrlParams = Record<string, string>
 export type DeployRequestConfig = BaseRequestConfig & {
   urlParamsToFields?: UrlParams
   deployAsField?: string
-  method: 'post' | 'put' | 'delete' | 'patch'
   fieldsToIgnore?: string[]
   omitRequestBody?: boolean
+  // TODON generalize and use as context for next request?
+  // TODON maybe need functions as well?
+  responseFieldsToExtract?: string[]
 }
 
-export type DeploymentRequestsByAction<A extends string = ActionName> = Partial<Record<A, DeployRequestConfig>>
+// TODON finish converting to array
+export type DeploymentRequestsByAction<A extends string = ActionName> = Partial<
+  Record<A, DeployRequestConfig | DeployRequestConfig[]>>
 
 export type FetchRequestDefaultConfig = Partial<Omit<FetchRequestConfig, 'url'>>
 

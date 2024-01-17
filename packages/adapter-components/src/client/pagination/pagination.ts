@@ -226,17 +226,20 @@ export const defaultPathChecker: PathCheckerFunc = (
  * as either a full URL or just the path and query prameters.
  * Only supports next pages under the same endpoint (and uses the same host).
  */
-export const getWithCursorPagination = (pathChecker = defaultPathChecker): PaginationFunc => {
+// TODON adjust input format
+export const getWithCursorPagination = (
+  pathChecker = defaultPathChecker, defaultPaginationField?: string,
+): PaginationFunc => {
   const nextPageCursorPages: PaginationFunc = ({
     responseData, getParams, currentParams,
   }) => {
-    const { paginationField, url } = getParams
+    const { url } = getParams
+    const paginationField = getParams.paginationField ?? defaultPaginationField
     if (paginationField !== undefined) {
       const nextPagePath = _.get(responseData, paginationField)
       if (_.isString(nextPagePath)) {
         const nextPage = new URL(nextPagePath, 'http://localhost')
         if (!pathChecker(url, nextPage.pathname)) {
-          log.error('unexpected next page received for endpoint %s params %o: %s', url, currentParams, nextPage.pathname)
           throw new Error(`unexpected next page received for endpoint ${url}: ${nextPage.pathname}`)
         }
         return [{

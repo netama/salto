@@ -16,6 +16,7 @@
 export * as auth from './src/auth'
 export * as client from './src/client'
 export * as config from './src/config'
+export * as definitions from './src/definitions'
 export * as deployment from './src/deployment'
 export * as elements from './src/elements'
 export * as filters from './src/filters'

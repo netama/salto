@@ -80,7 +80,6 @@ import viewFilter from './filters/view'
 import workspaceFilter from './filters/workspace'
 import ticketFormOrderFilter from './filters/reorder/ticket_form'
 import userFieldOrderFilter from './filters/reorder/user_field'
-import organizationFieldOrderFilter from './filters/reorder/organization_field'
 import workspaceOrderFilter from './filters/reorder/workspace'
 import slaPolicyOrderFilter from './filters/reorder/sla_policy'
 import automationOrderFilter from './filters/reorder/automation'
@@ -170,18 +169,22 @@ const DEFAULT_FILTERS = [
   // ticketStatusCustomStatusDeployFilter, // replaced by config
   ticketFieldFilter, // RUNS ON ticekt_field + options
   userFieldFilter, // RUNS ON user_field + options
-  viewFilter, // RUNS ON view
-  workspaceFilter, // RUNS ON workspace
-  ticketFormOrderFilter, // RUNS ON ticket_form + order?
-  userFieldOrderFilter, // RUNS ON user_field + order?
-  organizationFieldOrderFilter, // RUNS ON organization + order?
-  workspaceOrderFilter, // RUNS ON workspace + order?
-  slaPolicyOrderFilter, // RUNS ON sla_policy + order?
-  automationOrderFilter, // RUNS ON automation + order?
-  triggerOrderFilter, // RUNS ON trigger + order?
-  viewOrderFilter, // RUNS ON view + order?
-  businessHoursScheduleFilter, // RUNS ON business_hours_schedule
-  accountSettingsFilter, // RUNS ON account_settings
+  // viewFilter, // RUNS ON view
+  // workspaceFilter, // RUNS ON workspace
+
+  // TODON handled deploy (except trigger), still need to handle fetch
+  // ticketFormOrderFilter, // RUNS ON ticket_form + order?
+  // userFieldOrderFilter, // RUNS ON user_field + order?
+  // organizationFieldOrderFilter, // RUNS ON organization + order?
+  // workspaceOrderFilter, // RUNS ON workspace + order?
+  // slaPolicyOrderFilter, // RUNS ON sla_policy + order?
+  // automationOrderFilter, // RUNS ON automation + order?
+  // triggerOrderFilter, // RUNS ON trigger + order?
+  // viewOrderFilter, // RUNS ON view + order?
+  // end of order instances
+
+  // businessHoursScheduleFilter, // RUNS ON business_hours_schedule
+  // accountSettingsFilter, // RUNS ON account_settings
   dynamicContentFilter, // RUNS ON dynamic_content_item + variants
   restrictionFilter,
   organizationFieldFilter, // RUNS ON organization_field + options
@@ -197,7 +200,7 @@ const DEFAULT_FILTERS = [
   supportAddress, // RUNS ON support_address
   customStatus, // RUNS ON custom_status, default_custom_statuses
   guideAddBrandToArticleTranslation,
-  macroFilter, // RUNS ON macro
+  // macroFilter, // RUNS ON macro
   macroAttachmentsFilter, // RUNS ON macro, macro_attachment
   ticketFormDeploy, // RUNS ON ticket_form
   customRoleDeployFilter, // RUNS ON custom_role
@@ -229,10 +232,10 @@ const DEFAULT_FILTERS = [
   listValuesMissingReferencesFilter,
   appInstallationsFilter, // RUNS ON app_installation
   appOwnedConvertListToMapFilter,
-  slaPolicyFilter, // RUNS ON sla_policy
+  // slaPolicyFilter, // RUNS ON sla_policy
   routingAttributeValueDeployFilter, // RUNS ON routing_attribute_value
   addFieldOptionsFilter, // RUNS ON organization_field, user_field
-  webhookFilter, // RUNS ON webhook
+  // webhookFilter, // RUNS ON webhook
   // unorderedListsFilter should run after fieldReferencesFilter
   unorderedListsFilter,
   dynamicContentReferencesFilter, // RUNS ON everything
@@ -249,7 +252,7 @@ const DEFAULT_FILTERS = [
   handleIdenticalAttachmentConflicts,
   omitCollisionFilter, // needs to be after referencedIdFieldsFilter (which is part of the common filters)
   guideArrangePaths,
-  hideAccountFeatures,
+  // hideAccountFeatures,
   fetchCategorySection, // need to be after arrange paths as it uses the 'name'/'title' field
   addImportantValuesFilter,
   // defaultDeployFilter should be last!

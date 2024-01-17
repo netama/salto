@@ -18,10 +18,6 @@ import { ElemID, CORE_ANNOTATIONS, BuiltinTypes, ListType } from '@salto-io/adap
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { client as clientUtils, config as configUtils, elements } from '@salto-io/adapter-components'
 import {
-  ARTICLE_ATTACHMENT_TYPE_NAME,
-  ARTICLE_ORDER_TYPE_NAME,
-  CATEGORY_ORDER_TYPE_NAME,
-  SECTION_ORDER_TYPE_NAME,
   ZENDESK,
 } from './constants'
 

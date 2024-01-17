@@ -40,7 +40,7 @@ export type Config = { // TODON generalize? keep client config
   [FETCH_CONFIG]: configUtils.UserFetchConfig
   [API_COMPONENTS_CONFIG]: configUtils.ApiComponentsConfig // TODON update
   [DEPLOY_CONFIG]?: configUtils.UserDeployConfig
-  [REFERENCES_CONFIG]?: configUtils.ReferencesConfig
+  [REFERENCES_CONFIG]?: configUtils.ReferenceDefinitions
 }
 
 const createChangeValidatorConfigType = <ChangeValidatorName extends string>({ adapterName, changeValidatorNames }: {
@@ -102,7 +102,7 @@ export const createConfigType: ConfigTypeCreator = ({
   },
 })
 
-export const extendApiDefinitionsFromSwagger = (
+export const extendApiDefinitionsFromSwagger = ( // TODON move to util
   userConfig: Config,
   parsedConfigs?: Record<string, configUtils.RequestableTypeSwaggerConfig>,
 ): configUtils.AdapterApiConfig => {

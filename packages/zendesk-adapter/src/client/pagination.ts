@@ -17,9 +17,10 @@ import { client as clientUtils } from '@salto-io/adapter-components'
 
 const { getWithCursorPagination } = clientUtils
 
-const pathChecker: clientUtils.PathCheckerFunc = (current, next) => (
+// TODON move?
+export const pathChecker: clientUtils.PathCheckerFunc = (current, next) => (
   next === `${current}.json` || next === `${current}`
 )
 export const paginate: clientUtils.PaginationFuncCreator = () => (
-  getWithCursorPagination(pathChecker)
+  getWithCursorPagination(pathChecker, 'next_page') // TODON remove (added the extra arg)
 )
