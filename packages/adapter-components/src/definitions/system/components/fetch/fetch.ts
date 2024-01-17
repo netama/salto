@@ -15,23 +15,21 @@
 */
 
 import { DefaultWithCustomizations } from '../../shared'
-import { HTTPRequestDefinition } from './request'
+import { FetchResourceDefinition } from './resource'
 import { FetchTransformationDefinition } from './transformation'
 
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
-export type InstanceFetchApiDefinitions<ClientOptions extends string> = {
+export type InstanceFetchApiDefinitions = {
   isTopLevel: boolean
-  // by default, will contain all requests that list this type as responseExtractors in a responseExtractor
-  // if need more logic / dependencies, can customize
-  // TODON default name is bulk if only one? or doesn't matter?
-  requests?: DefaultWithCustomizations<HTTPRequestDefinition<ClientOptions>>
-  transformation?: FetchTransformationDefinition
+  resource?: FetchResourceDefinition
+  instance?: FetchTransformationDefinition // TODON rename type defs as well everywhere (instance or element?)
 }
 
-export type FetchApiDefinitions<ClientOptions extends string> = {
+// TODON decide if should be here, or next to the implementation (under fetch)?
+export type FetchApiDefinitions = {
   // // to allow fetching modules separately? e.g. zendesk guide can have its own fetch config?
   // // e.g. subdomain, brand id (to mark as parent)
   // initialContext: Record<string, Value>
 
-  instances: DefaultWithCustomizations<InstanceFetchApiDefinitions<ClientOptions>>
+  instances: DefaultWithCustomizations<InstanceFetchApiDefinitions>
 }

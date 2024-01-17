@@ -13,10 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 
-export const transformValue: definitions.fetch.TransformValueFunc = value => {
+export const transform: definitions.fetch.ResourceTransformFunc = ({ value }) => {
   const startYear = value.start_date?.split('-')[0]
   const endYear = value.end_date?.split('-')[0]
   return {

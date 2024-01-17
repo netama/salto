@@ -14,9 +14,11 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import { collections } from '@salto-io/lowerdash'
 import { definitions } from '@salto-io/adapter-components'
+import { Values } from '@salto-io/adapter-api'
 
-type OrderInstanceTransform = (activeFieldName?: string) => definitions.fetch.TransformValueFunc
+type OrderInstanceTransform = (activeFieldName?: string) => definitions.fetch.ResourceTransformFunc
 
 const toId = (value: { id: string | number }): string | number => value.id
 
@@ -27,7 +29,7 @@ const toId = (value: { id: string | number }): string | number => value.id
  * - the ids will be converted to references in the reference filter
  * @param activeFieldName The field determining whether an item is active or not in the type
  */
-export const toOrderValue: OrderInstanceTransform = activeFieldName => value => {
+export const toOrderValue: OrderInstanceTransform = activeFieldName => ({ value }) => {
   // TODON add typeguard - pair with each extractor/transform function, and then list them for "easy" use?
   // can have an empty schema in order to skip validation, but require adding something?
   const { items } = value
@@ -40,28 +42,25 @@ export const toOrderValue: OrderInstanceTransform = activeFieldName => value => 
   }
   const [active, inactive] = _.partition(items, val => val[activeFieldName]).map(group => group.map(toId))
 
-  return {
-    active,
-    inactive,
-  }
+  return { active, inactive }
 }
 
-// TODON improve types
-const toTriggersByCategory: definitions.fetch.TransformValueFunc = value => {
+const toTriggersByCategory = ({ value }: { value: Values }): Values => {
   // TODON add typeguard, make sure category_id is always defined
-  const { items } = value
+  const { items } = value // TODON adjust, didn't update
   const triggersByCategory = _.groupBy(items, ref => ref.value.category_id)
-  return _.mapValues(triggersByCategory, group => toOrderValue('active')({ items: group }))
+  // TODON passing empty fragments is a bit of a hack, decide if ok
+  return _.mapValues(triggersByCategory, group => toOrderValue('active')({ value: { items: group }, fragments: [] }))
 }
 
-export const toTriggerOrderValue: definitions.fetch.TransformValueFunc = value => {
+export const toTriggerOrderValue: definitions.fetch.ResourceTransformFunc = ({ value }) => {
   // TODON add typeguard!
-  const { triggers } = value
-  const categories = toTriggersByCategory(value)
+  const categories = collections.array.makeArray(value.categories) // TODON won't be needed if have scheme guard
+  const triggersByCategory = toTriggersByCategory({ value }) // TODON categories?
   return {
     order: categories.map(category => ({
       category,
-      ...triggers[category],
+      ...triggersByCategory[category],
     })),
   }
 }

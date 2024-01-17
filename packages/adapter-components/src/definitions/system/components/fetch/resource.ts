@@ -13,10 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { Values } from '@salto-io/adapter-api'
+import { ArgsWithCustomizer, ContextParams, GeneratedItem } from '../../shared'
 
-import { types } from '@salto-io/lowerdash'
-import { ArgsWithCustomizer, ContextParams } from '../../shared'
-import { HTTPEndpointIdentifier } from '../../requests'
+export type ResourceTransformFunc = (args: {
+  value: Values
+  fragments: GeneratedItem[]
+}) => Values
+
+export type Resource = {
+  typeName: string
+  serviceID: Record<string, string | number>
+  value: Values
+}
+
 
 type DependsOnDefinition = {
   // if the dependency is on a type from another component, it should be mentioned explicitly
@@ -63,29 +73,30 @@ type RecurseIntoDefinition = {
 
 type RecurseIntoByField = Record<string, RecurseIntoDefinition>
 
-export type HTTPRequest<ClientOptions extends string> = {
-  // which client to use - when missing, assume default client
-  client?: ClientOptions // TODON template arg based on supported clients in adapter
-  // TODON default get - warn when other than get/head?
-  endpoint: types.PickyRequired<Partial<HTTPEndpointIdentifier>, 'path'>
+// TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
+export type FetchResourceDefinition = ArgsWithCustomizer<
+  Resource[], // TODON divide into type elements and instance elements?
+  {
+    // TODON make sure to also mark the fields
+    serviceIDFields?: string[]
 
-  // context arg name to type info
-  // no need to specify context received from a parent's recurseInto context
-  // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
-  // TODON if multiple params from the same type, assume from same instance? (e.g. zendesk guide)
-  context?: ContextParamDefinitions
-  // TODON maybe add later - a way to pass filtering info throughout the pipeline
-  // to allow for earlier filtering in/out e.g. by name/active
-  // filtering?: ContextParamDefinitions
-  onlyForContext?: boolean // TODON see if needed or if can conclude (based on dependsOn etc)
-  toNestedPath?: string
+    // context arg name to type info
+    // no need to specify context received from a parent's recurseInto context
+    // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
+    // TODON if multiple params from the same type, assume from same instance? (e.g. zendesk guide)
+    context?: ContextParamDefinitions
 
-  // target field name to type info
-  // should be used to add nested fields containing other fetched types' responses (after the response was received)
-  recurseInto?: RecurseIntoByField
-}
+    // target field name to type info
+    // should be used to add nested fields containing other fetched types' responses (after the response was received)
+    recurseInto?: RecurseIntoByField
 
-export type HTTPRequestDefinition<ClientOptions extends string> = ArgsWithCustomizer<
-  HTTPRequest<ClientOptions>,
-  HTTPRequest<ClientOptions>
+    // when the value is constructed based on multiple fragments,
+    // decide how to combine the values
+    // default: merge (TODON by what order? alphabetically by endpoint name?)
+    transform?: ResourceTransformFunc
+
+    // TODON not adding for now, see if can avoid with field type overrides since only applies to child types
+    // sourceTypeName?: string
+  },
+  GeneratedItem[] // TODON not sure about type?
 >

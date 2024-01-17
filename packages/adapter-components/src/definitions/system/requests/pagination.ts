@@ -18,7 +18,7 @@ import { PaginationFunc } from '../../../client'
 
 // TODON decide if should move a level up to match the api.ts structure?
 
-export type PaginationConfig = { // TODON rename all XConfig to XDef / XDefinition
+export type PaginationDefinitions = {
   func: PaginationFunc // TODON should probably adjust + have headers / query args / params
   clientArgs?: {
     headers?: Record<string, string>

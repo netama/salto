@@ -31,6 +31,9 @@ export type RESTApiClientDefinition<PaginationOptions extends string> = {
   //   params?: Record<string, Values>
   // }
   endpoints: EndpointByPathAndMethod<PaginationOptions>
+  // when true, only the defined endpoints are supported. when false, unknown endpoints are supported with the default config
+  // TODON extend to allowed patterns by method and path instead?
+  strict: boolean
 }
 
 // TODON expand to other client types

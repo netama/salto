@@ -32,7 +32,7 @@ export type UserFetchConfig<T extends Record<string, unknown> | undefined = Defa
   include: FetchEntry<T>[]
   exclude: FetchEntry<T>[]
   hideTypes?: boolean
-  asyncPagination?: boolean
+  asyncPagination?: boolean // TODON move back in?
 }
 
 export type UserDeployConfig = {

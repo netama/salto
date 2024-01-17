@@ -15,5 +15,5 @@
 */
 
 export { FetchApiDefinitions } from './fetch'
-export { HTTPRequestDefinition, HTTPRequest, ContextParamDefinitions } from './request'
-export { ElementFieldCustomization, FieldIDPart, TransformValueFunc } from './transformation'
+export { Resource, ResourceTransformFunc, ContextParamDefinitions } from './resource'
+export { ElementFieldCustomization, FieldIDPart } from './transformation'

@@ -16,7 +16,6 @@
 import { definitions } from '@salto-io/adapter-components'
 import { EVERYONE_USER_TYPE } from '../../../../constants'
 import { DEFAULT_ID_PARTS, DEFAULT_FIELD_CUSTOMIZATIONS, NAME_ID_FIELD } from '../../support/fetch/shared'
-import { ClientOptions } from '../../../requests'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
@@ -37,17 +36,19 @@ const BRAND_CONTEXT: definitions.fetch.ContextParamDefinitions = {
   },
 }
 
-export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOptions> = {
+export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions = {
   instances: {
     default: {
-      requests: {
-        default: {
-          client: 'by_brand',
-        },
-      },
-      transformation: {
-        elemID: { parts: DEFAULT_ID_PARTS },
+      // requests: {
+      //   default: {
+      //     client: 'by_brand', // TODON make sure guaranteed to go to correct client
+      //   },
+      // },
+      resource: {
         serviceIDFields: ['id'],
+      },
+      instance: {
+        elemID: { parts: DEFAULT_ID_PARTS },
         fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
         path: { nestUnderParent: true },
       },
@@ -56,12 +57,12 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       // top-level, independent, global
       permission_group: {
         isTopLevel: true,
-        requests: {
-          default: {
-            client: 'global',
-          },
-        },
-        transformation: {
+        // requests: {
+        //   default: {
+        //     client: 'global',
+        //   },
+        // },
+        instance: {
           elemID: { parts: DEFAULT_ID_PARTS },
           fieldCustomizations: {
             id: {
@@ -74,12 +75,12 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       user_segment: {
         isTopLevel: true,
-        requests: {
-          default: {
-            client: 'global',
-          },
-        },
-        transformation: {
+        // requests: {
+        //   default: {
+        //     client: 'global',
+        //   },
+        // },
+        instance: {
           elemID: { parts: DEFAULT_ID_PARTS },
           fieldCustomizations: {
             id: {
@@ -103,12 +104,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       // top-level, independent (except for dependency on brand) - TODON formalize!
       guide_settings: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [BRAND_ID_PART],
           },
@@ -122,12 +121,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       guide_language_settings: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               BRAND_ID_PART,
@@ -139,12 +136,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       category: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               NAME_ID_FIELD,
@@ -178,12 +173,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       section: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               NAME_ID_FIELD,
@@ -230,25 +223,23 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       article: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: { // TODON make sure context is aggregated from "parent" endpoint (category)
-              category_id: {
-                typeName: 'category',
-                fieldName: 'id',
-              },
+        resource: {
+          context: { // TODON make sure context is aggregated from "parent" endpoint (category)
+            category_id: {
+              typeName: 'category',
+              fieldName: 'id',
             },
-            recurseInto: {
-              attachments: {
-                type: 'article_attachment',
-                context: {
-                  article_id: 'id',
-                },
+          },
+          recurseInto: {
+            attachments: {
+              type: 'article_attachment',
+              context: {
+                article_id: 'id',
               },
             },
           },
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               { fieldName: 'title' },
@@ -303,12 +294,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       // decide if should implement here or still in filter - probably here (similar to other order items)?
       category_order: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [],
             extendsParent: true,
@@ -317,12 +306,10 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       section_order: {
         isTopLevel: true,
-        requests: {
-          default: {
-            context: BRAND_CONTEXT,
-          },
+        resource: {
+          context: BRAND_CONTEXT,
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [],
             extendsParent: true,
@@ -332,7 +319,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       article_order: { // TODON define similarly to support order instances (as a "side-effect" of another request)
         isTopLevel: true,
         // TODON assuming context not needed since inherited from parent for endpoint? but not implemented yet...
-        transformation: {
+        instance: {
           elemID: {
             parts: [],
             extendsParent: true,
@@ -344,7 +331,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       category_translation: {
         // TODON had dataField: 'translations' but probably not in use anymore?
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'locale', isReference: true }],
@@ -379,7 +366,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       section_translation: {
         // TODON had { dataField: 'translations' } but probably not in use anymore?
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'locale', isReference: true }],
@@ -414,7 +401,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       article_translation: {
         // TODON had { dataField: 'translations' } but probably not in use anymore?
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'locale', isReference: true }],
@@ -451,7 +438,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       article_attachment: {
         isTopLevel: true,
         // TODON ensure context is passed from parent
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [
@@ -497,7 +484,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       // inner types
       guide_settings__help_center: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             feature_restrictions: { // TODON move to omit in endpoint
               omit: true, // omitted as it does not impact deploy? (TODON confirm?)
@@ -507,7 +494,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       guide_settings__help_center__settings: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               omit: true,
@@ -535,7 +522,7 @@ export const GUIDE_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOpt
       },
       guide_settings__help_center__text_filter: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               omit: true,

@@ -16,18 +16,17 @@
 import { types } from '@salto-io/lowerdash'
 import { Change, InstanceElement } from '@salto-io/adapter-api'
 import { ArgsWithCustomizer, ContextParams, ExtractionDefinitions } from '../../shared'
-import { HTTPEndpointIdentifier } from '../../requests'
+import { HTTPEndpointAndClientIdentifier } from '../../requests'
 
 export type ContextParamDefinitions = ArgsWithCustomizer<ContextParams, ContextParams>
 
 // export type HTTPRequest = HTTPEndpointIdentifier & {
-//   transformation?: ExtractionDefinitions // TODON rename types, use the same in fetch
+//   transformation?: ExtractionDefinitions // TODON rename types, use the same in fetch - instance?
 //   // context?: ContextParamDefinitions // TODON if not here, later need to align fetch
 // }
 // TODON experimenting with flattening for simplicity (but check customization!)
 export type HTTPRequest<ClientOptions extends string> = types.XOR<
-  HTTPEndpointIdentifier
-  & { client?: ClientOptions }
+  HTTPEndpointAndClientIdentifier<ClientOptions>
   & ExtractionDefinitions<{ change: Change<InstanceElement> }>,
   // TODON add a warning for changes matching this?
   { succeedWithoutRequest: true }

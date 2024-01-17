@@ -14,9 +14,10 @@
 * limitations under the License.
 */
 import { types } from '@salto-io/lowerdash'
-import { FieldDefinition, RestrictionAnnotationType, Values } from '@salto-io/adapter-api'
+import { FieldDefinition, RestrictionAnnotationType } from '@salto-io/adapter-api'
 import { NameMappingOptions } from '../../../../config/transformation' // TODON move
-import { ArgsWithCustomizer, GeneratedItem } from '../../shared'
+import { ArgsWithCustomizer } from '../../shared'
+import { Resource } from './resource'
 
 export type FieldIDPart = ArgsWithCustomizer<
   string | undefined,
@@ -63,17 +64,13 @@ type ElemIDOrSingleton = types.XOR<
   }
 >
 
-export type TransformValueFunc = (value: Values) => Values
-
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
 export type FetchTransformationDefinition = ArgsWithCustomizer<
   Element[], // TODON divide into type elements and instance elements?
   {
-    // additional manipulation of the value before creating the instance
-    transformValue?: TransformValueFunc // TODON slightly misaligned types, see if can improve
-    serviceIDFields?: string[] // TODON inherit from resource? since maybe not only top-level
     elemID?: ElemIDOrSingleton
     path?: { // instead of fileName
+      // Shir: in JSM object types, the "parent" might be another field (also in workato...)
       nestUnderParent?: boolean // TODON may need two booleans to decide if to create the parent's folder or not?
       alwaysCreateFolder?: boolean
       // when missing, inherited from elemID
@@ -94,5 +91,5 @@ export type FetchTransformationDefinition = ArgsWithCustomizer<
     // TODON adding for now, see if can avoid with field type overrides
     // sourceTypeName?: string
   },
-  GeneratedItem[] // TODON not sure about type?
+  Resource[]
 >

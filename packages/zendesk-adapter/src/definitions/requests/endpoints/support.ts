@@ -17,9 +17,6 @@ import { definitions } from '@salto-io/adapter-components'
 import { PAGE_SIZE } from '../../../config'
 import { PaginationOptions } from '../pagination'
 
-// TODON should move to client folder!
-// TODON and also fetch and deploy should move to dedicated folders?
-
 // TODON add option to "normalize" endpoints to use generic params (e.g. id, parent_id)
 // without losing the original - either when loading the swagger add a mapping, or add a "matched_endpoints" arg here?
 // hiding this when lodaing is probably better, similarly to cloned types?
@@ -156,7 +153,7 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           { // TODON example of a type getting values from multiple extractors and depending on all of them
             root: 'trigger_categories',
             toType: 'trigger_order',
-            aggregate: {
+            aggregate: { // TODON maybe not needed if removing this?
               sortBy: [
                 { fieldName: 'position' },
               ],
@@ -184,6 +181,9 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
                 { fieldName: 'title' },
               ],
             },
+            // TODON this one is a singleton so it's ok - usually we'd want to group by the service id(s),
+            // so we'd probably want them to be in the "response" value we pass on
+            // (and they'll need to overlap between the different parts)
             nestUnderField: 'items',
           },
         ],

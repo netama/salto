@@ -15,4 +15,4 @@
 */
 
 export { toOrderValue, toTriggerOrderValue } from './order'
-export { transformValue as transformBusinessHoursSchedule } from './business_hours_schedule'
+export { transform as transformBusinessHoursSchedule } from './business_hours_schedule'

@@ -59,6 +59,12 @@ export type ExtractionParams<TContext = ContextParams> = {
     TContext
   >
   toType?: string // TODON not needed in deploy change-to-request, decide if worth customizing
+
+  // the default identifier of this fragment is determined by the resulting value's service id
+  // if a different one is needed, it can be customized here
+  // TODON define function if/when needed (similarly to transform?)
+  // identifier?: IdentifierFunction
+
   nestUnderField?: string // TODON replaces deployAsField
   // default false, set to true to view all responses from all pages combined
   aggregate?: {

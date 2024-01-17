@@ -61,6 +61,9 @@ export type InstanceDeployApiDefinitions<
 
 export type DeployApiDefinitions<Action extends string, ClientOptions extends string> = {
   // TODON requests will move inside client since dependent on endpoint
+  // TODON allow to "view" the rest of the plan's changes (should change in the context core passes to the adapter),
+  // and not only the change group, to allow depending on changes in other groups and splitting the groups better?
+  // e.g. modify-instead-of-add if the parent implicitly created the child?
   instances: DefaultWithCustomizations<InstanceDeployApiDefinitions<Action, ClientOptions>> // TODON elements or changes?
   // TODON default MUST be shared across components, because we don't know how to pick it - unless ****requiring an entry*****?
 }

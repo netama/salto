@@ -26,6 +26,11 @@ export type HTTPEndpointIdentifier = {
   method: HTTPMethod
 }
 
+// TODON decide if needed - if enforcing no overlap between clients might be redundant
+export type HTTPEndpointAndClientIdentifier<ClientOptions extends string> = HTTPEndpointIdentifier & {
+  client?: ClientOptions
+}
+
 // TODON avoid having to write everything explicitly, and assume exists by default?
 
 export type HTTPEndpointDetails<PaginationOptions extends string> = {
@@ -52,6 +57,7 @@ export type HTTPEndpointDetails<PaginationOptions extends string> = {
   // input?: ContextParams // TODON arg name -> arg type?
 
   readonly?: boolean // safe for fetch
+  // TODON check if needs to also map to a component? (supposed to be unique so hopefully not)
   responseExtractors?: ExtractionDefinitions[]
 }
 

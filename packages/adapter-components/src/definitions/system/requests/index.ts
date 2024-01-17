@@ -15,5 +15,5 @@
 */
 
 export { ApiClientDefinition } from './client'
-export { HTTPEndpointIdentifier, HTTPEndpoint, HTTPMethod, EndpointByPathAndMethod, HTTPEndpointDetails } from './endpoint'
+export { HTTPEndpointIdentifier, HTTPEndpointAndClientIdentifier, HTTPEndpoint, HTTPMethod, EndpointByPathAndMethod, HTTPEndpointDetails } from './endpoint'
 export { PaginationDefinitions } from './pagination'

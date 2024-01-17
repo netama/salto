@@ -14,24 +14,20 @@
 * limitations under the License.
 */
 import { definitions } from '@salto-io/adapter-components'
-import * as transforms from './transforms'
+import * as transforms from './transforms' // TODON split better...
 import { DEFAULT_FIELDS_TO_HIDE, DEFAULT_FIELD_CUSTOMIZATIONS, DEFAULT_ID_PARTS, NAME_ID_FIELD } from './shared'
-import { ClientOptions } from '../../../requests'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
 
-export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientOptions> = {
+export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions = {
   instances: {
     default: {
-      requests: {
-        default: {
-          client: 'global',
-        },
-      },
-      transformation: {
-        elemID: { parts: DEFAULT_ID_PARTS },
+      resource: {
         serviceIDFields: ['id'],
+      },
+      instance: {
+        elemID: { parts: DEFAULT_ID_PARTS },
         fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
         path: { nestUnderParent: true },
       },
@@ -40,7 +36,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       // top-level, independent
       account_features: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             singleton: true,
           },
@@ -49,7 +45,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       account_setting: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             singleton: true,
           },
@@ -63,7 +59,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       trigger_definition: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             singleton: true,
           },
@@ -79,7 +75,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
         isTopLevel: true,
         // tags are created by a filter (but need to be able to exclude), do nothing
         // old comment: placeholder for config validation (the type is created by a filter)
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'string',
@@ -89,7 +85,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       group: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -101,7 +97,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       resource_collection: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -112,7 +108,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       monitored_twitter_handle: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -123,7 +119,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       api_token: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [{ fieldName: 'description' }],
           },
@@ -138,7 +134,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       oauth_token: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               { fieldName: 'client_id', isReference: true },
@@ -156,7 +152,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       oauth_client: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [{ fieldName: 'identifier' }],
           },
@@ -179,7 +175,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       oauth_global_client: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -190,7 +186,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       webhook: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -208,7 +204,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       sharing_agreement: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -227,7 +223,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       app_installation: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               { fieldName: 'settings.name' },
@@ -248,7 +244,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       app_owned: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -263,7 +259,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       support_address: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               NAME_ID_FIELD,
@@ -306,17 +302,15 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       custom_object: {
         isTopLevel: true,
-        requests: {
-          default: {
-            recurseInto: {
-              custom_object_fields: {
-                type: 'custom_object_field',
-                context: { custom_object_key: 'key' },
-              },
+        resource: {
+          recurseInto: {
+            custom_object_fields: {
+              type: 'custom_object_field',
+              context: { custom_object_key: 'key' },
             },
           },
         },
-        transformation: {
+        instance: {
           elemID: {
             parts: [{ fieldName: 'key' }],
           },
@@ -349,7 +343,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       custom_status: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               { fieldName: 'status_category' },
@@ -382,7 +376,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       workspace: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -395,7 +389,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       locale: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [{ fieldName: 'locale' }],
           },
@@ -409,7 +403,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       brand: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -431,7 +425,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       ticket_form: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -449,7 +443,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       target: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             parts: [
               { fieldName: 'title' },
@@ -467,7 +461,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       dynamic_content_item: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             variants: {
               standalone: {
@@ -485,7 +479,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       sla_policy: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -498,7 +492,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       custom_role: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -516,7 +510,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       organization: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -531,7 +525,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       view: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -547,7 +541,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       automation: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -560,7 +554,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       macro: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -576,7 +570,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       macro_categories: { // TODON align to macro_actions?
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { singleton: true },
           fieldCustomizations: {
             id: {
@@ -589,7 +583,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
 
       trigger: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'title' }] },
           fieldCustomizations: {
             id: {
@@ -603,7 +597,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       // TODON align these 3 as much as possible? decide if worth it
       ticket_field: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [
             { fieldName: 'raw_title' },
             { fieldName: 'type' },
@@ -641,7 +635,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       user_field: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'key' }] },
           fieldCustomizations: {
             custom_field_options: {
@@ -669,7 +663,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       organization_field: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { parts: [{ fieldName: 'key' }] },
           fieldCustomizations: {
             custom_field_options: {
@@ -697,7 +691,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       trigger_category: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -709,8 +703,10 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       trigger_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toTriggerOrderValue,
+        resource: {
+          transform: transforms.toTriggerOrderValue, // TODON? should change function signature...
+        },
+        instance: { // TODON need to aggregate when not singleton
           elemID: {
             singleton: true,
           },
@@ -720,50 +716,64 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       automation_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('active'),
+        resource: {
+          transform: transforms.toOrderValue('active'),
+        },
+        instance: {
         },
       },
       sla_policy_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue(),
+        resource: {
+          transform: transforms.toOrderValue(),
+        },
+        instance: {
         },
       },
       ticket_form_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('active'),
+        resource: {
+          transform: transforms.toOrderValue('active'),
+        },
+        instance: {
         },
       },
       organization_field_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('active'),
+        resource: {
+          transform: transforms.toOrderValue('active'),
+        },
+        instance: {
         },
       },
       user_field_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('active'),
+        resource: {
+          transform: transforms.toOrderValue('active'),
+        },
+        instance: {
         },
       },
       view_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('active'),
+        resource: {
+          transform: transforms.toOrderValue('active'),
+        },
+        instance: {
         },
       },
       workspace_order: {
         isTopLevel: true,
-        transformation: {
-          transformValue: transforms.toOrderValue('activated'),
+        resource: {
+          transform: transforms.toOrderValue('activated'),
+        },
+        instance: {
         },
       },
 
       macro_attachment: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             // TODON filter does something close but not identical, need to regenerate ids if moving here
             extendsParent: true,
@@ -780,18 +790,16 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
 
       business_hours_schedule: {
         isTopLevel: true,
-        requests: {
-          default: {
-            recurseInto: {
-              holidays: {
-                type: 'business_hours_schedule_holiday',
-                context: { parent_id: 'id' },
-              },
+        resource: {
+          recurseInto: {
+            holidays: {
+              type: 'business_hours_schedule_holiday',
+              context: { parent_id: 'id' },
             },
           },
+          transform: transforms.transformBusinessHoursSchedule,
         },
-        transformation: {
-          transformValue: transforms.transformBusinessHoursSchedule,
+        instance: {
           fieldCustomizations: {
             holidays: {
               standalone: {
@@ -809,17 +817,15 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       routing_attribute: {
         isTopLevel: true,
-        requests: {
-          default: {
-            recurseInto: { // TODON make sure automatically adds correct field type
-              values: {
-                type: 'routing_attribute_value',
-                context: { parent_id: 'id' },
-              },
+        resource: {
+          recurseInto: { // TODON make sure automatically adds correct field type
+            values: {
+              type: 'routing_attribute_value',
+              context: { parent_id: 'id' },
             },
           },
         },
-        transformation: {
+        instance: {
           fieldCustomizations: {
             values: {
               standalone: {
@@ -839,7 +845,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       // top-level, dependent
       custom_object_field: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'key' }],
@@ -860,7 +866,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       dynamic_content_item__variants: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'locale_id', isReference: true }],
@@ -875,7 +881,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       business_hours_schedule_holiday: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { extendsParent: true },
           fieldCustomizations: {
             id: {
@@ -896,7 +902,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       routing_attribute_value: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: { extendsParent: true },
           fieldCustomizations: {
             id: {
@@ -909,7 +915,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       ticket_field__custom_field_options: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             // TODON make sure specified everywhere, warn if standalone and not specified (during development at least)
             extendsParent: true,
@@ -939,7 +945,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       user_field__custom_field_options: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'value' }],
@@ -961,7 +967,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       organization_field__custom_field_options: {
         isTopLevel: true,
-        transformation: {
+        instance: {
           elemID: {
             extendsParent: true,
             parts: [{ fieldName: 'value' }],
@@ -985,7 +991,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       // TODON generalize
       macro_category: { // TODON check if needed
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               hide: true,
@@ -995,7 +1001,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       sla_policy__filter__all: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             value: {
               fieldType: 'unknown',
@@ -1005,7 +1011,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       sla_policy__filter__any: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             value: {
               fieldType: 'unknown',
@@ -1015,7 +1021,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       view__restriction: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'unknown',
@@ -1025,7 +1031,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       trigger__conditions__all: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             is_user_value: {
               fieldType: 'boolean',
@@ -1035,7 +1041,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       trigger__conditions__any: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             is_user_value: {
               fieldType: 'boolean',
@@ -1045,7 +1051,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       app_owned__parameters: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           ignoreDefaultFieldCustomizations: true,
           fieldCustomizations: {
             ...DEFAULT_FIELDS_TO_HIDE,
@@ -1057,14 +1063,14 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       workspace__apps: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           // TODON technically reset fieldsToHide and not fieldsToOmit, but probably irrelevant?
           ignoreDefaultFieldCustomizations: true,
         },
       },
       workspace__selected_macros: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           ignoreDefaultFieldCustomizations: true,
           fieldCustomizations: {
             usage_7d: {
@@ -1075,7 +1081,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       },
       workspace__selected_macros__restriction: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'unknown',
@@ -1086,7 +1092,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
       // old comment: Created in custom_object_field_options.ts (TODON check if can/should move to earlier)
       custom_object_field__custom_field_options: {
         isTopLevel: false,
-        transformation: {
+        instance: {
           fieldCustomizations: {
             id: {
               fieldType: 'number',
@@ -1101,7 +1107,7 @@ export const SUPPORT_FETCH_CONFIG: definitions.fetch.FetchApiDefinitions<ClientO
 
 // TODON not sure what this was used for, leftovers?
 // ticket_fields: {
-//   transformation: {
+//   instance: {
 //     fileNameFields: ['title'],
 //     fieldsToHide: FIELDS_TO_HIDE.concat({ fieldName: 'id', fieldType: 'number' }),
 //   },
