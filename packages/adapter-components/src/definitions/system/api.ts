@@ -18,6 +18,8 @@ import { ApiClientDefinition, PaginationDefinitions } from './requests' // TODON
 import { ComponentDefinitions } from './components'
 import { OptionsWithDefault } from './shared'
 import { OpenAPIDefinition } from './sources'
+import { FetchApiDefinitions } from './fetch'
+import { DeployApiDefinitions } from './deploy'
 
 // TODON deploy: change to resources, fetch: resource to instances
 
@@ -30,13 +32,12 @@ import { OpenAPIDefinition } from './sources'
 export type ApiDefinitions<
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
-  ComponentNames extends string = 'main',
   Action extends string = ActionName
 > = {
   // sources are processed and used to populate initial options for clients and components, in order of definition,
   // followed by the rest of the adjustments
   sources?: {
-    openAPI?: OpenAPIDefinition<ClientOptions, ComponentNames>[]
+    openAPI?: OpenAPIDefinition<ClientOptions>[]
   }
 
   // TODON add
@@ -52,7 +53,19 @@ export type ApiDefinitions<
 
   // references: ReferenceDefinitions // already defined elsewhere
 
-  components: Record<ComponentNames, ComponentDefinitions<Action, ClientOptions>>
+  // TODON decide if there's a reason to formalize components - vs just having a pattern
+  // for how to have them in different files and merge together
+  // (since overlaps are not allowed anyway)
+  // TODON the advantage is the ability to add a prefix for all of them - decide if worth it
+  // components: Record<ComponentNames, ComponentDefinitions<Action, ClientOptions>>
+
+  // TODON do NOT have here defaults+customizations either - these are "development" tools for generating the
+  // final config. instead, should be a list of final definitions when called in-memory!
+  // and should log / create an artifact with what it computed into.
+
+  fetch?: FetchApiDefinitions
+  deploy?: DeployApiDefinitions<Action, ClientOptions>
+
 
   // TODON temp flag for development, decide if should keep here or elsewhere - e.g. in adapter-creator?
   // TODON when on, will also log info and suggestions for initializing the adapter

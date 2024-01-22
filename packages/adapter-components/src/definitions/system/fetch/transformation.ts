@@ -15,8 +15,8 @@
 */
 import { types } from '@salto-io/lowerdash'
 import { FieldDefinition, RestrictionAnnotationType } from '@salto-io/adapter-api'
-import { NameMappingOptions } from '../../../../config/transformation' // TODON move
-import { ArgsWithCustomizer } from '../../shared'
+import { NameMappingOptions } from '../../../config/transformation' // TODON move
+import { ArgsWithCustomizer } from '../shared'
 import { Resource } from './resource'
 
 export type FieldIDPart = ArgsWithCustomizer<

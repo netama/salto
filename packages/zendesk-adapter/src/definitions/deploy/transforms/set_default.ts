@@ -16,7 +16,7 @@
 import { getChangeData, isInstanceElement, isReferenceExpression } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 import { getParents } from '@salto-io/adapter-utils'
-import { DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../../../../constants'
+import { DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../../constants'
 
 // TODON continue after others are done
 // assuming not yet resolved?

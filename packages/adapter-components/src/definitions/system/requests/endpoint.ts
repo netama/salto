@@ -27,9 +27,9 @@ export type HTTPEndpointIdentifier = {
 }
 
 // TODON decide if needed - if enforcing no overlap between clients might be redundant
-export type HTTPEndpointAndClientIdentifier<ClientOptions extends string> = HTTPEndpointIdentifier & {
-  client?: ClientOptions
-}
+// export type HTTPEndpointAndClientIdentifier<ClientOptions extends string> = HTTPEndpointIdentifier & {
+//   client?: ClientOptions
+// }
 
 // TODON avoid having to write everything explicitly, and assume exists by default?
 

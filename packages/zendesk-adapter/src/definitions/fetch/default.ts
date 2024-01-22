@@ -13,5 +13,19 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { definitions } from '@salto-io/adapter-components'
+import { DEFAULT_FIELD_CUSTOMIZATIONS, DEFAULT_ID_PARTS } from './shared'
 
-export { SUPPORT_FETCH_CONFIG as fetch } from './fetch'
+// TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
+// fields as hidden/omitted because of hcange from override to merge
+
+export const FETCH_DEFAULTS: Partial<definitions.fetch.InstanceFetchApiDefinitions> = {
+  resource: {
+    serviceIDFields: ['id'],
+  },
+  instance: {
+    elemID: { parts: DEFAULT_ID_PARTS },
+    fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
+    path: { nestUnderParent: true },
+  },
+}

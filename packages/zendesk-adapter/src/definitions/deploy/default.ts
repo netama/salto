@@ -13,17 +13,21 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import { deployment as deploymentUtils } from '@salto-io/adapter-components'
+import { DEFAULT_CONTEXT } from './utils'
+import { InstanceDeployApiDefinitions } from '../types'
 
-import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, InstanceChangeAndGroup } from '../../shared'
+const { groupByType } = deploymentUtils.grouping
 
-export type DeployResponseTransformationDefinitions = ArgsWithCustomizer<
-  Values, // TODON adjust, allow nesting etc? but detailed changes require too much...
-  {
-    // TODON allow extracting from nested value?
-    updateServiceIDs?: boolean // default true
-    fieldsToUpdateFromResponse?: string[] // TODON generalize if needed
-    // TODON decide on updating service url etc on deploy
+export const DEPLOY_DEFAULTS: InstanceDeployApiDefinitions = {
+  requestsByAction: {
+    default: {
+      // TODON move template and reference resolution here in a generic way? first see cases
+      // additionalResolvers: [],
+      request: {
+        context: DEFAULT_CONTEXT,
+      },
+    },
   },
-  InstanceChangeAndGroup
->
+  changeGroupId: groupByType,
+}

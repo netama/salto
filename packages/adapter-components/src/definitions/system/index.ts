@@ -15,7 +15,8 @@
 */
 
 export { ApiDefinitions } from './api'
-export * from './components'
+export * as deploy from './deploy'
+export * as fetch from './fetch'
 export * from './requests'
 export * from './utils'
 export { DefaultWithCustomizations, ExtractionDefinitions, FilterCondition, InstanceChangeAndGroup, TransformFunction } from './shared'

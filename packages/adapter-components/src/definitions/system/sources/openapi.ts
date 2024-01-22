@@ -24,7 +24,6 @@ type SourceTypeDefinition = {
 
 export type OpenAPIDefinition<
   ClientOptions extends string,
-  ComponentNames extends string
 > = {
   url: string
   // avoid importing parts of the swagger (in order to avoid conflicts)
@@ -41,8 +40,6 @@ export type OpenAPIDefinition<
   // when true, the sources are only used for defining the endpoints, but type fields are generated from responses
   endpointsOnly?: boolean
 
-  // the client on which teh endpoints will be added
+  // the client on which the endpoints will be added
   toClient: ClientOptions
-  // the component on which the types will be added
-  toComponent: ComponentNames
 }

@@ -17,13 +17,14 @@ import _ from 'lodash'
 import { types } from '@salto-io/lowerdash'
 import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
-import { transformForOrder } from '../../support/deploy/transforms'
-import { ClientOptions } from '../../../requests'
+import { transformForOrder } from './transforms'
+import { InstanceDeployApiDefinitions, DeployableRequestDefinitions } from '../types'
 
-// TODON move to adapter-components if recurs outside zendesk
-
-type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefinitions<ActionName, ClientOptions>
-type DeployableRequestDefinitions = definitions.deploy.DeployableRequestDefinitions<ClientOptions>
+export const DEFAULT_CONTEXT = {
+  id: 'id',
+  // TODON make sure doesn't break when no parent exists
+  parent_id: '_parent.0.id',
+}
 
 export const createStandardItemDeployConfigs = (typeArgs: Record<string, {
   bulkPath: string
@@ -149,6 +150,5 @@ export const createStandardTranslationDeployConfigs = (typeArgs: Record<string, 
     },
   })))
 )
-
 
 // TODON move helper functions somewhere else? filter-like? with fetch and deploy

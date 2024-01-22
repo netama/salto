@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, GeneratedItem } from '../../shared'
+import { ArgsWithCustomizer, ContextParams, GeneratedItem } from '../shared'
 
 export type ResourceTransformFunc = (args: {
   value: Values

@@ -14,16 +14,14 @@
 * limitations under the License.
 */
 import _ from 'lodash'
+import { types } from '@salto-io/lowerdash'
 import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
-import { GUIDE_DEPLOY_CONFIG } from './deploy'
-import { CHANGE_GROUP_CONFIG } from './change_groups'
-import { ClientOptions } from '../../../requests'
+import { ClientOptions } from './requests'
 
-// TODON move to helper utility since will need to duplicate in all components
+// TODON move to adapter-components if recurs outside zendesk
 
-export const deploy: definitions.deploy.DeployApiDefinitions<ActionName, ClientOptions> = _.merge(
-  {},
-  GUIDE_DEPLOY_CONFIG,
-  CHANGE_GROUP_CONFIG,
-)
+export type DeployDefWithDefault = types.PickyRequired<definitions.deploy.DeployApiDefinitions<ActionName, ClientOptions>['instances'], 'customizations'>
+export type DeployDefNoDefault = definitions.deploy.DeployApiDefinitionsNoDefault<ActionName, ClientOptions>['instances']
+export type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefinitions<ActionName, ClientOptions>
+export type DeployableRequestDefinitions = definitions.deploy.DeployableRequestDefinitions<ClientOptions>

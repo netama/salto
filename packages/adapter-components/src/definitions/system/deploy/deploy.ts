@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, DefaultWithCustomizations, FilterCondition } from '../../shared'
+import { ArgsWithCustomizer, DefaultWithCustomizations, FilterCondition } from '../shared'
 import { HTTPRequest } from './request'
 import { DeployResponseTransformationDefinitions } from './transformation'
-import { ChangeIdFunction } from '../../../../deployment/grouping'
+import { ChangeIdFunction } from '../../../deployment/grouping'
 
 export type ValueReferenceResolver = (args: { value: Values }) => Values
 
@@ -66,4 +66,8 @@ export type DeployApiDefinitions<Action extends string, ClientOptions extends st
   // e.g. modify-instead-of-add if the parent implicitly created the child?
   instances: DefaultWithCustomizations<InstanceDeployApiDefinitions<Action, ClientOptions>> // TODON elements or changes?
   // TODON default MUST be shared across components, because we don't know how to pick it - unless ****requiring an entry*****?
+}
+
+export type DeployApiDefinitionsNoDefault<Action extends string, ClientOptions extends string> = {
+  instances: Record<string, InstanceDeployApiDefinitions<Action, ClientOptions>>
 }

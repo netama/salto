@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-import { DefaultWithCustomizations } from '../../shared'
+import { DefaultWithCustomizations } from '../shared'
 import { FetchResourceDefinition } from './resource'
 import { FetchTransformationDefinition } from './transformation'
 
@@ -32,4 +32,12 @@ export type FetchApiDefinitions = {
   // initialContext: Record<string, Value>
 
   instances: DefaultWithCustomizations<InstanceFetchApiDefinitions>
+}
+
+export type FetchApiDefinitionsNoDefault = {
+  // // to allow fetching modules separately? e.g. zendesk guide can have its own fetch config?
+  // // e.g. subdomain, brand id (to mark as parent)
+  // initialContext: Record<string, Value>
+
+  instances: Record<string, InstanceFetchApiDefinitions>
 }

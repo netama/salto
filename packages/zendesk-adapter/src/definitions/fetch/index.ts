@@ -14,6 +14,6 @@
 * limitations under the License.
 */
 
-export { FetchApiDefinitions } from './fetch'
-export { Resource, ResourceTransformFunc, ContextParamDefinitions } from './resource'
-export { ElementFieldCustomization, FieldIDPart } from './transformation'
+export { GUIDE_FETCH_DEF } from './guide'
+export { SUPPORT_FETCH_DEF } from './support'
+export { FETCH_DEFAULTS } from './default'

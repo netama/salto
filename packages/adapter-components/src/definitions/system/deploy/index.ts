@@ -13,5 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { fetch } from './fetch'
-export { deploy } from './deploy'
+
+export { DeployApiDefinitions, DeployApiDefinitionsNoDefault, DeployableRequestDefinitions, InstanceDeployApiDefinitions, ValueReferenceResolver } from './deploy'
+export { HTTPRequest, DeployTransformRequest } from './request'

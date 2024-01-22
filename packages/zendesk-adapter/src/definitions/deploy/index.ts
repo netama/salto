@@ -13,5 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { fetch } from './fetch'
-export { deploy } from './deploy'
+import _ from 'lodash'
+export { GUIDE_DEPLOY_DEF } from './guide'
+export { SUPPORT_DEPLOY_DEF } from './support'
+export { DEPLOY_DEFAULTS } from './default'

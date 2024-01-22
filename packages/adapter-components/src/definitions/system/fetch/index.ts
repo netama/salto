@@ -13,14 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { FetchApiDefinitions } from './fetch'
-import { DeployApiDefinitions } from './deploy'
 
-// TODON decide if should move a level up to match the api.ts structure?
-
-export type ComponentDefinitions<Action extends string, ClientOptions extends string> = {
-  fetch?: FetchApiDefinitions<ClientOptions>
-  deploy?: DeployApiDefinitions<Action, ClientOptions>
-  // prefix to use for types defined in this component (TODON remove if not used)
-  // prefix?: string
-}
+export { FetchApiDefinitions, FetchApiDefinitionsNoDefault, InstanceFetchApiDefinitions } from './fetch'
+export { Resource, ResourceTransformFunc, ContextParamDefinitions } from './resource'
+export { ElementFieldCustomization, FieldIDPart } from './transformation'

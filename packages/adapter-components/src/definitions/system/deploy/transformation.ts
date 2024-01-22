@@ -14,4 +14,16 @@
 * limitations under the License.
 */
 
-export { GUIDE_FETCH_CONFIG as fetch } from './fetch'
+import { Values } from '@salto-io/adapter-api'
+import { ArgsWithCustomizer, InstanceChangeAndGroup } from '../shared'
+
+export type DeployResponseTransformationDefinitions = ArgsWithCustomizer<
+  Values, // TODON adjust, allow nesting etc? but detailed changes require too much...
+  {
+    // TODON allow extracting from nested value?
+    updateServiceIDs?: boolean // default true
+    fieldsToUpdateFromResponse?: string[] // TODON generalize if needed
+    // TODON decide on updating service url etc on deploy
+  },
+  InstanceChangeAndGroup
+>
