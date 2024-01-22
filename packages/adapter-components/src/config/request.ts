@@ -17,10 +17,9 @@ import { ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, Ma
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { collections } from '@salto-io/lowerdash'
+import { ARG_PLACEHOLDER_MATCHER } from 'src/fetch/resource/type_fetcher'
 
 const { findDuplicates } = collections.array
-
-export const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
 
 export const getConfigTypeName = (prefix: string, typeName: string): string =>
   (_.isEmpty(prefix) ? typeName : prefix.concat('_', typeName))
@@ -334,6 +333,7 @@ export const createRequestConfigs = ({
   }
 }
 
+// TODON move
 export const findUnresolvedArgs = (url: string, dependsOnArgs: Set<string> = new Set()): string[] => {
   const urlParams = url.match(ARG_PLACEHOLDER_MATCHER)?.map(m => m.slice(1, -1)) ?? []
   return urlParams.filter(p => !dependsOnArgs.has(p))

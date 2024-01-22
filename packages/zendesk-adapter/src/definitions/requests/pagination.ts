@@ -22,10 +22,11 @@ export type PaginationOptions = 'oldCursor' | 'cursor'
 
 export const PAGINATION: Record<PaginationOptions, definitions.PaginationDefinitions> = {
   oldCursor: {
-    func: getWithCursorPagination(pathChecker, 'next_page'),
+    // TODON see if can simplify and use the function directly
+    funcCreator: () => getWithCursorPagination(pathChecker, 'next_page'),
   },
   cursor: {
-    func: getWithCursorPagination(pathChecker, CURSOR_BASED_PAGINATION_FIELD),
+    funcCreator: () => getWithCursorPagination(pathChecker, CURSOR_BASED_PAGINATION_FIELD),
     clientArgs: {
       queryArgs: {
         'page[size]': String(PAGE_SIZE),

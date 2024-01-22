@@ -15,15 +15,16 @@
 */
 import { types } from '@salto-io/lowerdash'
 import { Change, InstanceElement } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, ExtractionDefinitions } from '../shared'
+import { ArgsWithCustomizer, ContextParams, ExtractionDefinition } from '../shared'
 import { HTTPEndpointIdentifier } from '../requests'
 
-export type ContextParamDefinitions = ArgsWithCustomizer<ContextParams, ContextParams>
+// TODON see if can consolidate the { args: Record<srting, primitive> } types
+export type ContextParamDefinitions = ArgsWithCustomizer<ContextParams, { args: ContextParams }>
 
 // TODON experimenting with flattening for simplicity (but check customization!)
 export type HTTPRequest = types.XOR<
   HTTPEndpointIdentifier
-  & ExtractionDefinitions<{ change: Change<InstanceElement> }>,
+  & ExtractionDefinition<{ change: Change<InstanceElement> }>,
   // TODON add a warning for changes matching this?
   { succeedWithoutRequest: true }
 >

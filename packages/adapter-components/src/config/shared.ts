@@ -31,7 +31,7 @@ export class AdapterFetchError extends Error {
 }
 
 export type TypeConfig<T extends TransformationConfig = TransformationConfig, A extends string = ActionName> = {
-  request?: FetchRequestConfig | FetchRequestConfig[] // TODON
+  request?: FetchRequestConfig  // | FetchRequestConfig[] // TODON
   deployRequests?: DeploymentRequestsByAction<A>
   transformation?: T
 }

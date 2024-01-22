@@ -24,19 +24,29 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
 
   // top-level, independent
   account_features: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        singleton: true,
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          singleton: true,
+        },
+        hide: true,
       },
-      hide: true,
     },
   },
   account_setting: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        singleton: true,
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          singleton: true,
+        },
       },
       fieldCustomizations: {
         id: {
@@ -47,10 +57,15 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   trigger_definition: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        singleton: true,
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          singleton: true,
+        },
       },
       fieldCustomizations: {
         id: {
@@ -61,10 +76,12 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   tag: {
-    isTopLevel: true,
     // tags are created by a filter (but need to be able to exclude), do nothing
     // old comment: placeholder for config validation (the type is created by a filter)
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'string',
@@ -73,20 +90,30 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   group: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/people/team/groups',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/people/team/groups',
     },
   },
   resource_collection: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -96,8 +123,13 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   monitored_twitter_handle: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -107,10 +139,16 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   api_token: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [{ fieldName: 'description' }],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [{ fieldName: 'description' }],
+        },
+        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/settings/tokens/',
       },
       fieldCustomizations: {
         id: {
@@ -118,17 +156,22 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/apis/zendesk-api/settings/tokens/',
     },
   },
   oauth_token: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [
-          { fieldName: 'client_id', isReference: true },
-          { fieldName: 'token' },
-        ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            { fieldName: 'client_id', isReference: true },
+            { fieldName: 'token' },
+          ],
+        },
+        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
       },
       fieldCustomizations: {
         id: {
@@ -136,14 +179,19 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
     },
   },
   oauth_client: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [{ fieldName: 'identifier' }],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [{ fieldName: 'identifier' }],
+        },
+        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
       },
       fieldCustomizations: {
         id: {
@@ -159,12 +207,16 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
     },
   },
   oauth_global_client: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -174,8 +226,14 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   webhook: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/apps-integrations/webhooks/webhooks/{id}/details',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -188,12 +246,16 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/webhooks/webhooks/{id}/details',
     },
   },
   sharing_agreement: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -211,13 +273,19 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   app_installation: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [
-          { fieldName: 'settings.name' },
-          { fieldName: 'product' },
-        ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            { fieldName: 'settings.name' },
+            { fieldName: 'product' },
+          ],
+        },
+        serviceUrl: '/admin/apps-integrations/apps/support-apps',
       },
       fieldCustomizations: {
         id: {
@@ -228,12 +296,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/apps/support-apps',
     },
   },
   app_owned: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/apps-integrations/apps/support-apps',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -243,17 +316,21 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           fieldType: 'map<app_owned__parameters>',
         },
       },
-      serviceUrl: '/admin/apps-integrations/apps/support-apps',
     },
   },
   support_address: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [
-          NAME_ID_FIELD,
-          { fieldName: 'email', isReference: true },
-        ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            NAME_ID_FIELD,
+            { fieldName: 'email', isReference: true },
+          ],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -290,18 +367,27 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   custom_object: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       recurseInto: {
         custom_object_fields: {
           type: 'custom_object_field',
-          context: { custom_object_key: 'key' },
+          context: {
+            args: {
+              custom_object_key: {
+                fromField: 'key',
+              },
+            },
+          },
         },
       },
     },
-    instance: {
-      elemID: {
-        parts: [{ fieldName: 'key' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [{ fieldName: 'key' }],
+        },
       },
       fieldCustomizations: {
         // TODON check if has an id field (original config was inconsistent, overriding type but not hiding)
@@ -331,13 +417,19 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   custom_status: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [
-          { fieldName: 'status_category' },
-          { fieldName: 'raw_agent_label' },
-        ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            { fieldName: 'status_category' },
+            { fieldName: 'raw_agent_label' },
+          ],
+        },
+        serviceUrl: '/admin/objects-rules/tickets/ticket_statuses/edit/{id}',
       },
       fieldCustomizations: {
         id: {
@@ -360,27 +452,36 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/tickets/ticket_statuses/edit/{id}',
     },
   },
   workspace: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/workspaces/agent-workspace/contextual-workspaces',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/workspaces/agent-workspace/contextual-workspaces',
     },
   },
   locale: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [{ fieldName: 'locale' }],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [{ fieldName: 'locale' }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -391,8 +492,14 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   brand: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/account/brand_management/brands',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -409,12 +516,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/account/brand_management/brands',
     },
   },
   ticket_form: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/objects-rules/tickets/ticket-forms/edit/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -427,17 +539,22 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/tickets/ticket-forms/edit/{id}',
     },
   },
   target: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        parts: [
-          { fieldName: 'title' },
-          { fieldName: 'type' },
-        ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            { fieldName: 'title' },
+            { fieldName: 'type' },
+          ],
+        },
+        serviceUrl: '/admin/apps-integrations/targets/targets',
       },
       fieldCustomizations: {
         id: {
@@ -445,12 +562,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/apps-integrations/targets/targets',
     },
   },
   dynamic_content_item: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/workspaces/agent-workspace/dynamic_content',
+      },
       fieldCustomizations: {
         variants: {
           standalone: {
@@ -463,25 +585,35 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/workspaces/agent-workspace/dynamic_content',
     },
   },
   sla_policy: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/objects-rules/rules/slas',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/slas',
     },
   },
   custom_role: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/people/team/roles/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -494,12 +626,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/people/team/roles/{id}',
     },
   },
   organization: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/agent/organizations/{id}/tickets',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -509,13 +646,18 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           fieldType: 'map<unknown>',
         },
       },
-      serviceUrl: '/agent/organizations/{id}/tickets',
     },
   },
   view: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/workspaces/agent-workspace/views/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -525,26 +667,36 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           fieldType: 'map<unknown>',
         },
       },
-      serviceUrl: '/admin/workspaces/agent-workspace/views/{id}',
     },
   },
   automation: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/objects-rules/rules/automations/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/automations/{id}',
     },
   },
   macro: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/workspaces/agent-workspace/macros/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -554,13 +706,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/workspaces/agent-workspace/macros/{id}',
     },
   },
   macro_categories: { // TODON align to macro_actions?
-    isTopLevel: true,
-    instance: {
-      elemID: { singleton: true },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { singleton: true },
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -571,26 +727,37 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   },
 
   trigger: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'title' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'title' }] },
+        serviceUrl: '/admin/objects-rules/rules/triggers/{id}',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/triggers/{id}',
     },
   },
   // TODON align these 3 as much as possible? decide if worth it
   ticket_field: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [
-        { fieldName: 'raw_title' },
-        { fieldName: 'type' },
-      ] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [
+          { fieldName: 'raw_title' },
+          { fieldName: 'type' },
+        ] },
+        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
+      },
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
@@ -619,13 +786,18 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
     },
   },
   user_field: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'key' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'key' }] },
+        serviceUrl: '/agent/admin/user_fields/{id}',
+      },
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
@@ -647,13 +819,18 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/agent/admin/user_fields/{id}',
     },
   },
   organization_field: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: [{ fieldName: 'key' }] },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: [{ fieldName: 'key' }] },
+        serviceUrl: '/agent/admin/organization_fields/{id}',
+      },
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
@@ -675,98 +852,128 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/agent/admin/organization_fields/{id}',
     },
   },
   trigger_category: {
-    isTopLevel: true,
-    instance: {
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/objects-rules/rules/triggers',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/triggers',
     },
   },
   trigger_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true, // TODON maybe depend on trigger+categories resources without additional calls (also for others)
       transform: transforms.toTriggerOrderValue, // TODON? should change function signature...
     },
-    instance: { // TODON need to aggregate when not singleton
-      elemID: {
-        singleton: true,
+    element: { // TODON need to aggregate when not singleton
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          singleton: true,
+        },
       },
       // TODON decide if should rename order type from trigger_order__order to trigger_order_entry
     },
     // TODON the type as returned from the service is not sorted correctly - fix!
   },
   automation_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('active'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   sla_policy_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue(),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   ticket_form_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('active'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   organization_field_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('active'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   user_field_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('active'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   view_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('active'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
   workspace_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       transform: transforms.toOrderValue('activated'),
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
     },
   },
 
   macro_attachment: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        // TODON filter does something close but not identical, need to regenerate ids if moving here
-        extendsParent: true,
-        parts: [{ fieldName: 'filename' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          // TODON filter does something close but not identical, need to regenerate ids if moving here
+          extendsParent: true,
+          parts: [{ fieldName: 'filename' }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -778,17 +985,27 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   },
 
   business_hours_schedule: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       recurseInto: {
         holidays: {
           type: 'business_hours_schedule_holiday',
-          context: { parent_id: 'id' },
+          context: {
+            args: {
+              parent_id: {
+                fromField: 'id',
+             },
+            },
+          },
         },
       },
       transform: transforms.transformBusinessHoursSchedule,
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/objects-rules/rules/schedules',
+      },
       fieldCustomizations: {
         holidays: {
           standalone: {
@@ -801,20 +1018,29 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/schedules',
     },
   },
   routing_attribute: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       recurseInto: { // TODON make sure automatically adds correct field type
         values: {
           type: 'routing_attribute_value',
-          context: { parent_id: 'id' },
+          context: {
+            args: {
+              parent_id: {
+                fromField: 'id',
+              },
+            },
+          },
         },
       },
     },
-    instance: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: '/admin/objects-rules/rules/routing',
+      },
       fieldCustomizations: {
         values: {
           standalone: {
@@ -827,17 +1053,18 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/routing',
     },
   },
 
   // top-level, dependent
   custom_object_field: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'key' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'key' }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -854,11 +1081,13 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   dynamic_content_item__variants: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'locale_id', isReference: true }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'locale_id', isReference: true }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -869,9 +1098,12 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   business_hours_schedule_holiday: {
-    isTopLevel: true,
-    instance: {
-      elemID: { extendsParent: true },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { extendsParent: true },
+        serviceUrl: '/admin/objects-rules/rules/schedules', // TODON wasn't in old config but I think better
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -886,29 +1118,33 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/schedules', // TODON wasn't in old config but I think better
     },
   },
   routing_attribute_value: {
-    isTopLevel: true,
-    instance: {
-      elemID: { extendsParent: true },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { extendsParent: true },
+        serviceUrl: '/admin/objects-rules/rules/routing',
+      },
       fieldCustomizations: {
         id: {
           fieldType: 'number',
           hide: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/rules/routing',
     },
   },
   ticket_field__custom_field_options: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        // TODON make sure specified everywhere, warn if standalone and not specified (during development at least)
-        extendsParent: true,
-        parts: [{ fieldName: 'value' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          // TODON make sure specified everywhere, warn if standalone and not specified (during development at least)
+          extendsParent: true,
+          parts: [{ fieldName: 'value' }],
+        },
+        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
       },
       fieldCustomizations: {
 
@@ -929,15 +1165,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
     },
   },
   user_field__custom_field_options: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'value' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'value' }],
+        },
+        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
       },
       fieldCustomizations: {
         id: {
@@ -951,15 +1189,16 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           omit: true,
         },
       },
-      serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
     },
   },
   organization_field__custom_field_options: {
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'value' }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'value' }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -979,18 +1218,17 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   // inner types
   // TODON generalize
   macro_category: { // TODON check if needed
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           hide: true,
         },
       },
+      sourceTypeName: 'macro_cateogires__macro_categories', // TODON check if needed, adjust
     },
   },
   sla_policy__filter__all: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         value: {
           fieldType: 'unknown',
@@ -999,8 +1237,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   sla_policy__filter__any: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         value: {
           fieldType: 'unknown',
@@ -1009,8 +1246,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   view__restriction: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           fieldType: 'unknown',
@@ -1019,8 +1255,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   trigger__conditions__all: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         is_user_value: {
           fieldType: 'boolean',
@@ -1029,8 +1264,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   trigger__conditions__any: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         is_user_value: {
           fieldType: 'boolean',
@@ -1039,8 +1273,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   app_owned__parameters: {
-    isTopLevel: false,
-    instance: {
+    element: {
       ignoreDefaultFieldCustomizations: true,
       fieldCustomizations: {
         ...DEFAULT_FIELDS_TO_HIDE,
@@ -1051,15 +1284,13 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   workspace__apps: {
-    isTopLevel: false,
-    instance: {
+    element: {
       // TODON technically reset fieldsToHide and not fieldsToOmit, but probably irrelevant?
       ignoreDefaultFieldCustomizations: true,
     },
   },
   workspace__selected_macros: {
-    isTopLevel: false,
-    instance: {
+    element: {
       ignoreDefaultFieldCustomizations: true,
       fieldCustomizations: {
         usage_7d: {
@@ -1069,8 +1300,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     },
   },
   workspace__selected_macros__restriction: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           fieldType: 'unknown',
@@ -1080,8 +1310,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   },
   // old comment: Created in custom_object_field_options.ts (TODON check if can/should move to earlier)
   custom_object_field__custom_field_options: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           fieldType: 'number',
@@ -1094,7 +1323,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
 
 // TODON not sure what this was used for, leftovers?
 // ticket_fields: {
-//   instance: {
+//   element: {
 //     fileNameFields: ['title'],
 //     fieldsToHide: FIELDS_TO_HIDE.concat({ fieldName: 'id', fieldType: 'number' }),
 //   },

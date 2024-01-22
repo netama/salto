@@ -16,4 +16,4 @@
 
 export { GUIDE_FETCH_DEF } from './guide'
 export { SUPPORT_FETCH_DEF } from './support'
-export { FETCH_DEFAULTS } from './default'
+export { FETCH_DEFAULTS } from './defaults'

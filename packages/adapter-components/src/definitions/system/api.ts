@@ -46,6 +46,7 @@ export type ApiDefinitions<
   // clients will be initialized as part of a big "client" in the adapter creator,
   // but need to be "registered" here in order to be used by the infra
   // TODON should be initialized in adapter creator?
+  // TODON can avoid default?
   clients: OptionsWithDefault<ApiClientDefinition<PaginationOptions>, ClientOptions>
 
   // supported pagination options. when missing, no pagination is used (TODON add warning)
@@ -64,7 +65,7 @@ export type ApiDefinitions<
   // and should log / create an artifact with what it computed into.
 
   fetch?: FetchApiDefinitions
-  deploy?: DeployApiDefinitions<Action, ClientOptions>
+  deploy?: DeployApiDefinitions<Action>
 
 
   // TODON temp flag for development, decide if should keep here or elsewhere - e.g. in adapter-creator?

@@ -14,12 +14,12 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { PaginationFunc } from '../../../client'
+import { PaginationFuncCreator } from '../../../client'
 
 // TODON decide if should move a level up to match the api.ts structure?
 
 export type PaginationDefinitions = {
-  func: PaginationFunc // TODON should probably adjust + have headers / query args / params
+  funcCreator: PaginationFuncCreator // TODON should probably adjust + have headers / query args / params
   clientArgs?: {
     headers?: Record<string, string>
     queryArgs?: Record<string, string>

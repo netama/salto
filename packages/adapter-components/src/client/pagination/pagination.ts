@@ -253,6 +253,8 @@ export const getWithCursorPagination = (
   return nextPageCursorPages
 }
 
+export const noPagination = (): PaginationFunc => () => []
+
 /**
  * Wrap a pagination function for use by the adapter
  */

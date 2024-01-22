@@ -29,14 +29,35 @@ export type Resource = {
 
 
 type DependsOnDefinition = {
-  // if the dependency is on a type from another component, it should be mentioned explicitly
-  componentName?: string
+  // TODON no components so removing
+  // // if the dependency is on a type from another component, it should be mentioned explicitly
+  // componentName?: string
   typeName: string
+  // TODON for now - allowing fieldName to be "." and will filter inside context
+  // - later might be worth consolidating with the extraction logic from other places, if there are more use cases?
+  // (root, pick, omit...)
   fieldName: string
-  addParentAnnotation?: boolean // TODON or markAsParent?
+  // TODON add later if needed
+  // addParentAnnotation?: boolean // TODON or markAsParent?
+  // TODON add conditions etc similarly to RecurseInto?
+}
+type FixedValueDefinition = {
+  value: string | number | boolean | Values // TODON consolidate arg definitions?
 }
 
-type ContextWithDependencies = Record<string, string | DependsOnDefinition>
+type ContextDefinition = DependsOnDefinition | FixedValueDefinition
+
+export const isDependsOnDefinition = (value: ContextDefinition): value is DependsOnDefinition => (
+  'typeName' in value
+)
+// TODON eliminate?
+export const isFixedValueDefinition = (value: ContextDefinition): value is FixedValueDefinition => (
+  'value' in value
+)
+
+export type ContextWithDependencies = {
+  args: Record<string, ContextDefinition>
+}
 
 // TODON move to dependencies file?
 
@@ -58,12 +79,24 @@ export const isRecurseIntoConditionByField = (
 )
 
 // TODON decide if similarly relevant in deploy?
-export type ContextParamDefinitions = ArgsWithCustomizer<ContextParams[], ContextWithDependencies>
+// TODON input and output should be based on calculateContextArgs (and similarly for other ArgsWithCustomizers)
+export type ContextParamDefinitions = ArgsWithCustomizer<Record<string, unknown[]>, ContextWithDependencies>
+
+// TODON add ArgsWithCustomizer per arg / globally, similarly to ContextParamDefinitions
+type RecurseIntoContextParamDefinition = {
+  fromField: string
+}
+type RecurseIntoContext = {
+  args: Record<string, RecurseIntoContextParamDefinition>
+}
+// TODON need to handle customizer later
+type RecurseIntoContextParamDefinitions = ArgsWithCustomizer<ContextParams[], RecurseIntoContext>
+
 
 type RecurseIntoDefinition = {
   type: string
   isSingle?: boolean // TODON rename to single to align
-  context: ContextParamDefinitions
+  context: RecurseIntoContextParamDefinitions // TODON align dependsOn with this!
   conditions?: RecurseIntoCondition[]
   skipOnError?: boolean
   // if the type requires additional context retrieved from another recursed-into field, list it here
@@ -74,29 +107,31 @@ type RecurseIntoDefinition = {
 type RecurseIntoByField = Record<string, RecurseIntoDefinition>
 
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
-export type FetchResourceDefinition = ArgsWithCustomizer<
-  Resource[], // TODON divide into type elements and instance elements?
-  {
-    // TODON make sure to also mark the fields
-    serviceIDFields?: string[]
+export type FetchResourceDefinition = {
+  // set to true if the resource should be fetched on its own. set to false for types only fetched via recurseInto
+  directFetch: boolean
+  // TODON make sure to also mark the fields
+  serviceIDFields?: string[]
 
-    // context arg name to type info
-    // no need to specify context received from a parent's recurseInto context
-    // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
-    // TODON if multiple params from the same type, assume from same instance? (e.g. zendesk guide)
-    context?: ContextParamDefinitions
+  // context arg name to type info
+  // no need to specify context received from a parent's recurseInto context
+  // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
+  // TODON if multiple params from the same type, assume from same instance? (e.g. zendesk guide)
+  // TODON custom is ONLY used for calculating the result - dependencies are based on config!!!
+  // TODON add extra function if need something else
+  // TODON split into dependsOn and "regular" context?
+  context?: ContextParamDefinitions
 
-    // target field name to type info
-    // should be used to add nested fields containing other fetched types' responses (after the response was received)
-    recurseInto?: RecurseIntoByField
+  // target field name to type info
+  // should be used to add nested fields containing other fetched types' responses (after the response was received)
+  // TODON rename - maybe subresources?
+  recurseInto?: RecurseIntoByField
 
-    // when the value is constructed based on multiple fragments,
-    // decide how to combine the values
-    // default: merge (TODON by what order? alphabetically by endpoint name?)
-    transform?: ResourceTransformFunc
+  // when the value is constructed based on multiple fragments,
+  // decide how to combine the values
+  // default: merge (TODON by what order? alphabetically by endpoint name?)
+  transform?: ResourceTransformFunc
 
-    // TODON not adding for now, see if can avoid with field type overrides since only applies to child types
-    // sourceTypeName?: string
-  },
-  GeneratedItem[] // TODON not sure about type?
->
+  // TODON not adding for now, see if can avoid with field type overrides since only applies to child types
+  // sourceTypeName?: string
+}

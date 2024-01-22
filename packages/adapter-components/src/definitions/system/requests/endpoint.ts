@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { Value } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, DefaultWithCustomizations, ExtractionDefinitions, GeneratedItem } from '../shared'
+import { ArgsWithCustomizer, DefaultWithCustomizations, ExtractionParams, GeneratedItem } from '../shared'
 import { Response, ResponseValue } from '../../../client'
 
 export type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'
@@ -33,7 +33,14 @@ export type HTTPEndpointIdentifier = {
 
 // TODON avoid having to write everything explicitly, and assume exists by default?
 
-export type HTTPEndpointDetails<PaginationOptions extends string> = {
+// TODON maybe avoid complete customization so we know what to fetch?
+export type FetchExtractionDefinition = ArgsWithCustomizer<
+  GeneratedItem[], // TODON decide if should be a generator
+  ExtractionParams,
+  Response<ResponseValue | ResponseValue[]>[]
+>
+
+export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = {
   headers?: Record<string, string>
   queryArgs?: Record<string, string>
   omitBody?: boolean
@@ -57,8 +64,8 @@ export type HTTPEndpointDetails<PaginationOptions extends string> = {
   // input?: ContextParams // TODON arg name -> arg type?
 
   readonly?: boolean // safe for fetch
-  // TODON check if needs to also map to a component? (supposed to be unique so hopefully not)
-  responseExtractors?: ExtractionDefinitions[]
+  // TODON decide if should key (group) by type (though usually a single extractor so probably not necessary, since will still need n array)
+  responseExtractors?: FetchExtractionDefinition[]
 }
 
 export type HTTPEndpoint<
@@ -71,11 +78,13 @@ export type EndpointCallResult = {
   resources: GeneratedItem[]
 }
 
-type EndpointDefinition<PaginationOptions extends string> = ArgsWithCustomizer<
+export type EndpointDefinition<PaginationOptions extends string> = ArgsWithCustomizer<
   EndpointCallResult,
   HTTPEndpointDetails<PaginationOptions> // TODON complete the endpoint details from the path
 >
 
+export type ClientEndpoints<PaginationOptions extends string> = Partial<Record<HTTPMethod, EndpointDefinition<PaginationOptions>>>
+
 export type EndpointByPathAndMethod<PaginationOptions extends string> = DefaultWithCustomizations<
-  Partial<Record<HTTPMethod, EndpointDefinition<PaginationOptions>>>
+  ClientEndpoints<PaginationOptions>
 >

@@ -33,7 +33,7 @@ import { HTTPError, Paginator } from '../../../src/client'
 import { TypeDuckTypeConfig, TypeDuckTypeDefaultsConfig } from '../../../src/config'
 import { simpleGetArgs, returnFullEntry, computeGetArgs } from '../../../src/elements'
 import { findDataField } from '../../../src/elements/field_finder'
-import { createElementQuery } from '../../../src/elements/query'
+import { createElementQuery } from '../../../src/fetch/query'
 import { AdapterFetchError, InvalidSingletonType } from '../../../src/config/shared'
 
 describe('ducktype_transformer', () => {

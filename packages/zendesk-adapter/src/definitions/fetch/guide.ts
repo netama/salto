@@ -16,6 +16,7 @@
 import { definitions } from '@salto-io/adapter-components'
 import { EVERYONE_USER_TYPE } from '../../constants'
 import { DEFAULT_ID_PARTS, NAME_ID_FIELD } from './shared'
+import { DATA_FIELD_ENTIRE_OBJECT } from '@salto-io/adapter-components/src/config'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
@@ -24,42 +25,51 @@ const BRAND_ID_PART: definitions.fetch.FieldIDPart = { fieldName: 'brand', isRef
 
 const BRAND_CONTEXT: definitions.fetch.ContextParamDefinitions = {
   // TODON make sure to get from the same instance...
-  brand_id: {
-    componentName: 'support',
-    typeName: 'brand',
-    fieldName: 'id',
-  },
-  brand_subdomain: {
-    componentName: 'support',
-    typeName: 'brand',
-    fieldName: 'subdomain',
+  args: {
+    brand: {
+      typeName: 'brand',
+      // we need both the id and the subdomain
+      fieldName: DATA_FIELD_ENTIRE_OBJECT,
+      // TODON use brand.id and brand.subdomain in client requests + pass back
+    },
+    // brand_id: {
+    //   typeName: 'brand',
+    //   fieldName: 'id',
+    // },
+    // brand_subdomain: {
+    //   typeName: 'brand',
+    //   fieldName: 'subdomain',
+    // },
   },
 }
 
 export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiDefinitions> = {
   // top-level, independent, global
   permission_group: {
-    isTopLevel: true,
-    instance: {
-      elemID: { parts: DEFAULT_ID_PARTS },
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: DEFAULT_ID_PARTS },
+        serviceUrl: '/knowledge/permissions/{id}',
+      },
       fieldCustomizations: {
         id: {
           hide: true,
           fieldType: 'number',
         },
       },
-      serviceUrl: '/knowledge/permissions/{id}',
     },
   },
   user_segment: {
-    isTopLevel: true,
-    // requests: {
-    //   default: {
-    //     client: 'global',
-    //   },
-    // },
-    instance: {
-      elemID: { parts: DEFAULT_ID_PARTS },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { parts: DEFAULT_ID_PARTS },
+        serviceUrl: '/knowledge/user_segments/edit/{id}',
+      },
       fieldCustomizations: {
         id: {
           hide: true,
@@ -76,19 +86,21 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
           restrictions: { enforce_value: true, values: ['signed_in_users', 'staff', EVERYONE_USER_TYPE] },
         },
       },
-      serviceUrl: '/knowledge/user_segments/edit/{id}',
     },
   },
 
   // top-level, independent (except for dependency on brand) - TODON formalize!
   guide_settings: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [BRAND_ID_PART],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [BRAND_ID_PART],
+        },
       },
       fieldCustomizations: {
         default_locale: { // TODON won't be needed if setting as part of request?
@@ -99,31 +111,38 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
     },
   },
   guide_language_settings: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [
-          BRAND_ID_PART,
-          { fieldName: 'locale' },
-        ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            BRAND_ID_PART,
+            { fieldName: 'locale' },
+          ],
+        },
+        // serviceUrl is created in help_center_service_url filter - TODON see if can move
       },
-      // serviceUrl is created in help_center_service_url filter - TODON see if can move
     },
   },
   category: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [
-          NAME_ID_FIELD,
-          BRAND_ID_PART,
-        ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            NAME_ID_FIELD,
+            BRAND_ID_PART,
+          ],
+        },
+        // serviceUrl is created in help_center_service_url filter - TODON see if can move
       },
       fieldCustomizations: {
         translations: {
@@ -147,20 +166,23 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
           omit: true,
         },
       },
-      // serviceUrl is created in help_center_service_url filter - TODON see if can move
     },
   },
   section: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [
-          NAME_ID_FIELD,
-          { fieldName: 'direct_parent_id', isReference: true },
-        ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            NAME_ID_FIELD,
+            { fieldName: 'direct_parent_id', isReference: true },
+          ],
+        },
+        // serviceUrl is created in help_center_service_url filter - TODON see if can move
       },
       fieldCustomizations: {
         translations: {
@@ -197,33 +219,42 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
           hide: true,
         },
       },
-      // serviceUrl is created in help_center_service_url filter - TODON see if can move
     },
   },
   article: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: { // TODON make sure context is aggregated from "parent" endpoint (category)
-        category_id: {
-          typeName: 'category',
-          fieldName: 'id',
+        args: {
+          category_id: {
+            typeName: 'category',
+            fieldName: 'id',
+          },
         },
       },
       recurseInto: {
         attachments: {
           type: 'article_attachment',
           context: {
-            article_id: 'id',
+            args: {
+              article_id: {
+                fromField: 'id',
+              },
+            },
           },
         },
       },
     },
-    instance: {
-      elemID: {
-        parts: [
-          { fieldName: 'title' },
-          { fieldName: 'section_id', isReference: true },
-        ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [
+            { fieldName: 'title' },
+            { fieldName: 'section_id', isReference: true },
+          ],
+        },
+        // serviceUrl is created in help_center_service_url filter - TODON see if can move
       },
       fieldCustomizations: {
         translations: {
@@ -263,7 +294,6 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
           omit: true,
         },
       },
-      // serviceUrl is created in help_center_service_url filter - TODON see if can move
     },
   },
 
@@ -272,36 +302,48 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   // TODON currently built in filter (and only added here for the elem-id regenerate?) -
   // decide if should implement here or still in filter - probably here (similar to other order items)?
   category_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [],
-        extendsParent: true,
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [],
+          extendsParent: true,
+        },
       },
     },
   },
   section_order: {
-    isTopLevel: true,
     resource: {
+      directFetch: true,
       context: BRAND_CONTEXT,
     },
-    instance: {
-      elemID: {
-        parts: [],
-        extendsParent: true,
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [],
+          extendsParent: true,
+        },
       },
     },
   },
   article_order: { // TODON define similarly to support order instances (as a "side-effect" of another request)
-    isTopLevel: true,
     // TODON assuming context not needed since inherited from parent for endpoint? but not implemented yet...
-    instance: {
-      elemID: {
-        parts: [],
-        extendsParent: true,
+    resource: {
+      directFetch: true,
+      context: BRAND_CONTEXT,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          parts: [],
+          extendsParent: true,
+        },
       },
     },
   },
@@ -309,11 +351,13 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   // the following 3 are almost identical, consolidate
   category_translation: {
     // TODON had dataField: 'translations' but probably not in use anymore?
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'locale', isReference: true }],
+    element: {
+      topLevel: {
+        isTopLevel: true, // TODON verify isTopLevel is aligned with standalone! or maybe not needed?
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'locale', isReference: true }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -344,11 +388,13 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   },
   section_translation: {
     // TODON had { dataField: 'translations' } but probably not in use anymore?
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'locale', isReference: true }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'locale', isReference: true }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -379,11 +425,13 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   },
   article_translation: {
     // TODON had { dataField: 'translations' } but probably not in use anymore?
-    isTopLevel: true,
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [{ fieldName: 'locale', isReference: true }],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [{ fieldName: 'locale', isReference: true }],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -415,15 +463,17 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   // old comment:
   // currently articles do not share attachments, if this changes the attachment code should be reviewed!
   article_attachment: {
-    isTopLevel: true,
     // TODON ensure context is passed from parent
-    instance: {
-      elemID: {
-        extendsParent: true,
-        parts: [
-          { fieldName: 'file_name' },
-          { fieldName: 'inline' },
-        ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: {
+          extendsParent: true,
+          parts: [
+            { fieldName: 'file_name' },
+            { fieldName: 'inline' },
+          ],
+        },
       },
       fieldCustomizations: {
         id: {
@@ -462,8 +512,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
 
   // inner types
   guide_settings__help_center: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         feature_restrictions: { // TODON move to omit in endpoint
           omit: true, // omitted as it does not impact deploy? (TODON confirm?)
@@ -472,8 +521,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
     },
   },
   guide_settings__help_center__settings: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           omit: true,
@@ -500,8 +548,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
     },
   },
   guide_settings__help_center__text_filter: {
-    isTopLevel: false,
-    instance: {
+    element: {
       fieldCustomizations: {
         id: {
           omit: true,

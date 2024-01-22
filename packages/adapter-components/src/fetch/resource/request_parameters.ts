@@ -18,8 +18,9 @@ import { Element, Values, isInstanceElement, isPrimitiveValue, InstanceElement }
 import { resolvePath, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
-import { ClientGetWithPaginationParams } from '../client'
-import { FetchRequestConfig, ARG_PLACEHOLDER_MATCHER, UrlParams, DependsOnConfig } from '../config/request'
+import { ClientGetWithPaginationParams } from '../../client'
+import { FetchRequestConfig, UrlParams, DependsOnConfig } from '../../config/request'
+import { ARG_PLACEHOLDER_MATCHER } from './type_fetcher'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)
@@ -41,7 +42,7 @@ export const simpleGetArgs: ComputeGetArgsFunc = (
   {
     url,
     queryParams,
-    recursiveQueryByResponseField,
+    recursiveQueryByResponseField, // TODON see if still needed or if can generalize to recurseInto
     paginationField,
   },
 ) => {
@@ -54,18 +55,19 @@ export const simpleGetArgs: ComputeGetArgsFunc = (
   return [{ url, queryParams, recursiveQueryParams, paginationField }]
 }
 
-export const replaceUrlParams = (url: string, paramValues: Record<string, unknown>): string => (
-  url.replace(
+export const replaceArgs = (valueToReplace: string, args: Record<string, unknown>): string => (
+  valueToReplace.replace(
     ARG_PLACEHOLDER_MATCHER,
     val => {
-      const replacement = paramValues[val.slice(1, -1)] ?? val
+      const replacement = args[val.slice(1, -1)] ?? val
       if (!isPrimitiveValue(replacement)) {
-        throw new Error(`Cannot replace param ${val} in ${url} with non-primitive value ${replacement}`)
+        throw new Error(`Cannot replace param ${val} in ${valueToReplace} with non-primitive value ${replacement}`)
       }
       return replacement.toString()
     }
   )
 )
+export const replaceUrlParams = replaceArgs // TODON for backward compability - rename instead
 
 const getContextInstances = (
   referenceDetails: DependsOnConfig,
@@ -82,6 +84,28 @@ const getContextInstances = (
 }
 
 export class MissingContextError extends Error {}
+
+/**
+ * Compute the cartesian product of all the potential arg values that are relevant for the output args.
+ * Assumes possibleArgs are unique.
+ *
+ * @param possibleArgs A mapping from each arg to its possible choices
+ * @param outputArgs The args in play
+ * @returns 
+ */
+export const computeArgCombinations = (
+  possibleArgs: Record<string, unknown[]>, // assuming possibleArgs are unique
+  outputArgs?: string[],
+): Record<string, unknown>[] => {
+  // since we are creating a cartesian product, we should focus on the required args
+  // in order to avoid getting unnecessarily-large combination sets
+  const potentialArgsByName = Object.entries(outputArgs !== undefined ? _.pick(possibleArgs, outputArgs) : possibleArgs)
+    .map(([argName, argValues]) => argValues.map(val => ({ [argName]: val })))
+
+  return potentialArgsByName.reduce((acc, argChoices) => acc.flatMap(
+    combo => argChoices.map(arg => ({ ...combo, ...arg }))
+  ))
+}
 
 const computeDependsOnURLs = (
   {

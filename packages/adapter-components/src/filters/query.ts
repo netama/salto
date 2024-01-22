@@ -20,7 +20,7 @@ import { collections } from '@salto-io/lowerdash'
 import { AbstractNodeMap } from '@salto-io/dag'
 import { logger } from '@salto-io/logging'
 import { FilterCreator } from '../filter_utils'
-import { ElementQuery } from '../elements/query'
+import { ElementQuery } from '../fetch/query'
 
 const log = logger(module)
 
@@ -51,6 +51,8 @@ export const createParentChildGraph = (
 /**
  * A filter to filter out instances by the fetchQuery of the adapter
  */
+// TODON will only need if not filtering via the infra / using queries that cannot be calculated during creation?
+// (or if filters create additional elements that require further filtering)
 export const queryFilterCreator: <
   TClient,
   TContext,

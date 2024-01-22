@@ -139,7 +139,7 @@ export const removeNullValues = (
   }) ?? {}
 
 export const createServiceIds = (
-  entry: Values, serviceIdField: string, typeId: ElemID
+  entry: Values, serviceIdField: string, typeId: ElemID // TODON adjust to multiple
 ): ServiceIds => ({
   [serviceIdField]: entry[serviceIdField],
   [OBJECT_SERVICE_ID]: toServiceIdsString({

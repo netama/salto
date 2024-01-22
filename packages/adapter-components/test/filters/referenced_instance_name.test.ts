@@ -31,7 +31,7 @@ import { addReferencesToInstanceNames, referencedInstanceNamesFilterCreator,
   createReferenceIndex } from '../../src/filters/referenced_instance_names'
 import { FilterWith } from '../../src/filter_utils'
 import { Paginator } from '../../src/client'
-import { createMockQuery } from '../../src/elements/query'
+import { createMockQuery } from '../../src/fetch/query'
 import { NameMappingOptions } from '../../src/config'
 
 const ADAPTER_NAME = 'myAdapter'

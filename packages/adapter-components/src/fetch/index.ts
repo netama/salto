@@ -13,7 +13,5 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-export { ApiClientDefinition } from './client'
-export { HTTPEndpointIdentifier, EndpointDefinition, HTTPEndpoint, HTTPMethod, EndpointByPathAndMethod, HTTPEndpointDetails } from './endpoint'
-export { PaginationDefinitions } from './pagination'
+export * as query from './query'
+export { getAllElements } from './fetch'

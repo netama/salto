@@ -36,6 +36,7 @@ export type GetAllItemsFunc = (args: {
   getParams: ClientGetWithPaginationParams
 }) => AsyncIterable<ResponseValue[]>
 
+// TODON improve input and output and generalize beyond GET
 export type PaginationFunc = ({
   responseData,
   page,
@@ -52,6 +53,7 @@ export type PaginationFunc = ({
   responseHeaders?: unknown
 }) => Record<string, string>[]
 
+// TODON move pageSize elsewhere?
 export type PaginationFuncCreator<T = {}> = (args: {
   client: HTTPReadClientInterface
   pageSize: number

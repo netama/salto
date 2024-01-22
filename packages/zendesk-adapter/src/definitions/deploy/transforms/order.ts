@@ -25,7 +25,7 @@ const idsAreNumbers = (ids: unknown): ids is number[] => (
 export const transformForOrder: (
   orderFieldName: string,
   addPositions?: boolean,
-) => definitions.DeployTransformRequest = (orderFieldName, addPositions) => ({ value, ...args }) => {
+) => definitions.deploy.DeployTransformRequest = (orderFieldName, addPositions) => ({ value, ...args }) => {
   const mergedOrderIDs = (value.active ?? []).concat(value.inactive ?? [])
 
   const addPositionsToOrder = (ids: unknown): { id: number, position: number }[] => {

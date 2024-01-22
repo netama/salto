@@ -16,10 +16,11 @@
 export { ApiComponentsConfig, createApiComponentsConfigType } from './api_components'
 export { createDucktypeAdapterApiConfigType, AdapterDuckTypeApiConfig, DuckTypeTransformationConfig, DuckTypeTransformationDefaultConfig, TypeDuckTypeConfig, TypeDuckTypeDefaultsConfig, validateApiDefinitionConfig as validateDuckTypeApiDefinitionConfig, validateFetchConfig as validateDuckTypeFetchConfig } from './ducktype'
 export { createRequestConfigs, validateRequestConfig, FetchRequestConfig, DeployRequestConfig, UrlParams, DeploymentRequestsByAction, RecurseIntoCondition, RecurseIntoConfig, isRecurseIntoConditionByField } from './request'
-export { ReferencesConfig, createReferencesConfigType } from '../definitions/system/references'
-export { createAdapterApiConfigType, getConfigWithDefault, AdapterApiConfig, UserFetchConfig, TypeConfig, TypeDefaultsConfig, createUserFetchConfigType, DEPLOYER_FALLBACK_VALUE, UserDeployConfig, DefaultMissingUserFallbackConfig, DefaultFetchCriteria, createUserDeployConfigType, validateDefaultMissingUserFallbackConfig, validateSupportedTypes, defaultMissingUserFallbackField, AdapterFetchError as FetchError } from './shared'
+export { ReferenceDefinitions, createReferencesConfigType } from '../definitions/system/references'
+export { createAdapterApiConfigType, getConfigWithDefault, AdapterApiConfig, TypeConfig, TypeDefaultsConfig, DEPLOYER_FALLBACK_VALUE, DefaultMissingUserFallbackConfig, validateDefaultMissingUserFallbackConfig, validateSupportedTypes, defaultMissingUserFallbackField, AdapterFetchError as FetchError } from './shared'
 export { mergeWithDefaultConfig } from './merge'
 export { createTypeNameOverrideConfigType, createSwaggerAdapterApiConfigType, AdapterSwaggerApiConfig, RequestableAdapterSwaggerApiConfig, SwaggerDefinitionBaseConfig, TypeSwaggerConfig, RequestableTypeSwaggerConfig, TypeSwaggerDefaultConfig, TypeNameOverrideConfig, validateApiDefinitionConfig as validateSwaggerApiDefinitionConfig, validateFetchConfig as validateSwaggerFetchConfig } from './swagger'
 export { createTransformationConfigTypes, validateTransoformationConfig, TransformationDefaultConfig, TransformationConfig, StandaloneFieldConfigType, FieldToOmitType, FieldToHideType, getTransformationConfigByType, dereferenceFieldName, isReferencedIdField, NameMappingOptions, DATA_FIELD_ENTIRE_OBJECT, getTypeTransformationConfig, shouldNestFiles } from './transformation'
 export { getConfigWithExcludeFromConfigChanges, ConfigChangeSuggestion } from './config_change'
 export * as configMigrations from './config_migrations'
+export { UserFetchConfig, createUserFetchConfigType, UserDeployConfig, DefaultFetchCriteria, createUserDeployConfigType,  } from '../definitions/user/user_config' // TODON move

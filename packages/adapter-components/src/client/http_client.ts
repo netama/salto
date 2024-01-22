@@ -51,7 +51,7 @@ export type ClientDataParams = ClientBaseParams & {
 
 export type ClientParams = ClientBaseParams | ClientDataParams
 
-export interface HTTPReadClientInterface {
+export interface HTTPReadClientInterface { // TODON eliminate, align get() to just be another command
   getSinglePage(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
   getPageSize(): number
 }
@@ -69,6 +69,8 @@ export type HttpMethodToClientParams = {
   put: ClientDataParams
   patch: ClientDataParams
   delete: ClientDataParams
+  head: ClientBaseParams
+  options: ClientBaseParams
 }
 
 type MethodsWithDataParam = 'put' | 'post' | 'patch'
@@ -168,7 +170,18 @@ export abstract class AdapterHTTPClient<
   @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
   @logDecorator(['url', 'queryParams'])
   @requiresLogin()
-  public async getSinglePage(params: ClientBaseParams):
+  public async getSinglePage(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('get', params)
+  }
+
+  /**
+   * Get a single response
+   */
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async get(params: ClientBaseParams): // TODON rename to just get?
     Promise<Response<ResponseValue | ResponseValue[]>> {
     return this.sendRequest('get', params)
   }
@@ -203,6 +216,22 @@ export abstract class AdapterHTTPClient<
   public async patch(params: ClientDataParams):
     Promise<Response<ResponseValue | ResponseValue[]>> {
     return this.sendRequest('patch', params)
+  }
+
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async head(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('head', params)
+  }
+
+  @throttle<TRateLimitConfig>({ bucketName: 'get', keys: ['url', 'queryParams'] })
+  @logDecorator(['url', 'queryParams'])
+  @requiresLogin()
+  public async options(params: ClientBaseParams): // TODON rename to just get?
+    Promise<Response<ResponseValue | ResponseValue[]>> {
+    return this.sendRequest('options', params)
   }
 
   protected async sendRequest<T extends keyof HttpMethodToClientParams>(

@@ -16,21 +16,16 @@
 
 import { DefaultWithCustomizations } from '../shared'
 import { FetchResourceDefinition } from './resource'
-import { FetchTransformationDefinition } from './transformation'
+import { ElementFetchDefinitionWithCustomizer } from './element'
 
 // TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
 export type InstanceFetchApiDefinitions = {
-  isTopLevel: boolean
   resource?: FetchResourceDefinition
-  instance?: FetchTransformationDefinition // TODON rename type defs as well everywhere (instance or element?)
+  element?: ElementFetchDefinitionWithCustomizer // TODON rename type defs as well everywhere (instance or element?)
 }
 
 // TODON decide if should be here, or next to the implementation (under fetch)?
 export type FetchApiDefinitions = {
-  // // to allow fetching modules separately? e.g. zendesk guide can have its own fetch config?
-  // // e.g. subdomain, brand id (to mark as parent)
-  // initialContext: Record<string, Value>
-
   instances: DefaultWithCustomizations<InstanceFetchApiDefinitions>
 }
 

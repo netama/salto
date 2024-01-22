@@ -15,7 +15,7 @@
 */
 import { InstanceElement, Value } from '@salto-io/adapter-api'
 import { MockInterface } from '@salto-io/test-utils'
-import { UserFetchConfig } from '../../config'
+import { UserFetchConfig } from '../../config' // TODON move
 
 export const ALL_TYPES = '.*'
 
@@ -78,6 +78,9 @@ export const createElementQuery = <T extends Record<string, unknown>>(
 
       return isIncluded && !isExcluded
     },
+
+    // TODON also extend and add something like getCriteriaForType? (formatted as include/exclude)
+    // so that it can be used for optimizations
   })
 
 export const createMockQuery = (): MockInterface<ElementQuery> => ({

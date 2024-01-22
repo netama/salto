@@ -37,7 +37,7 @@ export const mergeSingleDefWithDefault = <T extends Values | Values[], K extends
 
 // TODON figure out the typing issue when not defaulting to string
 export function mergeWithDefault<T extends Values | Values[], K extends string = string>(
-  defsWithDefault: types.PickyRequired<DefaultWithCustomizations<T, K>, 'customizations'>,
+  defsWithDefault: DefaultWithCustomizations<T, K>
 ): Record<K, T>
 export function mergeWithDefault<T extends Values | Values[]>(
   defsWithDefault: types.PickyRequired<DefaultWithCustomizations<T, string>, 'customizations'>,

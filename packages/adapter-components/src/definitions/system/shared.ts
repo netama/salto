@@ -20,16 +20,14 @@ import { Change, ChangeGroup, InstanceElement, Values } from '@salto-io/adapter-
 // TODON can also use some "magic" placeholder, e.g. __default__ but ugly...
 export type DefaultWithCustomizations<T, K extends string = string> = {
   default?: types.RecursivePartial<T extends (infer U)[] ? U : T> // TODON allow requiring/omitting specific fields?
-  customizations?: Partial<Record<K, T>>
+  // TODON check if this does what I want (want partial only if not every string)
+  customizations: string extends K ? Record<K, T> : Partial<Record<K, T>>
 }
 
 // TODON decide about default input
-export type ArgsWithCustomizer<ResponseType, Args, Input = unknown> = Args
-  | ({
-    custom: ((args: Partial<Args>) => (input: Input) => ResponseType)
-      | ((input: Input) => ResponseType)
-  } & Partial<Args>)
-
+export type ArgsWithCustomizer<ResponseType, Args, Input = unknown> = Args & {
+  custom?: ((args: Partial<Args>) => (input: Input) => ResponseType)
+}
 export type ContextParams = Record<string, unknown>
 
 export type GeneratedItem<TContext = ContextParams> = {
@@ -38,7 +36,7 @@ export type GeneratedItem<TContext = ContextParams> = {
   // TODON allow to define a buffer type?
   binaryValue?: Buffer
   // identifier: string[] // TODON maybe can use additionalContext instead?
-  readonly context: ContextParams & TContext // TODON decide between context and input and align
+  readonly context?: ContextParams & TContext // TODON decide between context and input and align
 }
 
 export type TransformFunction<TContext = ContextParams> = (
@@ -46,19 +44,21 @@ export type TransformFunction<TContext = ContextParams> = (
 ) => types.PickyRequired<Partial<GeneratedItem<TContext>>, 'value'> // TODON fill out the others from input if missing
 
 // TODON adjust similarly to lodash?
-type SortKey = ArgsWithCustomizer<(value: Values) => unknown, {
-  fieldName: string
-  descending?: boolean // false = ascending (default)
-}>
+// type SortKey = ArgsWithCustomizer<(value: Values) => unknown, {
+//   fieldName: string
+//   descending?: boolean // false = ascending (default)
+// }>
 
 export type ExtractionParams<TContext = ContextParams> = {
   // return field name (can customize e.g. to "type => types")
-  root?: ArgsWithCustomizer<
-    string | undefined,
-    string,
-    TContext
-  >
-  toType?: string // TODON not needed in deploy change-to-request, decide if worth customizing
+  root?: string
+  // TODON generalize later
+  // root?: ArgsWithCustomizer<
+  //   string | undefined,
+  //   string,
+  //   TContext
+  // >
+  toType: string // TODON not needed in deploy change-to-request, decide if worth customizing
 
   // the default identifier of this fragment is determined by the resulting value's service id
   // if a different one is needed, it can be customized here
@@ -67,9 +67,9 @@ export type ExtractionParams<TContext = ContextParams> = {
 
   nestUnderField?: string // TODON replaces deployAsField
   // default false, set to true to view all responses from all pages combined
-  aggregate?: {
-    sortBy: SortKey[] // TODON define
-  }
+  // aggregate?: { // TODON see if can replace with dependencies on individual items?
+  //   sortBy: SortKey[] // TODON define
+  // }
   // aggregate?: boolean
   // // on fetch - singleton, on deploy - whether to split to individual requests or batch
   // single?: boolean // moved to transformation
@@ -91,7 +91,8 @@ export type InstanceChangeAndGroup = {
 
 export type FilterCondition = (args: InstanceChangeAndGroup) => boolean
 
-export type ExtractionDefinitions<TContext = ContextParams> = ArgsWithCustomizer<
+// TODON maybe avoid complete customization so we know what to fetch?
+export type ExtractionDefinition<TContext = ContextParams> = ArgsWithCustomizer<
   GeneratedItem<TContext>[], // TODON decide if should be a generator
   ExtractionParams<TContext>,
   GeneratedItem<TContext>[]
