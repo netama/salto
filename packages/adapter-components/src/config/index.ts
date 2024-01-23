@@ -23,4 +23,4 @@ export { createTypeNameOverrideConfigType, createSwaggerAdapterApiConfigType, Ad
 export { createTransformationConfigTypes, validateTransoformationConfig, TransformationDefaultConfig, TransformationConfig, StandaloneFieldConfigType, FieldToOmitType, FieldToHideType, getTransformationConfigByType, dereferenceFieldName, isReferencedIdField, NameMappingOptions, DATA_FIELD_ENTIRE_OBJECT, getTypeTransformationConfig, shouldNestFiles } from './transformation'
 export { getConfigWithExcludeFromConfigChanges, ConfigChangeSuggestion } from './config_change'
 export * as configMigrations from './config_migrations'
-export { UserFetchConfig, createUserFetchConfigType, UserDeployConfig, DefaultFetchCriteria, createUserDeployConfigType,  } from '../definitions/user/user_config' // TODON move
+export { UserFetchConfig, createUserFetchConfigType, UserDeployConfig, DefaultFetchCriteria, createUserDeployConfigType } from '../definitions/user/user_config' // TODON move

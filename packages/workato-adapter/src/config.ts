@@ -121,7 +121,7 @@ export const DEFAULT_TYPES: Record<string, configUtils.TypeDuckTypeConfig> = {
   [FOLDER_TYPE]: {
     request: {
       url: '/folders',
-      recursiveQueryByResponseField: {
+      recursiveQueryByResponseField: { // TODON convert to "regular" recurseInto?
         // eslint-disable-next-line camelcase
         parent_id: 'id',
       },

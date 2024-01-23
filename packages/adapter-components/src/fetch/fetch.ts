@@ -52,8 +52,8 @@ export const getAllElements = async <
   // computeGetArgs = defaultComputeGetArgs,
   getElemIdFunc,
   // getEntriesResponseValuesFunc, - TODON make sure no longer needed
-  isErrorTurnToConfigSuggestion,
-  customInstanceFilter,
+  // isErrorTurnToConfigSuggestion,
+  // customInstanceFilter,
   additionalRequestContext,
   requestCache,
 }: {
@@ -81,7 +81,7 @@ export const getAllElements = async <
     additionalDefs,
     definitions,
   )
-  const { clients, fetch, pagination, initializing } = mergedDefs
+  const { clients, fetch, pagination /* , initializing */ } = mergedDefs
 
 
   // TODON make smart merge - the "top-level" defaults should only be set if isTopLevel is true!!!
@@ -117,9 +117,11 @@ export const getAllElements = async <
   // 2. resources to resources (based on recurseInto in one direction, and context-dependsOn in the other)
   // 3. context dependencies (on the same edges?)
   // create "banks" by type + serialized service id using the json serialization library
-  // figure out how to maintain references to parent resources before defining the elements - add some "resource" entity?
+  // figure out how to maintain references to parent resources before defining the elements -
+  //   add some "resource" entity? (not sure needed in the current implementation though, since added as a child)
   // for each resource, maintain all the promises it's waiting for and where they should be assigned? or do implicitly
-  // to get a resource, (later add filtering) traverse the dependency graph backwards to find all "roots" that don't need more args
+  // to get a resource, (later add filtering) traverse the dependency graph backwards to find all "roots" that don't
+  // need more args.
   // maintain aggregated context by resource (should also be a graph? check old implementation of recurseInto)
   const resourceManager = createResourceManager({
     adapterName,

@@ -34,7 +34,8 @@ export type RESTApiClientDefinition<PaginationOptions extends string> = {
 
   // TODON only relevant for deploy? might want to define it differently, and then if this is only for fetch
   // it will always be strict
-  // when true, only the defined endpoints are supported. when false, unknown endpoints are supported with the default config
+  // when true, only the defined endpoints are supported. when false,
+  // unknown endpoints are supported with the default config.
   // TODON extend to allowed patterns by method and path instead?
   strict: boolean
 }

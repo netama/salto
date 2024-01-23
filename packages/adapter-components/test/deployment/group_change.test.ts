@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { BuiltinTypes, Change, CORE_ANNOTATIONS, ElemID, getChangeData, InstanceElement, isInstanceChange, ObjectType, toChange } from '@salto-io/adapter-api'
-import { getChangeGroupIdsFunc, ChangeIdFunction } from '../../src/deployment'
+import { ChangeIdFunction, getChangeGroupIdsFunc } from '../../src/deployment/grouping'
 
 describe('getChangeGroupIdsFunc', () => {
   let type: ObjectType

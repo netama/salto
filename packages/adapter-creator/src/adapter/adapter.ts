@@ -18,7 +18,7 @@ import {
   FetchResult, AdapterOperations, DeployResult,
   DeployModifiers, FetchOptions, ElemIdGetter, InstanceElement, isObjectType,
 } from '@salto-io/adapter-api'
-import { client as clientUtils, config as configUtils, elements as elementUtils } from '@salto-io/adapter-components'
+import { client as clientUtils, config as configUtils, deployment as deploymentUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections } from '@salto-io/lowerdash'
@@ -28,11 +28,11 @@ import { Filter, filtersRunner } from '../filter'
 import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
 import { analyzeConfig } from '../utils/config_initializer'
-import { getChangeGroupIdsFuncWithConfig } from '@salto-io/adapter-components/src/deployment/grouping'
 
 const { createPaginator } = clientUtils
 const { computeGetArgs, findDataField, getAllElements } = elementUtils
 const { generateTypes } = elementUtils.swagger
+const { getChangeGroupIdsFuncWithConfig } = deploymentUtils.grouping
 const log = logger(module) // TODON move inside so that it has the account context???
 
 // TODON add a creator for this? and only use member functions where strictly needed
@@ -184,7 +184,9 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
   public get deployModifiers(): DeployModifiers {
     return {
       changeValidator,
-      getChangeGroupIds: getChangeGroupIdsFuncWithConfig(this.userConfig), // TODON upgrade config and use correct part, allow for adding more
+      // TODON bring back + upgrade config and use correct part, allow for adding more
+      // getChangeGroupIds: getChangeGroupIdsFuncWithConfig(this.userConfig),
+      getChangeGroupIds: getChangeGroupIdsFuncWithConfig({ customizations: {} }),
     }
   }
 }

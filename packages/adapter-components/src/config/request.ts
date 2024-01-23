@@ -16,8 +16,8 @@
 import { ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, MapType, ListType, ActionName, createRestriction } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
-import { collections } from '@salto-io/lowerdash'
-import { ARG_PLACEHOLDER_MATCHER } from 'src/fetch/resource/type_fetcher'
+import { collections, types } from '@salto-io/lowerdash'
+import { ARG_PLACEHOLDER_MATCHER } from '../fetch/types'
 
 const { findDuplicates } = collections.array
 
@@ -82,7 +82,7 @@ export type FetchRequestConfig = BaseRequestConfig & {
 
 export type UrlParams = Record<string, string>
 
-export type DeployRequestConfig = BaseRequestConfig & {
+export type DeployRequestConfig = types.PickyRequired<BaseRequestConfig, 'method'> & {
   urlParamsToFields?: UrlParams
   deployAsField?: string
   fieldsToIgnore?: string[]
@@ -94,7 +94,7 @@ export type DeployRequestConfig = BaseRequestConfig & {
 
 // TODON finish converting to array
 export type DeploymentRequestsByAction<A extends string = ActionName> = Partial<
-  Record<A, DeployRequestConfig | DeployRequestConfig[]>>
+  Record<A, DeployRequestConfig>> // | DeployRequestConfig[]>>
 
 export type FetchRequestDefaultConfig = Partial<Omit<FetchRequestConfig, 'url'>>
 

@@ -25,7 +25,7 @@ const ITEM_INDEX_PAGINATION_URLS = [
   '/rest/api/2/priorityschemes',
 ]
 
-const removeScopedObjectsImpl = <T extends clientUtils.ResponseValue>(
+const removeScopedObjectsImpl = <T extends clientUtils.ResponseValue>( // TODON move to definition under endpoint transform in endpoint?
   response: T | T[],
 ): T | T[] => {
   if (Array.isArray(response)) {

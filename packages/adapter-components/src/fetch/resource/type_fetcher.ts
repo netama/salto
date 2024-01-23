@@ -16,19 +16,19 @@
 import _ from 'lodash'
 import objectHash from 'object-hash'
 import stableStringify from 'json-stable-stringify'
+import { Values, isPrimitiveValue } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { ContextWithDependencies, isDependsOnDefinition } from '../../definitions/system/fetch'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
 import { Requester } from '../requester'
-import { TypeResourceFetcher } from '../types'
-import { HTTPEndpointIdentifier } from 'src/definitions'
-import { GeneratedItem } from 'src/definitions/system/shared'
-import { FetchResourceDefinition } from 'src/definitions/system/fetch/resource'
+import { ARG_PLACEHOLDER_MATCHER, TypeResourceFetcher } from '../types'
+import { HTTPEndpointIdentifier } from '../../definitions/system'
+import { GeneratedItem } from '../../definitions/system/shared'
+import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
 import { computeArgCombinations } from './request_parameters'
-import { findUnresolvedArgs } from 'src/elements'
-import { Values, isPrimitiveValue } from '@salto-io/adapter-api'
+import { findUnresolvedArgs } from '../../elements' // TODON move
 import { recurseIntoSubresources } from './subresources'
 
 const log = logger(module)
@@ -54,8 +54,6 @@ const getEmptyTypeResourceFetcher = (): TypeResourceFetcher => ({
   getItems: () => [],
 })
 
-export const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
-
 // TODON move to new location
 export const replaceParams = (origValue: string, paramValues: Record<string, unknown>): string => (
   origValue.replace(
@@ -74,7 +72,9 @@ export const replaceParams = (origValue: string, paramValues: Record<string, unk
 // TODON move
 export const serviceIdCreator = (
   serviceIdFields: string[], typeName: string,
-): ((entry: Values) => string) => entry => (
+): (
+  (entry: Values) => string
+) => entry => (
   stableStringify({
     typeName,
     ids: _.pick(entry, serviceIdFields),
@@ -83,7 +83,7 @@ export const serviceIdCreator = (
 
 // TODON adjust to customizer later
 const calculateContextArgs = ({ args, initialRequestContext, availableResources }: {
-  args: ContextWithDependencies['args'] | undefined,
+  args: ContextWithDependencies['args'] | undefined
   initialRequestContext?: Record<string, unknown>
   availableResources: Record<string, GeneratedItem[] | undefined>
 }): Record<string, unknown[]> => {
@@ -99,9 +99,9 @@ const calculateContextArgs = ({ args, initialRequestContext, availableResources 
     {},
     predefinedArgs,
     _(remainingArgs)
-      .mapValues(arg => isDependsOnDefinition(arg)
+      .mapValues(arg => (isDependsOnDefinition(arg)
         ? availableResources[arg.typeName]?.map(item => _.pick({ ...item.value, ...item.context }, arg.fieldName))
-        : collections.array.makeArray(arg.value))
+        : collections.array.makeArray(arg.value)))
       .pickBy(lowerdashValues.isDefined)
       .mapValues(values => _.uniqBy(values, objectHash)) // TODON make sure safe, can also use stableStringify
       .value(),
@@ -167,16 +167,16 @@ export const createTypeResourceFetcher = ({
           contexts,
           callerIdentifier: {
             typeName,
-          }
+          },
         })).toArray()
       }))).flat()
 
       const recurseIntoFetcher = recurseIntoSubresources({ def, typeFetcherCreator, availableResources })
-  
-      const fragments = await Promise.all(itemsWithContext.map(async item => {
+
+      const allFragments = await Promise.all(itemsWithContext.map(async item => {
         const nestedResources = await recurseIntoFetcher(item)
         const fieldValues = Object.entries(nestedResources).map(([fieldName, fieldItems]) => ({
-          [fieldName]: fieldItems.map(({ value }) => value)
+          [fieldName]: fieldItems.map(({ value }) => value),
         }))
         return {
           ...item,
@@ -184,17 +184,17 @@ export const createTypeResourceFetcher = ({
         }
       }))
       const toServiceID = serviceIdCreator(def.serviceIDFields ?? [], typeName)
-      const groupedFragments = _.groupBy(fragments, toServiceID)
+      const groupedFragments = _.groupBy(allFragments, toServiceID)
       // TODON recursively merge arrays?
       const mergedFragments = _(groupedFragments)
         .mapValues(fragments => ({
           fragments,
           // concat arrays
           value: _.mergeWith({}, ...fragments.map(fragment => fragment.value), (first: unknown, second: unknown) => (
-          (Array.isArray(first) && Array.isArray(second))
-            ? first.concat(second)
-            : undefined
-          ))
+            (Array.isArray(first) && Array.isArray(second))
+              ? first.concat(second)
+              : undefined
+          )),
         }))
         .mapValues(item => def.transform?.(item) ?? item.value)
         .value()
@@ -216,7 +216,7 @@ export const createTypeResourceFetcher = ({
       }
       return {
         success: false,
-        errors: [new Error(String(e))] // TODON
+        errors: [new Error(String(e))], // TODON
       }
     }
   }

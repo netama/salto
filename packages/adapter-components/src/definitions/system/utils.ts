@@ -22,18 +22,18 @@ export const mergeSingleDefWithDefault = <T extends Values | Values[], K extends
   defaultDef: DefaultWithCustomizations<T, K>['default'] | undefined,
   def: T | undefined,
 ): T | undefined => (
-  def === undefined
-    ? undefined
-    : _.mergeWith(
-      _.cloneDeep(defaultDef ?? {}),
-      def ?? {},
-      (firstVal, secondValue) => (
-        (Array.isArray(secondValue) && !Array.isArray(firstVal))
-          ? secondValue.map(innerVal => mergeSingleDefWithDefault(firstVal, innerVal))
-          : undefined
-      )
-    ) as T // TODON improve
-)
+    def === undefined
+      ? undefined
+      : _.mergeWith(
+        _.cloneDeep(defaultDef ?? {}),
+        def ?? {},
+        (firstVal, secondValue) => (
+          (Array.isArray(secondValue) && !Array.isArray(firstVal))
+            ? secondValue.map(innerVal => mergeSingleDefWithDefault(firstVal, innerVal))
+            : undefined
+        )
+      ) as T // TODON improve
+  )
 
 // TODON figure out the typing issue when not defaulting to string
 export function mergeWithDefault<T extends Values | Values[], K extends string = string>(

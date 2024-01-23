@@ -33,8 +33,10 @@ export const processSources = async <
 >(_defs: ApiDefinitions<ClientOptions, PaginationOptions, Action>):
     Promise<ProcessedSources<ClientOptions, PaginationOptions, Action>> => {
   // TODON
+  const additionalDefs = {}
+  const predefinedTypes = {}
   return {
-    additionalDefs: {},
-    predefinedTypes: {},
+    additionalDefs,
+    predefinedTypes,
   }
 }

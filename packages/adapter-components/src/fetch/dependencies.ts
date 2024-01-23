@@ -17,7 +17,7 @@ import _ from 'lodash'
 import { ActionName } from '@salto-io/adapter-api'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ApiDefinitions, HTTPEndpointDetails, HTTPEndpointIdentifier, HTTPMethod, mergeWithDefault } from '../definitions'
-import { ClientEndpoints } from 'src/definitions/system/requests/endpoint'
+import { ClientEndpoints } from '../definitions/system/requests/endpoint'
 
 export type TypeEndpointRelations<ClientOptions extends string> = {
   // TODON see if need to formalize? technically can do on-demand, but can help narrow the context
@@ -37,8 +37,8 @@ export type TypeEndpointRelations<ClientOptions extends string> = {
 const getExtractedTypes = <PaginationOptions extends string | 'none'>(
   endpointDetails: HTTPEndpointDetails<PaginationOptions>,
 ): string[] => (
-  _.uniq(endpointDetails.responseExtractors?.map(ext => ext.toType).filter(lowerdashValues.isDefined) ?? [])
-)
+    _.uniq(endpointDetails.responseExtractors?.map(ext => ext.toType).filter(lowerdashValues.isDefined) ?? [])
+  )
 
 // TODON add generic helper function for reverting edges
 
@@ -47,22 +47,24 @@ const getEndpointToClient = <
   PaginationOptions extends string | 'none',
   Action extends ActionName
 >(
-  defs: ApiDefinitions<ClientOptions, PaginationOptions, Action>
-): Record<string, HTTPEndpointIdentifier[]> => {
+    clientDefs: ApiDefinitions<ClientOptions, PaginationOptions, Action>['clients']
+  ): Record<string, HTTPEndpointIdentifier[]> => {
   // TODON handle casting
   const allEndpoints = {
     ...Object.values(
-      _.mapValues(defs.clients.options, options => mergeWithDefault(options.endpoints) as ClientEndpoints<PaginationOptions>)
-    )
+      _.mapValues(
+        clientDefs.options, options => mergeWithDefault(options.endpoints) as ClientEndpoints<PaginationOptions>
+      )
+    ),
   } as unknown as Record<string, Record<HTTPMethod, HTTPEndpointDetails<PaginationOptions>>>
 
   const endpointToExtractedType = _.mapValues(allEndpoints, (methodToDetails, path) => (
-    _.mapValues(methodToDetails, (details, method) => getExtractedTypes(details).map(type => ({ path, method, type }))
-  )))
+    _.mapValues(methodToDetails, (details, method) => getExtractedTypes(details).map(type => ({ path, method, type })))
+  ))
   const allItems = Object.values(endpointToExtractedType).flatMap(val => Object.values(val)).flat()
   return _.mapValues(
     _.groupBy(allItems, ({ type }) => type),
-    items => items.map(({ type, ...item }) => item)
+    items => items.map(({ type: _type, ...item }) => item)
   ) as Record<string, HTTPEndpointIdentifier[]>
 }
 
@@ -73,8 +75,8 @@ export const computeDependencies = <
   PaginationOptions extends string | 'none',
   Action extends ActionName
 >(
-  defs: ApiDefinitions<ClientOptions, PaginationOptions, Action>
-): TypeEndpointRelations<ClientOptions> => {
+    defs: Pick<ApiDefinitions<ClientOptions, PaginationOptions, Action>, 'fetch' | 'clients'>
+  ): TypeEndpointRelations<ClientOptions> => {
   if (defs.fetch?.instances === undefined) {
     throw new Error('no fetch information') // TODON
   }
@@ -94,6 +96,6 @@ export const computeDependencies = <
 
   return {
     endpointToClient,
-    typeToEndpoints: getEndpointToClient(defs),
+    typeToEndpoints: getEndpointToClient(defs.clients),
   }
 }

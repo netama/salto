@@ -15,7 +15,7 @@
 */
 import _ from 'lodash'
 import { logger } from '@salto-io/logging'
-import { ResponseValue, Response } from '../client'
+import { ResponseValue, Response, ClientDataParams } from '../client'
 import { ContextParams, GeneratedItem } from '../definitions/system/shared'
 import { ApiDefinitions, HTTPEndpointIdentifier, mergeWithDefault } from '../definitions'
 import { TypeEndpointRelations } from './dependencies'
@@ -25,6 +25,7 @@ import { noPagination } from '../client/pagination/pagination'
 import { DATA_FIELD_ENTIRE_OBJECT } from '../config'
 import { FetchExtractionDefinition } from '../definitions/system/requests/endpoint'
 import { replaceArgs } from './resource/request_parameters'
+import { getLogPrefix } from '../utils'
 
 const log = logger(module)
 
@@ -46,36 +47,33 @@ export const createExtractor = (extractorDef: FetchExtractionDefinition): ItemEx
   if (extractorDef.custom !== undefined) {
     return extractorDef.custom(extractorDef)
   }
-  const { toType, /* aggregate, */context,  nestUnderField, omit, pick, root, transform } = extractorDef
+  const { toType, /* aggregate, */context, nestUnderField, omit, pick, root, transform } = extractorDef
   // TODON in order to aggregate, assuming got all pages - see if we want to change this to a stream
   return pages => {
     const items = pages
-      .flatMap(page => (root === undefined || root === DATA_FIELD_ENTIRE_OBJECT) ? page : _.get(page, root))
-      .map(item => pick !== undefined ? _.pick(item, pick) : item)
-      .map(item => omit !== undefined ? _.omit(item, omit) : item)
-      .map(item => nestUnderField !== undefined
+      .flatMap(page => ((root === undefined || root === DATA_FIELD_ENTIRE_OBJECT) ? page : _.get(page, root)))
+      .map(item => (pick !== undefined ? _.pick(item, pick) : item))
+      .map(item => (omit !== undefined ? _.omit(item, omit) : item))
+      .map(item => (nestUnderField !== undefined
         ? { [nestUnderField]: item }
-        : item)
-    
+        : item))
+
     return items
       .map(item => ({ typeName: toType, value: item, context: context ?? {} }))
-      .map(generatedItem => transform !== undefined
+      .map(generatedItem => (transform !== undefined
         ? _.defaults({}, transform(generatedItem), generatedItem)
-        : generatedItem)
+        : generatedItem))
   }
 }
 
-export const getRequester = <
-  ClientOptions extends string,
-  PaginationOptions extends string | 'none',
-  Action extends string // TODON won't be needed once narrowing the definitions type
->({
-  // adapterName,
-  // accountName,
+// TODON action won't be needed once narrowing the definitions type?
+export const getRequester = <ClientOptions extends string, PaginationOptions extends string | 'none', Action extends string>({
+  adapterName,
+  accountName,
   clients,
   pagination,
   endpointToClient,
-  // requestCache,
+  // requestCache, // TODON move to client? or keep here?
 }: {
   adapterName: string
   accountName: string
@@ -84,7 +82,6 @@ export const getRequester = <
   endpointToClient: TypeEndpointRelations<ClientOptions>['endpointToClient']
   requestCache?: Record<string, unknown>
 }): Requester => {
-
   const clientDefs = _.mapValues(
     clients.options,
     ({ endpoints, ...def }) => ({
@@ -93,12 +90,13 @@ export const getRequester = <
     })
   )
 
-  const request: Requester['request'] = async function *({ callerIdentifier, contexts, endpointIdentifier }) {
+  const request: Requester['request'] = async function *request({ callerIdentifier, contexts, endpointIdentifier }) {
     if (endpointToClient[endpointIdentifier.path] === undefined) {
       if (clients.options[clients.default].strict) {
         throw new Error(`Could not find client for endpoint ${endpointIdentifier.path}`)
       }
-      log.error('Could not find client for endpoint %s, falling back to default client (%s)', endpointIdentifier.path, clients.default)
+      // TODON make this a pattern of how to use adapter/client?
+      log.error('[%s] Could not find client for endpoint %s, falling back to default client (%s)', getLogPrefix(adapterName, accountName), endpointIdentifier.path, clients.default)
     }
     const clientName = endpointToClient[endpointIdentifier.path] ?? clients.default
     const clientDef = clientDefs[clientName]
@@ -134,7 +132,7 @@ export const getRequester = <
     // TODON refactor paginator and use it here
     // TODON replace args recursively instead!
 
-    const replaceAllArgs = (context: ContextParams) => ({
+    const replaceAllArgs = (context: ContextParams): ClientDataParams => ({
       // TODON rename to path
       url: replaceArgs(endpointIdentifier.path, context),
       // TODON use body if not only GET?
@@ -157,7 +155,7 @@ export const getRequester = <
         context,
       })))
       .flatMap(({ items, context }) => items.flatMap(item => ({ ...item, context })))
-    yield *itemsWithContext.map(item => ({
+    yield* itemsWithContext.map(item => ({
       callerIdentifier,
       typeName: callerIdentifier.typeName,
       value: item,

@@ -68,7 +68,8 @@ export type DeployApiDefinitions<Action extends string> = {
   // and not only the change group, to allow depending on changes in other groups and splitting the groups better?
   // e.g. modify-instead-of-add if the parent implicitly created the child?
   instances: DefaultWithCustomizations<InstanceDeployApiDefinitions<Action>> // TODON elements or changes?
-  // TODON default MUST be shared across components, because we don't know how to pick it - unless ****requiring an entry*****?
+  // TODON default MUST be shared across components, because we don't know how to pick it -
+  // unless ****requiring an entry*****?
 }
 
 export type DeployApiDefinitionsNoDefault<Action extends string> = {

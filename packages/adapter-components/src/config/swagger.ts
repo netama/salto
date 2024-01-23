@@ -17,9 +17,10 @@ import _ from 'lodash'
 import { ObjectType, ElemID, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, ListType, ActionName } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { types, collections, values as lowerDashValues } from '@salto-io/lowerdash'
-import { AdapterApiConfig, createAdapterApiConfigType, TypeConfig, TypeDefaultsConfig, UserFetchConfig, validateSupportedTypes } from './shared'
+import { AdapterApiConfig, createAdapterApiConfigType, TypeConfig, TypeDefaultsConfig, validateSupportedTypes } from './shared'
 import { validateRequestConfig } from './request'
 import { createTransformationConfigTypes, getTransformationConfigByType, TransformationConfig, TransformationDefaultConfig, validateTransoformationConfig } from './transformation'
+import { UserFetchConfig } from '../definitions/user'
 
 const { isDefined } = lowerDashValues
 const { findDuplicates } = collections.array
@@ -54,10 +55,10 @@ export type SwaggerDefinitionBaseConfig = {
   // filter?: RegExp
 
   // when true, the sources are only used for finding the endpoints but types are generated from responses
-  endpointsOnly?: boolean // TODON or: alwaysDuckType?
+  // endpointsOnly?: boolean // TODON or: alwaysDuckType?
 
   // the endpoints will be loaded into the default client (when missing, the default client)
-  client?: string // TODON
+  // client?: string // TODON
 }
 
 export type TypeSwaggerConfig = TypeConfig

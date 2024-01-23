@@ -132,7 +132,11 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       trigger: { bulkPath: '/api/v2/triggers' },
       trigger_category: {
         bulkPath: '/api/v2/trigger_categories',
-        overrides: { customizations: { modify: { request: { method: 'patch' } } } },
+        overrides: {
+          customizations: {
+            modify: [{ request: { method: 'patch' } }],
+          },
+        },
       },
       view: {
         bulkPath: '/api/v2/views',
@@ -147,12 +151,12 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           // the user was warned in externalSourceWebhook.ts
           default: { request: { omit: ['external_source'] } },
           customizations: {
-            modify: {
+            modify: [{
               request: {
                 method: 'patch',
                 transform: transforms.webhook,
               },
-            },
+            }],
           },
         },
       },
@@ -162,7 +166,7 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           transform: transforms.workspace,
         } } },
       },
-  
+
       // parent-child
       business_hours_schedule_holiday: {
         bulkPath: '/api/v2/business_hours/schedules/{parent_id}/holidays',
@@ -199,11 +203,11 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       nestUnderField: 'settings',
       overrides: {
         customizations: {
-          modify: {
+          modify: [{
             request: {
               transform: transforms.omitByValue('routing.autorouting_tag', ''),
             },
-          },
+          }],
         },
       },
     },
@@ -242,7 +246,15 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       method: 'post',
       nestUnderField: 'job',
       // TODON implement transformTriggerOrder based on reorder/trigger.ts:deployFunc (has another nesting level)
-      overrides: { customizations: { modify: { request: { transform: transformTriggerOrder } } } },
+      overrides: {
+        customizations: {
+          modify: [{
+            request: {
+              // transform: transformTriggerOrder,
+            },
+          }],
+        },
+      },
     },
   }),
 
@@ -275,18 +287,18 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
             },
           },
         ],
-        modify: {
+        modify: [{
           request: {
             path: '/api/v2/ticket_fields/{id}',
             method: 'put',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/ticket_fields/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -304,25 +316,25 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         },
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/ticket_fields/{parent_id}/options',
             method: 'post',
             transform: transforms.setDefaultFlag,
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: { // TODON same as add, make sure intentional
             path: '/api/v2/ticket_fields/{parent_id}/options',
             method: 'post',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/ticket_fields/{parent_id}/options/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -340,24 +352,24 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         // fromResponse: () => (),
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/user_fields',
             method: 'post',
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: '/api/v2/user_fields/{id}',
             method: 'put',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/user_fields/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -376,25 +388,25 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         },
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/user_fields/{parent_id}/options',
             method: 'post',
             transform: transforms.setDefaultFlag,
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: { // TODON same as add, make sure intentional
             path: '/api/v2/user_fields/{parent_id}/options',
             method: 'post',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/user_fields/{parent_id}/options/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -411,24 +423,24 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         // fromResponse: () => (),
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/organization_fields',
             method: 'post',
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: '/api/v2/organization_fields/{id}',
             method: 'put',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/organization_fields/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },

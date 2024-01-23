@@ -994,7 +994,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
             args: {
               parent_id: {
                 fromField: 'id',
-             },
+              },
             },
           },
         },

@@ -21,14 +21,14 @@ import { ElementGenerator } from '../element'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
 import { Requester } from '../requester'
-import { HTTPEndpointIdentifier } from 'src/definitions'
+import { HTTPEndpointIdentifier } from '../../definitions'
 import { createTypeResourceFetcher } from './type_fetcher'
-import { FetchResourceDefinition } from 'src/definitions/system/fetch/resource'
+import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
 import { TypeFetcherCreator } from '../types'
 
 const log = logger(module)
 
-export type ResourceManager  = {
+export type ResourceManager = {
   // orchestrate all requests and transformations needed to fetch all entries matching the specified query,
   // and pass them to the element generator that will turn them into elements
   fetch: (query: ElementQuery) => Promise<void>
@@ -83,57 +83,58 @@ export const createResourceManager = ({
   requester: Requester
   elementGenerator: ElementGenerator
   initialRequestContext?: Record<string, unknown>
-}): ResourceManager => {
-  return {
-    fetch: log.time(() => async query => {
-      const createTypeFetcher: TypeFetcherCreator = ({ typeName, context }) => {
-        return createTypeResourceFetcher({ // TODON simplify...
-          adapterName,
-          accountName,
-          typeName,
-          defs: resourceDefs,
-          typeToEndpoints,
-          query,
-          requester,
-          initialRequestContext: _.defaults({}, initialRequestContext, context),
-        })
-      }
-      const directFetchResourceDefs = _.pickBy(resourceDefs, def => def.directFetch)
-      const resourceFetchers = _.mapValues(
-        directFetchResourceDefs,
-        (_def, typeName) => createTypeFetcher({ typeName })
+}): ResourceManager => ({
+  fetch: log.time(() => async query => {
+    // TODON simplify?
+    const createTypeFetcher: TypeFetcherCreator = ({ typeName, context }) => (createTypeResourceFetcher({
+      adapterName,
+      accountName,
+      typeName,
+      defs: resourceDefs,
+      typeToEndpoints,
+      query,
+      requester,
+      initialRequestContext: _.defaults({}, initialRequestContext, context),
+    }))
+    const directFetchResourceDefs = _.pickBy(resourceDefs, def => def.directFetch)
+    const resourceFetchers = _.mapValues(
+      directFetchResourceDefs,
+      (_def, typeName) => createTypeFetcher({ typeName })
+    )
+    const graph = createDependencyGraph(resourceDefs)
+    await graph.walkAsync(async typeName => {
+      const resourceFetcher = resourceFetchers[typeName]
+      // TODON improve performance - only get the context from the dependsOn types
+      const availableResources = _.mapValues(
+        _.pickBy(resourceFetchers, fetcher => fetcher.done),
+        fetcher => fetcher.getItems()
       )
-      const graph = createDependencyGraph(resourceDefs)
-      await graph.walkAsync(async typeName => {
-        const resourceFetcher = resourceFetchers[typeName]
-        // TODON improve performance - only get the context from the dependsOn types
-        const availableResources = _.mapValues(
-          _.pickBy(resourceFetchers, fetcher => fetcher.done),
-          fetcher => fetcher.getItems()
-        )
-        const res = await resourceFetcher.fetch({ availableResources, typeFetcherCreator: createTypeFetcher }) // TODON handle context
-        if (!res.success) {
-          // TODON need a way to pass the errors back - by passing to the element generator?
-          // TODON when entering a type, should check again if there was success on dependent types - and if not, exit
-          return
-        }
-        // TODON pass errers to the generator so that it produces them at the end?
-        elementGenerator.processEntries({
-          typeName: String(typeName),
-          entries: resourceFetcher.getItems()?.map(item => item.value) ?? [],
-        })
+      const res = await resourceFetcher.fetch({
+        availableResources,
+        typeFetcherCreator: createTypeFetcher,
+      }) // TODON handle context
+      if (!res.success) {
+        // TODON need a way to pass the errors back - by passing to the element generator?
+        // TODON when entering a type, should check again if there was success on dependent types - and if not, exit
+        return
+      }
+      // TODON pass errers to the generator so that it produces them at the end?
+      elementGenerator.processEntries({
+        typeName: String(typeName),
+        entries: resourceFetcher.getItems()?.map(item => item.value) ?? [],
       })
-    }, 'fetching resources for account %s (%s)', accountName, adapterName)
-  }
-}
+    })
+  }, 'fetching resources for account %s (%s)', accountName, adapterName),
+})
 
 /*
-TODON then - 
+TODON then -
 V 1. get all top-level types, excluding the recurseInto types
 V 2. create a dependency graph between them, and traverse from the roots (starting as BFS but async...)
 3. child types wait for all their parents to return, then use MACHPELA CARTEZIT on context args
 -- before making a request, make sure all context args are there - if not, fail
 4. inside each type - first fetch "main" resource, then recurseInto (recursively...)
-4. resource fetcher makes the typeToEndpoints calls, providing the "requester" context and awaiting completion + add a place to return by request context
+4. resource fetcher makes the typeToEndpoints calls, providing the "requester" context and awaiting completion +
+    add a place to return by request context
 5. requesters provide a request() interface that yields events per generated type + cache requests made?
 */

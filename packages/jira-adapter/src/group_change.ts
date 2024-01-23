@@ -18,14 +18,14 @@ import { getParent, getParents, isResolvedReferenceExpression } from '@salto-io/
 import { deployment } from '@salto-io/adapter-components'
 import { FIELD_CONFIGURATION_ITEM_TYPE_NAME, SCRIPT_FRAGMENT_TYPE, SCRIPT_RUNNER_LISTENER_TYPE, SECURITY_LEVEL_TYPE, WORKFLOW_TYPE_NAME } from './constants'
 
-export const getWorkflowGroup: deployment.ChangeIdFunction = async change => (
+export const getWorkflowGroup: deployment.grouping.ChangeIdFunction = async change => (
   isModificationChange(change)
     && getChangeData(change).elemID.typeName === WORKFLOW_TYPE_NAME
     ? 'Workflow Modifications'
     : undefined
 )
 
-export const getSecurityLevelGroup: deployment.ChangeIdFunction = async change => {
+export const getSecurityLevelGroup: deployment.grouping.ChangeIdFunction = async change => {
   const instance = getChangeData(change)
   if (!isAdditionChange(change)
     || instance.elemID.typeName !== SECURITY_LEVEL_TYPE) {
@@ -41,7 +41,7 @@ export const getSecurityLevelGroup: deployment.ChangeIdFunction = async change =
 }
 
 
-const getFieldConfigItemGroup: deployment.ChangeIdFunction = async change => {
+const getFieldConfigItemGroup: deployment.grouping.ChangeIdFunction = async change => {
   const instance = getChangeData(change)
   if (instance.elemID.typeName !== FIELD_CONFIGURATION_ITEM_TYPE_NAME) {
     return undefined
@@ -52,17 +52,17 @@ const getFieldConfigItemGroup: deployment.ChangeIdFunction = async change => {
   return `${parent.elemID.getFullName()} items`
 }
 
-const getScriptListenersGroup: deployment.ChangeIdFunction = async change =>
+const getScriptListenersGroup: deployment.grouping.ChangeIdFunction = async change =>
   (getChangeData(change).elemID.typeName === SCRIPT_RUNNER_LISTENER_TYPE
     ? 'Script Listeners'
     : undefined)
 
-const getScriptedFragmentsGroup: deployment.ChangeIdFunction = async change =>
+const getScriptedFragmentsGroup: deployment.grouping.ChangeIdFunction = async change =>
   (getChangeData(change).elemID.typeName === SCRIPT_FRAGMENT_TYPE
     ? 'Scripted Fragments'
     : undefined)
 
-export const getChangeGroupIds = deployment.getChangeGroupIdsFunc([
+export const getChangeGroupIds = deployment.grouping.getChangeGroupIdsFunc([
   getWorkflowGroup,
   getSecurityLevelGroup,
   getFieldConfigItemGroup,

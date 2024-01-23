@@ -14,11 +14,12 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ElemID, ObjectType, BuiltinTypes, FieldDefinition, ListType, MapType, Field, CORE_ANNOTATIONS, ActionName,
+import { ElemID, ObjectType, BuiltinTypes, FieldDefinition, ListType, MapType, CORE_ANNOTATIONS, ActionName,
   SeverityLevel } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import type { TransformationConfig, TransformationDefaultConfig } from './transformation'
 import { createRequestConfigs, DeploymentRequestsByAction, FetchRequestConfig, FetchRequestDefaultConfig, getConfigTypeName } from './request'
+import { UserFetchConfig } from '../definitions/user'
 
 export const DEPLOYER_FALLBACK_VALUE = '##DEPLOYER##'
 
@@ -31,7 +32,7 @@ export class AdapterFetchError extends Error {
 }
 
 export type TypeConfig<T extends TransformationConfig = TransformationConfig, A extends string = ActionName> = {
-  request?: FetchRequestConfig  // | FetchRequestConfig[] // TODON
+  request?: FetchRequestConfig // | FetchRequestConfig[] // TODON
   deployRequests?: DeploymentRequestsByAction<A>
   transformation?: T
 }

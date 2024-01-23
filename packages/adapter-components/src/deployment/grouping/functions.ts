@@ -16,7 +16,8 @@
 
 import { Change, getChangeData, isReferenceExpression } from '@salto-io/adapter-api'
 import { getParents } from '@salto-io/adapter-utils'
-import { InstanceDeployApiDefinitions, DefaultWithCustomizations, mergeWithDefault } from '../../definitions/system'
+import { DefaultWithCustomizations, mergeWithDefault } from '../../definitions/system'
+import { InstanceDeployApiDefinitions } from '../../definitions/system/deploy'
 
 export type ChangeIdFunction = (change: Change) => Promise<string | undefined>
 
@@ -32,9 +33,10 @@ export const groupWithFirstParent: ChangeIdFunction = async change => {
   return undefined
 }
 
-export const getChangeGroupIdByConfig = (
+export const getChangeGroupIdByConfig = <Action extends string>(
   // TODON use better (limited) type
-  groupingConfig: DefaultWithCustomizations<InstanceDeployApiDefinitions>,
+  groupingConfig: DefaultWithCustomizations<InstanceDeployApiDefinitions<Action>>,
 ): ChangeIdFunction => (async change => (
-  mergeWithDefault(groupingConfig, getChangeData(change).elemID.typeName).changeGroupId?.(change)
-))
+  // TODON have the "merged" config defined once and pass it here instead
+  mergeWithDefault(groupingConfig)[getChangeData(change).elemID.typeName]?.changeGroupId?.(change)
+  ))

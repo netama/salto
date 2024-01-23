@@ -26,6 +26,8 @@ describe('client connection', () => {
     const mockConnection: clientUtils.APIConnection = {
       get: mockFunction<clientUtils.APIConnection['get']>()
         .mockImplementation(url => mockGet(url)),
+      head: mockFunction<clientUtils.APIConnection['head']>(),
+      options: mockFunction<clientUtils.APIConnection['options']>(),
       post: mockFunction<clientUtils.APIConnection['post']>(),
       put: mockFunction<clientUtils.APIConnection['put']>(),
       delete: mockFunction<clientUtils.APIConnection['delete']>(),

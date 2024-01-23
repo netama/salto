@@ -15,7 +15,6 @@
 */
 import { ActionName } from '@salto-io/adapter-api'
 import { ApiClientDefinition, PaginationDefinitions } from './requests' // TODON allow subdomain-based client for guide...
-import { ComponentDefinitions } from './components'
 import { OptionsWithDefault } from './shared'
 import { OpenAPIDefinition } from './sources'
 import { FetchApiDefinitions } from './fetch'

@@ -97,12 +97,13 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'views',
             toType: 'view_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-                { fieldName: 'title' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //     { fieldName: 'title' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],
@@ -120,12 +121,13 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'triggers',
             toType: 'trigger_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-                { fieldName: 'title' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //     { fieldName: 'title' },
+            //   ],
+            // },
             nestUnderField: 'triggers',
           },
         ],
@@ -153,11 +155,12 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           { // TODON example of a type getting values from multiple extractors and depending on all of them
             root: 'trigger_categories',
             toType: 'trigger_order',
-            aggregate: { // TODON maybe not needed if removing this?
-              sortBy: [
-                { fieldName: 'position' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: { // TODON maybe not needed if removing this?
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //   ],
+            // },
             nestUnderField: 'categories',
           },
         ],
@@ -175,12 +178,13 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'automations',
             toType: 'automation_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-                { fieldName: 'title' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //     { fieldName: 'title' },
+            //   ],
+            // },
             // TODON this one is a singleton so it's ok - usually we'd want to group by the service id(s),
             // so we'd probably want them to be in the "response" value we pass on
             // (and they'll need to overlap between the different parts)
@@ -200,12 +204,13 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'sla_policies',
             toType: 'sla_policy_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-                { fieldName: 'title' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //     { fieldName: 'title' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],
@@ -403,11 +408,12 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'ticket_forms',
             toType: 'ticket_form_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],
@@ -436,11 +442,12 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'user_fields',
             toType: 'user_field_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],
@@ -458,11 +465,12 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'organization_fields',
             toType: 'organization_field_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],
@@ -480,11 +488,12 @@ export const SUPPORT_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOp
           {
             root: 'workspaces',
             toType: 'workspace_order',
-            aggregate: {
-              sortBy: [
-                { fieldName: 'position' },
-              ],
-            },
+            // TODON re-do with fragments? (need to sort!)
+            // aggregate: {
+            //   sortBy: [
+            //     { fieldName: 'position' },
+            //   ],
+            // },
             nestUnderField: 'items',
           },
         ],

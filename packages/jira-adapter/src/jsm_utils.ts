@@ -42,7 +42,7 @@ const { makeArray } = collections.array
 const log = logger(module)
 
 // Common function to process entries
-const processEntries = async ({
+const processEntries = async ({ // TODON can move to request transform
   paginator,
   args,
   typeName,
@@ -103,7 +103,7 @@ elementUtils.ducktype.EntriesRequester => async ({ paginator, args, typeName, ty
   args,
   typeName,
   typesConfig,
-  additionalProcessing: entry => {
+  additionalProcessing: entry => { // TODON can move to transform on request
     if (typeName === ASSETS_ATTRIBUTE_TYPE && isAttributeEntry(entry)) {
       if (typeof entry.objectType !== 'string') {
         entry.objectType = entry.objectType.id

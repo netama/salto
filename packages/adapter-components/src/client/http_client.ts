@@ -53,6 +53,9 @@ export type ClientParams = ClientBaseParams | ClientDataParams
 
 export interface HTTPReadClientInterface { // TODON eliminate, align get() to just be another command
   getSinglePage(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
+  get(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
+  head(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
+  options(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
   getPageSize(): number
 }
 

@@ -64,7 +64,8 @@ export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = {
   // input?: ContextParams // TODON arg name -> arg type?
 
   readonly?: boolean // safe for fetch
-  // TODON decide if should key (group) by type (though usually a single extractor so probably not necessary, since will still need n array)
+  // TODON decide if should key (group) by type (though usually a single extractor so probably not necessary,
+  // since will still need n array)
   responseExtractors?: FetchExtractionDefinition[]
 }
 
@@ -83,7 +84,8 @@ export type EndpointDefinition<PaginationOptions extends string> = ArgsWithCusto
   HTTPEndpointDetails<PaginationOptions> // TODON complete the endpoint details from the path
 >
 
-export type ClientEndpoints<PaginationOptions extends string> = Partial<Record<HTTPMethod, EndpointDefinition<PaginationOptions>>>
+export type ClientEndpoints<PaginationOptions extends string> = Partial<
+  Record<HTTPMethod, EndpointDefinition<PaginationOptions>>>
 
 export type EndpointByPathAndMethod<PaginationOptions extends string> = DefaultWithCustomizations<
   ClientEndpoints<PaginationOptions>

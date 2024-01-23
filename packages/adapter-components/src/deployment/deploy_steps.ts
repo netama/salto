@@ -18,7 +18,7 @@ import { Change, ElemID, getChangeData, InstanceElement, ReadOnlyElementsSource,
 import { inspectValue } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { createUrl } from '../fetch/resource/request_parameters'
-import { HTTPWriteClientInterface } from '../client/http_client'
+import { HTTPReadClientInterface, HTTPWriteClientInterface } from '../client/http_client'
 import { DeploymentRequestsByAction, AdapterApiConfig, getConfigWithDefault } from '../config'
 import { ResponseValue } from '../client'
 import { filterIgnoredValues, filterUndeployableValues } from './filtering'
@@ -49,7 +49,7 @@ export const deployChange = async ({
   elementsSource,
 }:{
   change: Change<InstanceElement>
-  client: HTTPWriteClientInterface
+  client: HTTPWriteClientInterface & HTTPReadClientInterface
   endpointDetails?: DeploymentRequestsByAction
   fieldsToIgnore?: string[] | ((path: ElemID) => boolean)
   additionalUrlVars?: Record<string, string>

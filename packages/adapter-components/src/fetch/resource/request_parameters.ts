@@ -20,7 +20,7 @@ import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ClientGetWithPaginationParams } from '../../client'
 import { FetchRequestConfig, UrlParams, DependsOnConfig } from '../../config/request'
-import { ARG_PLACEHOLDER_MATCHER } from './type_fetcher'
+import { ARG_PLACEHOLDER_MATCHER } from '../types'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)
@@ -91,7 +91,6 @@ export class MissingContextError extends Error {}
  *
  * @param possibleArgs A mapping from each arg to its possible choices
  * @param outputArgs The args in play
- * @returns 
  */
 export const computeArgCombinations = (
   possibleArgs: Record<string, unknown[]>, // assuming possibleArgs are unique

@@ -15,7 +15,9 @@
 */
 // import { Values } from '@salto-io/adapter-api'
 
-import { GeneratedItem } from "src/definitions/system/shared"
+import { GeneratedItem } from '../definitions/system/shared'
+
+export const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
 
 export type ResourceIdentifier = {
   typeName: string
@@ -34,6 +36,7 @@ type ResourceFetchResult = {
 export type TypeResourceFetcher = {
   fetch: (args: {
     availableResources: Record<string, GeneratedItem[] | undefined>
+    // eslint-disable-next-line no-use-before-define
     typeFetcherCreator: TypeFetcherCreator
   }) => Promise<ResourceFetchResult>
   done: () => boolean

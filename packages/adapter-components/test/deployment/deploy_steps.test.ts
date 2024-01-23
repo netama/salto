@@ -15,14 +15,14 @@
 */
 import { BuiltinTypes, CORE_ANNOTATIONS, ElemID, InstanceElement, ObjectType, toChange } from '@salto-io/adapter-api'
 import { mockFunction, MockInterface } from '@salto-io/test-utils'
-import { HTTPWriteClientInterface } from '../../src/client/http_client'
+import { HTTPReadClientInterface, HTTPWriteClientInterface } from '../../src/client/http_client'
 import { deployChange } from '../../src/deployment/deploy_steps'
 import { DeploymentRequestsByAction } from '../../src/config/request'
 
 describe('deployChange', () => {
   let type: ObjectType
   let instance: InstanceElement
-  let httpClient: MockInterface<HTTPWriteClientInterface>
+  let httpClient: MockInterface<HTTPWriteClientInterface & HTTPReadClientInterface>
   let endpoint: DeploymentRequestsByAction
 
   beforeEach(() => {
@@ -65,6 +65,11 @@ describe('deployChange', () => {
       put: mockFunction<HTTPWriteClientInterface['put']>(),
       delete: mockFunction<HTTPWriteClientInterface['delete']>(),
       patch: mockFunction<HTTPWriteClientInterface['patch']>(),
+      getSinglePage: mockFunction<HTTPReadClientInterface['getSinglePage']>(),
+      getPageSize: mockFunction<HTTPReadClientInterface['getPageSize']>(),
+      get: mockFunction<HTTPReadClientInterface['get']>(),
+      head: mockFunction<HTTPReadClientInterface['head']>(),
+      options: mockFunction<HTTPReadClientInterface['options']>(),
     }
   })
 

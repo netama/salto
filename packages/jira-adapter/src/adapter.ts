@@ -447,7 +447,7 @@ export default class JiraAdapter implements AdapterOperations {
     const apiDefinitions = getApiDefinitions(this.userConfig.apiDefinitions)
     // Note - this is a temporary way of handling multiple swagger defs in the same adapter
     // this will be replaced by built-in infrastructure support for multiple swagger defs
-    // in the configuration
+    // in the configuration // TODON available now
     const results = await Promise.all(
       Object.keys(swaggers).map(
         key => generateTypes(
@@ -499,7 +499,7 @@ export default class JiraAdapter implements AdapterOperations {
     }
 
     const paginator = createPaginator({
-      client: this.scriptRunnerClient,
+      client: this.scriptRunnerClient, // TODON separate client
       paginationFuncCreator: paginate,
     })
 
@@ -535,7 +535,7 @@ export default class JiraAdapter implements AdapterOperations {
     if (workspaceId === undefined) {
       return { elements: [] }
     }
-    const workspaceContext = { workspaceId }
+    const workspaceContext = { workspaceId } // TODON use as example of context?
     return getAllElements({
       adapterName: JIRA,
       apiConfig: {
@@ -602,6 +602,7 @@ export default class JiraAdapter implements AdapterOperations {
       })
     }))
 
+    // TODON won't be needed in new infra? make sure
     /* Remove all the duplicate types and create map from type to it's instances  */
     const typeNameToJSMInstances = _.groupBy(
       fetchResultWithDuplicateTypes.flatMap(result => result.elements).filter(isInstanceElement),
@@ -675,7 +676,7 @@ export default class JiraAdapter implements AdapterOperations {
     progressReporter.reportProgress({ message: 'Running filters for additional information' })
     const filterResult = await this.createFiltersRunner().onFetch(elements) || {}
 
-    const updatedConfig = this.configInstance && configChanges
+    const updatedConfig = this.configInstance && configChanges // TODON can remove old migration code
       ? configUtils.getConfigWithExcludeFromConfigChanges({
         configChanges,
         currentConfig: this.configInstance,
@@ -684,12 +685,12 @@ export default class JiraAdapter implements AdapterOperations {
       }) : undefined
     // This needs to happen after the onFetch since some filters
     // may add fields that deployment annotation should be added to
-    await addDeploymentAnnotations(
+    await addDeploymentAnnotations( // TODON see if want to include everywhere or not
       elements.filter(isObjectType),
       Object.values(swaggers),
       this.userConfig.apiDefinitions,
     )
-    if (this.logIdsFunc !== undefined) {
+    if (this.logIdsFunc !== undefined) { // TODON see if want to add to adapter-creator?
       this.logIdsFunc()
     }
     return { elements, errors: (errors ?? []).concat(filterResult.errors ?? []), updatedConfig }
