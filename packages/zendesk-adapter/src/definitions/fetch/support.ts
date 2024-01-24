@@ -371,7 +371,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       directFetch: true,
       recurseInto: {
         custom_object_fields: {
-          type: 'custom_object_field',
+          typeName: 'custom_object_field',
           context: {
             args: {
               custom_object_key: {
@@ -393,6 +393,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
         // TODON check if has an id field (original config was inconsistent, overriding type but not hiding)
         custom_object_fields: {
           standalone: {
+            typeName: 'custom_object_field', // TODON verify
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -576,6 +577,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         variants: {
           standalone: {
+            typeName: 'dynamic_content_item__variants',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -761,6 +763,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
+            typeName: 'ticket_field__custom_field_options',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -801,6 +804,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
+            typeName: 'user_field__custom_field_options',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -834,6 +838,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
+            typeName: 'organizatio_field__custom_field_options',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -873,8 +878,11 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   },
   trigger_order: {
     resource: {
-      directFetch: true, // TODON maybe depend on trigger+categories resources without additional calls (also for others)
-      transform: transforms.toTriggerOrderValue, // TODON? should change function signature...
+      // TODON maybe depend on trigger+categories resources without additional calls (also for others)
+      directFetch: true,
+      mergeAndTransform: {
+        adjust: transforms.toTriggerOrderValue, // TODON? should change function signature...
+      },
     },
     element: { // TODON need to aggregate when not singleton
       topLevel: {
@@ -890,7 +898,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   automation_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('active'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('active'),
+      },
     },
     element: {
       topLevel: {
@@ -901,7 +911,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   sla_policy_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue(),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue(),
+      },
     },
     element: {
       topLevel: {
@@ -912,7 +924,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   ticket_form_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('active'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('active'),
+      },
     },
     element: {
       topLevel: {
@@ -923,7 +937,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   organization_field_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('active'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('active'),
+      },
     },
     element: {
       topLevel: {
@@ -934,7 +950,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   user_field_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('active'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('active'),
+      },
     },
     element: {
       topLevel: {
@@ -945,7 +963,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   view_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('active'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('active'),
+      },
     },
     element: {
       topLevel: {
@@ -956,7 +976,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
   workspace_order: {
     resource: {
       directFetch: true,
-      transform: transforms.toOrderValue('activated'),
+      mergeAndTransform: {
+        adjust: transforms.toOrderValue('activated'),
+      },
     },
     element: {
       topLevel: {
@@ -989,7 +1011,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       directFetch: true,
       recurseInto: {
         holidays: {
-          type: 'business_hours_schedule_holiday',
+          typeName: 'business_hours_schedule_holiday',
           context: {
             args: {
               parent_id: {
@@ -999,7 +1021,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           },
         },
       },
-      transform: transforms.transformBusinessHoursSchedule,
+      mergeAndTransform: {
+        adjust: transforms.transformBusinessHoursSchedule,
+      },
     },
     element: {
       topLevel: {
@@ -1009,6 +1033,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         holidays: {
           standalone: {
+            typeName: 'business_hours_schedule_holiday',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
@@ -1025,7 +1050,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       directFetch: true,
       recurseInto: { // TODON make sure automatically adds correct field type
         values: {
-          type: 'routing_attribute_value',
+          typeName: 'routing_attribute_value',
           context: {
             args: {
               parent_id: {
@@ -1044,6 +1069,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         values: {
           standalone: {
+            typeName: 'routing_attribute_value',
             addParentAnnotation: true,
             referenceFromParent: true,
           },

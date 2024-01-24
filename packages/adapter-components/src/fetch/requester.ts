@@ -15,6 +15,7 @@
 */
 import _ from 'lodash'
 import { logger } from '@salto-io/logging'
+import { collections } from '@salto-io/lowerdash'
 import { ResponseValue, Response, ClientDataParams } from '../client'
 import { ContextParams, GeneratedItem } from '../definitions/system/shared'
 import { ApiDefinitions, HTTPEndpointIdentifier, mergeWithDefault } from '../definitions'
@@ -22,10 +23,10 @@ import { TypeEndpointRelations } from './dependencies'
 import { ResourceIdentifier, IdentifiedItem } from './types'
 // import { createPaginator } from '../client'
 import { noPagination } from '../client/pagination/pagination'
-import { DATA_FIELD_ENTIRE_OBJECT } from '../config'
 import { FetchExtractionDefinition } from '../definitions/system/requests/endpoint'
 import { replaceArgs } from './resource/request_parameters'
 import { getLogPrefix } from '../utils'
+import { createValueTransformer } from './utils'
 
 const log = logger(module)
 
@@ -47,23 +48,12 @@ export const createExtractor = (extractorDef: FetchExtractionDefinition): ItemEx
   if (extractorDef.custom !== undefined) {
     return extractorDef.custom(extractorDef)
   }
-  const { toType, /* aggregate, */context, nestUnderField, omit, pick, root, transform } = extractorDef
+  const transform = createValueTransformer(extractorDef.transformValue)
+  const { toType, context } = extractorDef
   // TODON in order to aggregate, assuming got all pages - see if we want to change this to a stream
-  return pages => {
-    const items = pages
-      .flatMap(page => ((root === undefined || root === DATA_FIELD_ENTIRE_OBJECT) ? page : _.get(page, root)))
-      .map(item => (pick !== undefined ? _.pick(item, pick) : item))
-      .map(item => (omit !== undefined ? _.omit(item, omit) : item))
-      .map(item => (nestUnderField !== undefined
-        ? { [nestUnderField]: item }
-        : item))
-
-    return items
-      .map(item => ({ typeName: toType, value: item, context: context ?? {} }))
-      .map(generatedItem => (transform !== undefined
-        ? _.defaults({}, transform(generatedItem), generatedItem)
-        : generatedItem))
-  }
+  return pages => (
+    pages.flatMap(page => collections.array.makeArray(transform({ value: page, typeName: toType, context })))
+  )
 }
 
 // TODON action won't be needed once narrowing the definitions type?

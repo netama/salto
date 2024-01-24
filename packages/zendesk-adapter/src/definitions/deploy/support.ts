@@ -33,30 +33,52 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
     createStandardItemDeployConfigs({
       app_installation: {
         bulkPath: '/api/v2/apps/installations',
-        overrides: { default: { request: {
-          nestUnderField: '.', // TODON make sure handled correctly
-          omit: ['app', 'settings.title', 'settings_objects'],
-        } } },
+        overrides: {
+          default: {
+            request: {
+              transformValue: {
+                omit: ['app', 'settings.title', 'settings_objects'],
+                // nestUnderField: '.', // TODON make sure handled correctly
+              },
+            },
+          },
+        },
       },
       automation: { bulkPath: '/api/v2/automations' },
       brand: {
         bulkPath: '/api/v2/brands',
-        overrides: { default: { request: { omit: [LOGO_FIELD, CATEGORIES_FIELD] } } },
+        overrides: {
+          default: {
+            request: {
+              transformValue: {
+                omit: [LOGO_FIELD, CATEGORIES_FIELD],
+              },
+            },
+          },
+        },
       },
       business_hours_schedule: {
         bulkPath: '/api/v2/business_hours/schedules',
-        overrides: { default: { request: {
-          nestUnderField: 'schedule',
-          omit: ['holidays'],
-        } } },
+        overrides: {
+          default: {
+            request: {
+              transformValue: {
+                nestUnderField: 'schedule',
+                omit: ['holidays'],
+              },
+            },
+          },
+        },
         appendRequests: {
           add: [{
             condition: ({ change }) => shouldDeployIntervals(change),
             request: {
               path: '/api/v2/business_hours/schedules/{id}/workweek',
               method: 'put',
-              nestUnderField: 'workweek',
-              root: 'intervals',
+              transformValue: {
+                root: 'intervals',
+                nestUnderField: 'workweek',
+              },
             },
           }],
           modify: [{
@@ -64,8 +86,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
             request: {
               path: '/api/v2/business_hours/schedules/{id}/workweek',
               method: 'put',
-              root: 'intervals',
-              nestUnderField: 'workweek',
+              transformValue: {
+                root: 'intervals',
+                nestUnderField: 'workweek',
+              },
             },
           }],
         },
@@ -74,7 +98,9 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         bulkPath: '/api/v2/custom_objects',
         overrides: { default: { request: {
           context: { key: 'key' },
-          omit: ['custom_object_fields'],
+          transformValue: {
+            omit: ['custom_object_fields'],
+          },
         } } },
       },
       custom_role: { bulkPath: '/api/v2/custom_roles' },
@@ -89,8 +115,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         overrides: {
           default: {
             request: {
-              // TODON combine with okta schema_field_removal (and zendesk add_field_options)?
-              transform: transforms.undefinedToNull('restriction'),
+              transformValue: {
+                // TODON combine with okta schema_field_removal (and zendesk add_field_options)?
+                adjust: transforms.undefinedToNull('restriction'),
+              },
             },
           },
         },
@@ -100,8 +128,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       routing_attribute: {
         bulkPath: '/api/v2/routing/attributes',
         overrides: { default: { request: {
-          nestUnderField: 'attribute',
-          omit: ['values'],
+          transformValue: {
+            omit: ['values'],
+            nestUnderField: 'attribute',
+          },
         } } },
       },
       sharing_agreement: { bulkPath: '/api/v2/sharing_agreements' },
@@ -110,23 +140,37 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         overrides: {
           default: {
             request: {
-              transform: replaceByValue({
-                path: 'filter',
-                oldValues: [undefined],
-                newValue: { all: [], any: [] },
-              }),
+              transformValue: {
+                adjust: replaceByValue({
+                  path: 'filter',
+                  oldValues: [undefined],
+                  newValue: { all: [], any: [] },
+                }),
+              },
             },
           },
         },
       },
       support_address: {
         bulkPath: '/api/v2/recipient_addresses',
-        overrides: { default: { request: { nestUnderField: 'recipient_address' } } },
+        overrides: {
+          default: {
+            request: {
+              transformValue: {
+                nestUnderField: 'recipient_address',
+              },
+            },
+          },
+        },
       },
       target: {
         bulkPath: '/api/v2/targets',
         // TODON check: we don't get the password, maybe just not have the field instead?
-        overrides: { default: { request: { omit: ['username', 'password'] } } },
+        overrides: { default: { request: {
+          transformValue: {
+            omit: ['username', 'password'],
+          },
+        } } },
       },
       ticket_form: { bulkPath: '/api/v2/ticket_forms' },
       trigger: { bulkPath: '/api/v2/triggers' },
@@ -141,7 +185,9 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       view: {
         bulkPath: '/api/v2/views',
         overrides: { default: { request: {
-          transform: transforms.view,
+          transformValue: {
+            adjust: transforms.view,
+          },
         } } },
       },
       webhook: {
@@ -149,12 +195,18 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         overrides: {
           // Ignore external_source because it is impossible to deploy,
           // the user was warned in externalSourceWebhook.ts
-          default: { request: { omit: ['external_source'] } },
+          default: { request: {
+            transformValue: {
+              omit: ['external_source'],
+            },
+          } },
           customizations: {
             modify: [{
               request: {
                 method: 'patch',
-                transform: transforms.webhook,
+                transformValue: {
+                  adjust: transforms.webhook,
+                },
               },
             }],
           },
@@ -163,14 +215,22 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       workspace: {
         bulkPath: '/api/v2/workspaces',
         overrides: { default: { request: {
-          transform: transforms.workspace,
+          transformValue: {
+            adjust: transforms.workspace,
+          },
         } } },
       },
 
       // parent-child
       business_hours_schedule_holiday: {
         bulkPath: '/api/v2/business_hours/schedules/{parent_id}/holidays',
-        overrides: { default: { request: { nestUnderField: 'variant' } } },
+        overrides: { default: {
+          request: {
+            transformValue: {
+              nestUnderField: 'variant',
+            },
+          },
+        } },
       },
       custom_object_field: {
         bulkPath: '/api/v2/custom_objects/{parent_key}/fields',
@@ -182,11 +242,19 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
       },
       dynamic_content_item__variants: {
         bulkPath: '/api/v2/dynamic_content/items/{parent_id}/variants',
-        overrides: { default: { request: { nestUnderField: 'variant' } } },
+        overrides: { default: { request: {
+          transformValue: {
+            nestUnderField: 'variant',
+          },
+        } } },
       },
       routing_attribute_value: {
         bulkPath: '/api/v2/routing/attributes/{parent_id}/values',
-        overrides: { default: { request: { nestUnderField: 'attribute_value' } } },
+        overrides: { default: { request: {
+          transformValue: {
+            nestUnderField: 'attribute_value',
+          },
+        } } },
       },
       // TODON decide if to add ticket_field, organization_field, user_field here with customizations or leave as-is
     }),
@@ -205,7 +273,9 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
         customizations: {
           modify: [{
             request: {
-              transform: transforms.omitByValue('routing.autorouting_tag', ''),
+              transformValue: {
+                adjust: transforms.omitByValue('routing.autorouting_tag', ''),
+              },
             },
           }],
         },
@@ -263,8 +333,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'ticket_field',
-          omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          transformValue: {
+            omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+            nestUnderField: 'ticket_field',
+          },
           // TODON resolve ticket field options + run setDefaultFlag on each of them pre-deploy
           // transform: item => item,
         },
@@ -311,8 +383,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           change => getChangeData(change).elemID.typeName === TICKET_FIELD_TYPE_NAME
         ) === undefined,
         request: {
-          nestUnderField: 'custom_field_option',
-          transform: transforms.setDefaultFlag,
+          transformValue: {
+            nestUnderField: 'custom_field_option',
+            adjust: transforms.setDefaultFlag,
+          },
         },
       },
       customizations: {
@@ -320,7 +394,9 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           request: {
             path: '/api/v2/ticket_fields/{parent_id}/options',
             method: 'post',
-            transform: transforms.setDefaultFlag,
+            transformValue: {
+              adjust: transforms.setDefaultFlag,
+            },
           },
         }],
         modify: [{
@@ -343,8 +419,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'user_field',
-          omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          transformValue: {
+            omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+            nestUnderField: 'user_field',
+          },
           // TODON resolve field options + run setDefaultFlag on each of them pre-deploy
           // transform: item => item,
         },
@@ -383,8 +461,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           change => getChangeData(change).elemID.typeName === TICKET_FIELD_TYPE_NAME
         ) === undefined,
         request: {
-          nestUnderField: 'custom_field_option',
-          transform: transforms.setDefaultFlag,
+          transformValue: {
+            nestUnderField: 'custom_field_option',
+            adjust: transforms.setDefaultFlag,
+          },
         },
       },
       customizations: {
@@ -392,7 +472,9 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
           request: {
             path: '/api/v2/user_fields/{parent_id}/options',
             method: 'post',
-            transform: transforms.setDefaultFlag,
+            transformValue: {
+              adjust: transforms.setDefaultFlag,
+            },
           },
         }],
         modify: [{
@@ -414,8 +496,10 @@ export const SUPPORT_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = 
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'organization_field',
-          omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+          transformValue: {
+            omit: [DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME],
+            nestUnderField: 'organization_field',
+          },
           // TODON resolve field options + run setDefaultFlag on each of them pre-deploy
           // transform: item => item,
         },

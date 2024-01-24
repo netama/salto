@@ -13,18 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-// import { Values } from '@salto-io/adapter-api'
-
-import { GeneratedItem } from '../definitions/system/shared'
-
-export const ARG_PLACEHOLDER_MATCHER = /\{([\w_]+)\}/g
+import { Values } from '@salto-io/adapter-api'
+import { ContextParams, GeneratedItem } from '../definitions/system/shared'
 
 export type ResourceIdentifier = {
   typeName: string
   identifier?: Record<string, string>
 }
 
-export type IdentifiedItem = GeneratedItem & {
+export type ValueGeneratedItem = GeneratedItem<ContextParams, Values>
+
+export type IdentifiedItem = ValueGeneratedItem & {
+  // caller stack - the most recent call is first, and the earliest one is last
+  // TODON maybe switch from resource terms to endpoint terms so we can use the args? but need resource info as well
+  // callStack: ResourceIdentifier[] // TODON switch to this later
   callerIdentifier: ResourceIdentifier
 }
 
@@ -35,12 +37,12 @@ type ResourceFetchResult = {
 
 export type TypeResourceFetcher = {
   fetch: (args: {
-    availableResources: Record<string, GeneratedItem[] | undefined>
+    availableResources: Record<string, ValueGeneratedItem[] | undefined>
     // eslint-disable-next-line no-use-before-define
     typeFetcherCreator: TypeFetcherCreator
   }) => Promise<ResourceFetchResult>
   done: () => boolean
-  getItems: () => GeneratedItem[] | undefined
+  getItems: () => ValueGeneratedItem[] | undefined
 }
 
 export type TypeFetcherCreator = ({ typeName, context }: {

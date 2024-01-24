@@ -13,11 +13,16 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import _ from 'lodash'
 import { ElemID, ElemIdGetter, /* ElemIdGetter, */ InstanceElement, ObjectType, TypeElement, Values } from '@salto-io/adapter-api'
+import { logger } from '@salto-io/logging'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementQuery } from './query'
 import { FetchElements } from '../elements'
 import { ElementFetchDefinition } from '../definitions/system/fetch/element'
-// import { collections } from '@salto-io/lowerdash'
+import { getLogPrefix } from '../utils'
+
+const log = logger(module)
 
 export type ElementGenerator = {
   /*
@@ -26,7 +31,7 @@ export type ElementGenerator = {
    */
   processEntries: (args: {
     typeName: string
-    entries: Values[]
+    entries: unknown[]
   }) => void
 
   // produce all types and instances based on all entries processed until now
@@ -54,12 +59,17 @@ export const getElementGenerator = (args: {
   // const elemIDGetter = createElemIDGetter(instanceDefs)
 
   const processEntries: ElementGenerator['processEntries'] = ({ typeName, entries }) => {
+    const valueGuard = args.elementDefs[typeName]?.topLevel?.valueGuard ?? lowerdashValues.isPlainObject
+    const [validEntries, invalidEntries] = _.partition(entries, valueGuard)
+    // TODON add better logging
+    log.warn('[%s] omitted %d entries of type %s that did not match the value guard', getLogPrefix(args.adapterName, args.accountName), invalidEntries.length, typeName)
+
     // TODON should be a map and not a list, keyed by the service id - starting with _something_ and will update
     if (valuesByType[typeName] === undefined) {
       valuesByType[typeName] = []
     }
     // TODON filter based on query (if making it possible to filter by resource)
-    valuesByType[typeName].push(...entries)
+    valuesByType[typeName].push(...validEntries)
   }
   const generate: ElementGenerator['generate'] = async () => {
     const allElements = Object.entries(valuesByType).flatMap(([typeName, values]) => {

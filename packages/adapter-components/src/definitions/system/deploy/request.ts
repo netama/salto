@@ -15,21 +15,29 @@
 */
 import { types } from '@salto-io/lowerdash'
 import { Change, InstanceElement } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, ExtractionDefinition } from '../shared'
+import { ArgsWithCustomizer, ContextParams, ExtractionParams, GeneratedItem } from '../shared'
 import { HTTPEndpointIdentifier } from '../requests'
 
 // TODON see if can consolidate the { args: Record<srting, primitive> } types
 export type ContextParamDefinitions = ArgsWithCustomizer<ContextParams, { args: ContextParams }>
 
+// TODON maybe avoid complete customization so we know what to fetch?
+type ExtractionDefinition<TContext = ContextParams> = ArgsWithCustomizer<
+  GeneratedItem<TContext>[], // TODON decide if should be a generator
+  ExtractionParams<TContext>,
+  GeneratedItem<TContext>[]
+>
+
 // TODON experimenting with flattening for simplicity (but check customization!)
 export type HTTPRequest = types.XOR<
   HTTPEndpointIdentifier
-  & Omit<ExtractionDefinition<{ change: Change<InstanceElement> }>, 'toType'>,
+  & ExtractionDefinition<{ change: Change<InstanceElement> }>,
   // TODON add a warning for changes matching this?
   { succeedWithoutRequest: true }
 >
 
-export type DeployTransformRequest = HTTPRequest['transform']
+// TODON renamed from transform to transformValue, continue adjusting
+export type DeployTransformRequest = HTTPRequest['transformValue']
 export type HTTPRequestDefinition = ArgsWithCustomizer<
   HTTPRequest,
   HTTPRequest

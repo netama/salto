@@ -15,5 +15,5 @@
 */
 
 export { FetchApiDefinitions, FetchApiDefinitionsNoDefault, InstanceFetchApiDefinitions } from './fetch'
-export { Resource, ResourceTransformFunc, ContextParamDefinitions, ContextWithDependencies, isDependsOnDefinition } from './resource'
+export { Resource, ResourceTransformFunc } from './resource'
 export { ElementFieldCustomization, FieldIDPart, ElementFetchDefinitionWithCustomizer } from './element'

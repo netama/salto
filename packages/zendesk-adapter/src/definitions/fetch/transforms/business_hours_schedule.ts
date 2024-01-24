@@ -13,14 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 
 export const transform: definitions.fetch.ResourceTransformFunc = ({ value }) => {
-  const startYear = value.start_date?.split('-')[0]
-  const endYear = value.end_date?.split('-')[0]
+  if (!lowerdashValues.isPlainObject(value)) {
+    // TODON improve
+    throw new Error('Could not transform business hours schedule value')
+  }
+  // TODON add scheme guard instead of _.get
+  const startYear = _.get(value, 'start_date')?.split('-')[0]
+  const endYear = _.get(value, 'end_date')?.split('-')[0]
+  // const startYear = value.start_date?.split('-')[0]
+  // const endYear = value.end_date?.split('-')[0]
   return {
-    ...value,
-    start_year: startYear,
-    end_year: endYear,
+    value: {
+      ...value,
+      start_year: startYear,
+      end_year: endYear,
+    },
   }
 }

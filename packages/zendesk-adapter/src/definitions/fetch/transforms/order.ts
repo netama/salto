@@ -32,7 +32,7 @@ const toId = (value: { id: string | number }): string | number => value.id
 export const toOrderValue: OrderInstanceTransform = activeFieldName => ({ value }) => {
   // TODON add typeguard - pair with each extractor/transform function, and then list them for "easy" use?
   // can have an empty schema in order to skip validation, but require adding something?
-  const { items } = value
+  const { items } = value as Values // TODON avoid and replace by type guard
   if (activeFieldName === undefined) {
     return {
       value: {
@@ -42,7 +42,12 @@ export const toOrderValue: OrderInstanceTransform = activeFieldName => ({ value 
   }
   const [active, inactive] = _.partition(items, val => val[activeFieldName]).map(group => group.map(toId))
 
-  return { active, inactive }
+  return {
+    value: {
+      active,
+      inactive,
+    },
+  }
 }
 
 const toTriggersByCategory = ({ value }: { value: Values }): Values => {
@@ -50,17 +55,24 @@ const toTriggersByCategory = ({ value }: { value: Values }): Values => {
   const { items } = value // TODON adjust, didn't update
   const triggersByCategory = _.groupBy(items, ref => ref.value.category_id)
   // TODON passing empty fragments is a bit of a hack, decide if ok
-  return _.mapValues(triggersByCategory, group => toOrderValue('active')({ value: { items: group }, fragments: [] }))
+  return _.mapValues(triggersByCategory, group => toOrderValue('active')({
+    typeName: 'IGNORE', // TODON
+    value: { items: group },
+    context: { fragments: [] },
+  }))
 }
 
-export const toTriggerOrderValue: definitions.fetch.ResourceTransformFunc = ({ value }) => {
+export const toTriggerOrderValue: definitions.fetch.ResourceTransformFunc = item => {
   // TODON add typeguard!
+  const value = item.value as Values // TODON avoid and replace by type guard
   const categories = collections.array.makeArray(value.categories) // TODON won't be needed if have scheme guard
   const triggersByCategory = toTriggersByCategory({ value }) // TODON categories?
   return {
-    order: categories.map(category => ({
-      category,
-      ...triggersByCategory[category],
-    })),
+    value: {
+      order: categories.map(category => ({
+        category,
+        ...triggersByCategory[category],
+      })),
+    },
   }
 }

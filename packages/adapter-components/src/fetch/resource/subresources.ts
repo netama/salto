@@ -15,9 +15,8 @@
 */
 import _ from 'lodash'
 import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
-import { IdentifiedItem, TypeFetcherCreator } from '../types'
+import { IdentifiedItem, TypeFetcherCreator, ValueGeneratedItem } from '../types'
 import { shouldRecurseIntoEntry } from '../../elements/instance_elements'
-import { GeneratedItem } from '../../definitions/system/shared'
 
 type NestedResourceFetcher = (item: IdentifiedItem) => Promise<Record<string, IdentifiedItem[]>>
 
@@ -25,7 +24,8 @@ type NestedResourceFetcher = (item: IdentifiedItem) => Promise<Record<string, Id
 export const recurseIntoSubresources = ({ def, typeFetcherCreator, availableResources }: {
   def: FetchResourceDefinition
   typeFetcherCreator: TypeFetcherCreator
-  availableResources: Record<string, GeneratedItem[] | undefined>
+  // TODON reuse a shared definition of GeneratedItems and IdentifiedItems with Values
+  availableResources: Record<string, ValueGeneratedItem[] | undefined>
 }): NestedResourceFetcher => async item => (
   Object.fromEntries((await Promise.all(
     Object.entries(def.recurseInto ?? {})
@@ -40,7 +40,7 @@ export const recurseIntoSubresources = ({ def, typeFetcherCreator, availableReso
         )
         // TODON avoid crashing if fails on sub-element (copy from swagger)!
         const typeFetcher = typeFetcherCreator({
-          typeName: recurseDef.type,
+          typeName: recurseDef.typeName,
           context: nestedRequestContext,
         })
         const recurseRes = await typeFetcher.fetch({ availableResources, typeFetcherCreator })

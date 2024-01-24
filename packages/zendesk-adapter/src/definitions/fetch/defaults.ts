@@ -14,18 +14,21 @@
 * limitations under the License.
 */
 import { definitions } from '@salto-io/adapter-components'
+import { types } from '@salto-io/lowerdash'
 import { DEFAULT_FIELD_CUSTOMIZATIONS, DEFAULT_ID_PARTS } from './shared'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
 
-export const FETCH_DEFAULTS: Partial<definitions.fetch.InstanceFetchApiDefinitions> = {
+export const FETCH_DEFAULTS: types.RecursivePartial<definitions.fetch.InstanceFetchApiDefinitions> = {
   resource: {
     serviceIDFields: ['id'],
   },
-  instance: {
-    elemID: { parts: DEFAULT_ID_PARTS },
+  element: {
+    topLevel: {
+      elemID: { parts: DEFAULT_ID_PARTS },
+      path: { nestUnderParent: true },
+    },
     fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
-    path: { nestUnderParent: true },
   },
 }

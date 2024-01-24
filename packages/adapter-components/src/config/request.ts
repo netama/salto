@@ -17,7 +17,7 @@ import { ElemID, ObjectType, BuiltinTypes, CORE_ANNOTATIONS, FieldDefinition, Ma
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { collections, types } from '@salto-io/lowerdash'
-import { ARG_PLACEHOLDER_MATCHER } from '../fetch/types'
+import { ARG_PLACEHOLDER_MATCHER } from '../fetch/utils'
 
 const { findDuplicates } = collections.array
 

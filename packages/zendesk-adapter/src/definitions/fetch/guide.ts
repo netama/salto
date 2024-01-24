@@ -16,30 +16,22 @@
 import { definitions } from '@salto-io/adapter-components'
 import { EVERYONE_USER_TYPE } from '../../constants'
 import { DEFAULT_ID_PARTS, NAME_ID_FIELD } from './shared'
-import { DATA_FIELD_ENTIRE_OBJECT } from '@salto-io/adapter-components/src/config'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
 
 const BRAND_ID_PART: definitions.fetch.FieldIDPart = { fieldName: 'brand', isReference: true }
 
-const BRAND_CONTEXT: definitions.fetch.ContextParamDefinitions = {
-  // TODON make sure to get from the same instance...
-  args: {
+const BRAND_CONTEXT: definitions.fetch.ContextCombinationDefinition = {
+  dependsOn: {
     brand: {
-      typeName: 'brand',
-      // we need both the id and the subdomain
-      fieldName: DATA_FIELD_ENTIRE_OBJECT,
+      parentTypeName: 'brand',
+      transformValue: {
+        // we need both the id and the subdomain
+        pick: ['id', 'subdomain'],
+      },
       // TODON use brand.id and brand.subdomain in client requests + pass back
     },
-    // brand_id: {
-    //   typeName: 'brand',
-    //   fieldName: 'id',
-    // },
-    // brand_subdomain: {
-    //   typeName: 'brand',
-    //   fieldName: 'subdomain',
-    // },
   },
 }
 
@@ -147,10 +139,11 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       fieldCustomizations: {
         translations: {
           standalone: {
+            typeName: 'category_translation',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
-          fieldType: 'list<category_translation>',
+          // fieldType: 'list<category_translation>', // TODON can conclude? make sure happens
         },
         id: {
           fieldType: 'number',
@@ -187,10 +180,11 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       fieldCustomizations: {
         translations: {
           standalone: {
+            typeName: 'section_translation',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
-          fieldType: 'list<section_translation>',
+          // fieldType: 'list<section_translation>', // TODON make sure created
         },
         id: {
           fieldType: 'number',
@@ -225,20 +219,22 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
     resource: {
       directFetch: true,
       context: { // TODON make sure context is aggregated from "parent" endpoint (category)
-        args: {
+        dependsOn: {
           category_id: {
-            typeName: 'category',
-            fieldName: 'id',
+            parentTypeName: 'category',
+            transformValue: {
+              root: 'id',
+            },
           },
         },
       },
       recurseInto: {
         attachments: {
-          type: 'article_attachment',
+          typeName: 'article_attachment',
           context: {
             args: {
               article_id: {
-                fromField: 'id',
+                fromField: 'id', // TODON align with transformation config here as well?
               },
             },
           },
@@ -259,17 +255,19 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       fieldCustomizations: {
         translations: {
           standalone: {
+            typeName: 'category_translation',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
-          fieldType: 'list<category_translation>',
+          // fieldType: 'list<category_translation>', // TODON make sure happens
         },
         attachments: {
           standalone: {
+            typeName: 'article_attachment',
             addParentAnnotation: true,
             referenceFromParent: true,
           },
-          fieldType: 'list<article_attachment>', // TODON not needed if will get automatically from recurseInto?
+          // fieldType: 'list<article_attachment>', // TODON not needed if will get automatically from recurseInto?
         },
         id: {
           fieldType: 'number',

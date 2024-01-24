@@ -19,17 +19,18 @@ import stableStringify from 'json-stable-stringify'
 import { Values, isPrimitiveValue } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
-import { ContextWithDependencies, isDependsOnDefinition } from '../../definitions/system/fetch'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
 import { Requester } from '../requester'
-import { ARG_PLACEHOLDER_MATCHER, TypeResourceFetcher } from '../types'
+import { TypeResourceFetcher, ValueGeneratedItem } from '../types'
 import { HTTPEndpointIdentifier } from '../../definitions/system'
 import { GeneratedItem } from '../../definitions/system/shared'
-import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
+import { DependsOnDefinition, FetchResourceDefinition } from '../../definitions/system/fetch/resource'
 import { computeArgCombinations } from './request_parameters'
 import { findUnresolvedArgs } from '../../elements' // TODON move
 import { recurseIntoSubresources } from './subresources'
+import { createValueTransformer, ARG_PLACEHOLDER_MATCHER } from '../utils'
+import { getLogPrefix } from '../../utils'
 
 const log = logger(module)
 
@@ -82,26 +83,36 @@ export const serviceIdCreator = (
 )
 
 // TODON adjust to customizer later
-const calculateContextArgs = ({ args, initialRequestContext, availableResources }: {
-  args: ContextWithDependencies['args'] | undefined
+const calculateContextArgs = ({ contextDef, initialRequestContext, availableResources }: {
+  contextDef?: FetchResourceDefinition['context']
   initialRequestContext?: Record<string, unknown>
-  availableResources: Record<string, GeneratedItem[] | undefined>
+  availableResources: Record<string, ValueGeneratedItem[] | undefined>
 }): Record<string, unknown[]> => {
-  const predefinedArgs = _.mapValues(initialRequestContext ?? {}, collections.array.makeArray)
-  if (args === undefined) {
-    // make a single request for the empty context
-    return predefinedArgs
-  }
+  // initial args take precedence over fixed args if there's a conflict
+  const { dependsOn, fixed } = contextDef ?? {}
+  const predefinedArgs = _.mapValues(
+    _.defaults(
+      {},
+      initialRequestContext ?? {},
+      fixed ?? {},
+    ),
+    collections.array.makeArray,
+  )
 
-  const remainingArgs: ContextWithDependencies['args'] = _.omit(args, Object.keys(predefinedArgs))
+  const remainingDependsOnArgs: Record<string, DependsOnDefinition> = _.omit(dependsOn, Object.keys(predefinedArgs))
 
   return _.defaults(
     {},
     predefinedArgs,
-    _(remainingArgs)
-      .mapValues(arg => (isDependsOnDefinition(arg)
-        ? availableResources[arg.typeName]?.map(item => _.pick({ ...item.value, ...item.context }, arg.fieldName))
-        : collections.array.makeArray(arg.value)))
+    _(remainingDependsOnArgs)
+      .mapValues(arg => (availableResources[arg.parentTypeName]
+        ?.flatMap(item =>
+          createValueTransformer<{}, Values>(arg.transformValue)({
+            typeName: arg.parentTypeName,
+            value: { ...item.value, ...item.context },
+          }))
+        .filter(lowerdashValues.isDefined)
+      ))
       .pickBy(lowerdashValues.isDefined)
       .mapValues(values => _.uniqBy(values, objectHash)) // TODON make sure safe, can also use stableStringify
       .value(),
@@ -129,14 +140,10 @@ export const createTypeResourceFetcher = ({
   initialRequestContext?: Record<string, unknown>
 }): TypeResourceFetcher => {
   if (!query.isTypeMatch(typeName)) {
-    log.info('type %s does not match query, skipping it and all its dependencies', typeName)
+    log.info('[%s] type %s does not match query, skipping it and all its dependencies', getLogPrefix(adapterName, accountName), typeName)
     return getEmptyTypeResourceFetcher()
   }
-  const endpoints = typeToEndpoints[typeName]
-  if (endpoints === undefined) {
-    log.error('no endpoints found for type %s (account %s adapter %s), not fetching type', typeName, accountName, adapterName)
-    return getEmptyTypeResourceFetcher()
-  }
+  const endpoints = typeToEndpoints[typeName] ?? []
 
   let done = false
   const items: GeneratedItem[] = []
@@ -145,15 +152,22 @@ export const createTypeResourceFetcher = ({
     if (!done) {
       return undefined
     }
-    return items
+    // TODON if a more accurate type guard exists, use it and cast?
+    const validItems = _.filter(items, item => lowerdashValues.isPlainObject(item.value)) as ValueGeneratedItem[]
+    if (validItems.length < items.length) {
+      // TODON add better logging
+      log.warn('[%s] omitted %d items of type %s that did not match the value guard', getLogPrefix(adapterName, accountName), items.length - validItems.length, typeName)
+    }
+
+    return validItems
   }
 
   const fetch: TypeResourceFetcher['fetch'] = async ({ availableResources, typeFetcherCreator }) => {
     // TODON allow customizing!
     const def = defs[typeName]
-    const resourceContext = def.context
-    const contextPossibleArgs = (resourceContext?.custom?.(resourceContext.args) ?? calculateContextArgs)({
-      args: resourceContext?.args,
+    // TODON support customizing in each part
+    const contextPossibleArgs = calculateContextArgs({
+      contextDef: def.context,
       initialRequestContext,
       availableResources,
     })
@@ -170,6 +184,12 @@ export const createTypeResourceFetcher = ({
           },
         })).toArray()
       }))).flat()
+
+      // TODOM make sure these are _all_ generated items, not only the ones relevant for this type -
+      // and pass the others to the other "waiting" resource managers.
+      // in current approach, should only pass "top-level" ones - but if we do flatten the graph,
+      // then these can identify any resource - if the context has the "caller" id,
+      // then the combined id is an array and we can use a trie?
 
       const recurseIntoFetcher = recurseIntoSubresources({ def, typeFetcherCreator, availableResources })
 
@@ -188,6 +208,7 @@ export const createTypeResourceFetcher = ({
       // TODON recursively merge arrays?
       const mergedFragments = _(groupedFragments)
         .mapValues(fragments => ({
+          typeName,
           fragments,
           // concat arrays
           value: _.mergeWith({}, ...fragments.map(fragment => fragment.value), (first: unknown, second: unknown) => (
@@ -196,16 +217,18 @@ export const createTypeResourceFetcher = ({
               : undefined
           )),
         }))
-        .mapValues(item => def.transform?.(item) ?? item.value)
+        .mapValues(item => collections.array.makeArray(
+          createValueTransformer<{ fragments: GeneratedItem[] }, Values>(def.mergeAndTransform)(item)
+        ))
         .value()
 
-      Object.values(mergedFragments).forEach(item => items.push(item))
+      Object.values(mergedFragments).flat().forEach(item => items.push(item))
       done = true
       return {
         success: true,
       }
     } catch (e) {
-      log.error('Error caught while fetching %s: %s. stack: %s', typeName, e, (e as Error).stack)
+      log.error('[%s] Error caught while fetching %s: %s. stack: %s', getLogPrefix(adapterName, accountName), typeName, e, (e as Error).stack)
       done = true
       if (_.isError(e)) {
         return {

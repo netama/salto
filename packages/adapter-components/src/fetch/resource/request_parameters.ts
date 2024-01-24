@@ -20,7 +20,7 @@ import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ClientGetWithPaginationParams } from '../../client'
 import { FetchRequestConfig, UrlParams, DependsOnConfig } from '../../config/request'
-import { ARG_PLACEHOLDER_MATCHER } from '../types'
+import { ARG_PLACEHOLDER_MATCHER } from '../utils'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)

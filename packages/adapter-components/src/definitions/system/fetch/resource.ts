@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, GeneratedItem } from '../shared'
+import { ArgsWithCustomizer, ContextParams, GeneratedItem, TransformDefinition } from '../shared'
 
 export type ResourceTransformFunc = (args: {
   value: Values
@@ -28,35 +28,30 @@ export type Resource = {
 }
 
 
-type DependsOnDefinition = {
+export type DependsOnDefinition = {
   // TODON no components so removing
   // // if the dependency is on a type from another component, it should be mentioned explicitly
   // componentName?: string
-  typeName: string
+  parentTypeName: string
   // TODON for now - allowing fieldName to be "." and will filter inside context
   // - later might be worth consolidating with the extraction logic from other places, if there are more use cases?
   // (root, pick, omit...)
-  fieldName: string
+  // fieldName: string
+  transformValue: TransformDefinition<{}, unknown>
   // TODON add later if needed
   // addParentAnnotation?: boolean // TODON or markAsParent?
   // TODON add conditions etc similarly to RecurseInto?
+
+  // TODON - replaces recurseInto - check if needed
+  nestUnderParent?: {
+    parentField: string
+    single?: boolean
+    condition?: (args: { child: GeneratedItem; parent: GeneratedItem }) => boolean
+  }
 }
-type FixedValueDefinition = {
+
+type FixedValueContextDefinition = {
   value: string | number | boolean | Values // TODON consolidate arg definitions?
-}
-
-type ContextDefinition = DependsOnDefinition | FixedValueDefinition
-
-export const isDependsOnDefinition = (value: ContextDefinition): value is DependsOnDefinition => (
-  'typeName' in value
-)
-// TODON eliminate?
-export const isFixedValueDefinition = (value: ContextDefinition): value is FixedValueDefinition => (
-  'value' in value
-)
-
-export type ContextWithDependencies = {
-  args: Record<string, ContextDefinition>
 }
 
 // TODON move to dependencies file?
@@ -70,6 +65,7 @@ type RecurseIntoConditionByContext = RecurseIntoConditionBase & {
   fromContext: string
 }
 
+// TODON see if can merge (since all are now context)?
 export type RecurseIntoCondition = RecurseIntoConditionByField | RecurseIntoConditionByContext
 
 export const isRecurseIntoConditionByField = (
@@ -80,7 +76,9 @@ export const isRecurseIntoConditionByField = (
 
 // TODON decide if similarly relevant in deploy?
 // TODON input and output should be based on calculateContextArgs (and similarly for other ArgsWithCustomizers)
-export type ContextParamDefinitions = ArgsWithCustomizer<Record<string, unknown[]>, ContextWithDependencies>
+// export type ContextParamDefinitions<
+//   C extends types.XOR<DependsOnDefinition, FixedValueContextDefinition>
+// > = ArgsWithCustomizer<Record<string, unknown[]>, ContextWithDependencies<C>>
 
 // TODON add ArgsWithCustomizer per arg / globally, similarly to ContextParamDefinitions
 type RecurseIntoContextParamDefinition = {
@@ -89,49 +87,71 @@ type RecurseIntoContextParamDefinition = {
 type RecurseIntoContext = {
   args: Record<string, RecurseIntoContextParamDefinition>
 }
-// TODON need to handle customizer later
+// TODON need to handle customizer later, consolidate with ContextParamDefinitions?
 type RecurseIntoContextParamDefinitions = ArgsWithCustomizer<ContextParams[], RecurseIntoContext>
 
 
 type RecurseIntoDefinition = {
-  type: string
+  typeName: string
   isSingle?: boolean // TODON rename to single to align
   context: RecurseIntoContextParamDefinitions // TODON align dependsOn with this!
   conditions?: RecurseIntoCondition[]
   skipOnError?: boolean
-  // if the type requires additional context retrieved from another recursed-into field, list it here
-  // cycles will result in all fields being omitted (TODON add safeties)
-  recurseAfter?: string[]
+
+  // TODON why not use dependsOn in this case? will get the parent's full context so almost identical
+  // TODON then maybe can do the other way around and avoid recusreInto and only have dependsOn + mark adding the field
+  // under the parent(s)?
+
+  // when true, the resource is created as its own resource and does not reference the parent
+  // TODON switch guide to use this instead + add as its own entity in the graph?
+  // defaults to false - which means the resource will be added under the relevant field of the parent resource
+  // independent?: boolean
+
+  // // if the type requires additional context retrieved from another recursed-into field, list it here
+  // // cycles will result in all fields being omitted (TODON add safeties)
+  // recurseAfter?: string[]
 }
 
-type RecurseIntoByField = Record<string, RecurseIntoDefinition>
+type ContextCombinationDefinition = {
+  fixed?: Record<string, FixedValueContextDefinition>
+  // each dependsOn combination provides a cartesian product of its possible arguments
+  dependsOn?: Record<string, DependsOnDefinition>
+  // TODON not supported yet, add support
+  conditions?: RecurseIntoCondition[]
+}
 
-// TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
+/**
+ * Define how resources are constructed.
+ * Flow: (TODON decide if relevant here or if should be documented in getAllElements / if this should move there!)
+ * - Resource types to fetch are determined by the fetch query
+ * - TODON continue
+ */
 export type FetchResourceDefinition = {
   // set to true if the resource should be fetched on its own. set to false for types only fetched via recurseInto
-  directFetch: boolean
+  directFetch: boolean // TODON after refactor might not be needed?
   // TODON make sure to also mark the fields
   serviceIDFields?: string[]
 
   // context arg name to type info
   // no need to specify context received from a parent's recurseInto context
   // TODON decide what to do when returned values are arrays (need a strategy for how to combine)
-  // TODON if multiple params from the same type, assume from same instance? (e.g. zendesk guide)
   // TODON custom is ONLY used for calculating the result - dependencies are based on config!!!
   // TODON add extra function if need something else
-  // TODON split into dependsOn and "regular" context?
-  context?: ContextParamDefinitions
+  // TODON convert to array of possible combinations when the need arises
+  context?: ContextCombinationDefinition
 
-  // target field name to type info
-  // should be used to add nested fields containing other fetched types' responses (after the response was received)
+  // target field name to sub-resource info
+  // can be used to add nested fields containing other fetched types' responses (after the response was received),
+  // and to separate child resources into their own instances
   // TODON rename - maybe subresources?
-  recurseInto?: RecurseIntoByField
+  recurseInto?: Record<string, RecurseIntoDefinition>
 
-  // when the value is constructed based on multiple fragments,
-  // decide how to combine the values
-  // default: merge (TODON by what order? alphabetically by endpoint name?)
-  transform?: ResourceTransformFunc
+  // construct the final value from all fetched fragments, which are grouped by the service id and parent resource id.
+  // default behavior: merge all fragments together while concatenating array values.
+  // note: concatenation order between fragments is not defined.
+  mergeAndTransform?: TransformDefinition<{ fragments: GeneratedItem[] }>
 
-  // TODON not adding for now, see if can avoid with field type overrides since only applies to child types
-  // sourceTypeName?: string
+  // TODON move standalone fields here instead of on element? (still needs to be recursive, need to give target type)
+  // subResources?: Record<string, FieldSubResourceDefinition>
+
 }

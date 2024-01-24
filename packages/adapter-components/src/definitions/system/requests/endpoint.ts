@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { Value } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, DefaultWithCustomizations, ExtractionParams, GeneratedItem } from '../shared'
+import { ArgsWithCustomizer, ContextParams, DefaultWithCustomizations, ExtractionParams, GeneratedItem } from '../shared'
 import { Response, ResponseValue } from '../../../client'
 
 export type HTTPMethod = 'get' | 'post' | 'put' | 'patch' | 'delete' | 'head' | 'options'
@@ -33,10 +33,14 @@ export type HTTPEndpointIdentifier = {
 
 // TODON avoid having to write everything explicitly, and assume exists by default?
 
+type FetchExtractionParams<TContext = ContextParams> = ExtractionParams<TContext> & {
+  toType: string // TODON not needed in deploy change-to-request, decide if worth customizing
+}
+
 // TODON maybe avoid complete customization so we know what to fetch?
 export type FetchExtractionDefinition = ArgsWithCustomizer<
   GeneratedItem[], // TODON decide if should be a generator
-  ExtractionParams,
+  FetchExtractionParams,
   Response<ResponseValue | ResponseValue[]>[]
 >
 

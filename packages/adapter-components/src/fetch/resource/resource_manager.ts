@@ -16,7 +16,6 @@
 import _ from 'lodash'
 import { DAG } from '@salto-io/dag'
 import { logger } from '@salto-io/logging'
-import { isDependsOnDefinition } from '../../definitions/system/fetch'
 import { ElementGenerator } from '../element'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
@@ -25,6 +24,7 @@ import { HTTPEndpointIdentifier } from '../../definitions'
 import { createTypeResourceFetcher } from './type_fetcher'
 import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
 import { TypeFetcherCreator } from '../types'
+import { getLogPrefix } from '../../utils'
 
 const log = logger(module)
 
@@ -45,21 +45,19 @@ export type ResourceManager = {
 //   getAllResources: (query: ElementQuery, typeName?: string) => FetchItemGenerator
 // }
 
-
 /*
- * Create a graph with instance ids as nodes and parent annotations+fields as edges
+ * Create a graph with dependencies between resources based on the dependsOn definitions
  */
 const createDependencyGraph = (defs: Record<string, FetchResourceDefinition>): DAG<undefined> => {
   const graph = new DAG<undefined>()
   Object.entries(_.pickBy(defs, def => def.directFetch)).forEach(([typeName, resource]) => {
-    if (resource?.context === undefined) {
+    if (resource?.context?.dependsOn === undefined) {
       graph.addNode(typeName, [], undefined)
       return
     }
     // TODON make sure we handle custom - this should use a default function that can be overwritten
     // (and same everywhere else where a function can customize this)
-    const dependsOnTypes = _.uniq(Object.values(resource.context.args)
-      .filter(isDependsOnDefinition).map(arg => arg.typeName))
+    const dependsOnTypes = _.uniq(Object.values(resource.context.dependsOn).map(arg => arg.parentTypeName))
     graph.addNode(typeName, dependsOnTypes, undefined)
   })
 
@@ -124,7 +122,7 @@ export const createResourceManager = ({
         entries: resourceFetcher.getItems()?.map(item => item.value) ?? [],
       })
     })
-  }, 'fetching resources for account %s (%s)', accountName, adapterName),
+  }, '[%s] fetching resources for account', getLogPrefix(adapterName, accountName)),
 })
 
 /*

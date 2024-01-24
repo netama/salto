@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { types } from '@salto-io/lowerdash'
-import { RestrictionAnnotationType, TypeElement } from '@salto-io/adapter-api'
+import { RestrictionAnnotationType, TypeElement, Values } from '@salto-io/adapter-api'
 import { NameMappingOptions } from '../../../config/transformation' // TODON move
 import { ArgsWithCustomizer } from '../shared'
 import { Resource } from './resource'
@@ -31,6 +31,16 @@ export type FieldIDPart = ArgsWithCustomizer<
   }
 >
 
+type StandaloneFieldDefinition = {
+  typeName: string
+  // add parent annotation on child, default true
+  addParentAnnotation?: boolean
+  // whether to replace the original value in the parent with a reference to the newly-created child instance
+  // defaults to true. when false, the original field is omitted
+  referenceFromParent?: boolean
+}
+
+// TODON add safeties (e.g. standalone.referencFromParent means omit)
 export type ElementFieldCustomization = types.XOR<
   {
     fieldType?: string // TODON also convert to service id?
@@ -40,10 +50,8 @@ export type ElementFieldCustomization = types.XOR<
     // TODON usually not written
     // customizeField: ({ field }: { field: Field }) => field,
     // customizeValue: ({ value }: { value: Value }) => value,
-    standalone?: { // undefined means not standalone
-      addParentAnnotation: boolean
-      referenceFromParent: boolean
-    }
+    // TODON moved to resource, make sure works with adding references
+    standalone?: StandaloneFieldDefinition
     restrictions?: RestrictionAnnotationType
   },
   {
@@ -64,7 +72,7 @@ type ElemIDOrSingleton = types.XOR<
   }
 >
 
-export type ElementFetchDefinition = {
+export type ElementFetchDefinition<TVal extends Values = Values> = {
   topLevel?: {
     // set to true if element has instances. set to false for subtypes
     isTopLevel: true // TODON placeholder so that there will be something to set
@@ -82,6 +90,11 @@ export type ElementFetchDefinition = {
     hide?: boolean
     // alias, important attributes, ?
     hardCodedType?: boolean // when false, extend the "defined" type (if exists) with ducktype
+
+    // type guard to use to validate the type is correct.
+    // when missing, we only validate that this is a plain object, and do not cast to the more accurate type
+    // TODON make sure to cast by allowing to template InstanceElement's on the value type like Ori suggested
+    valueGuard?: (val: unknown) => val is TVal
   }
 
   // // // // // type manipulations (relevant also for subtypes)

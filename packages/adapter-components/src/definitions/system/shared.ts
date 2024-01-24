@@ -30,18 +30,38 @@ export type ArgsWithCustomizer<ResponseType, Args, Input = unknown> = Args & {
 }
 export type ContextParams = Record<string, unknown>
 
-export type GeneratedItem<TContext = ContextParams> = {
+export type GeneratedItem<TContext = ContextParams, TVal = unknown> = {
   typeName: string
-  value: Values // TODON see if always works or if also need arrays
+  value: TVal // TODON switched from Values, check if should validate assumptions elsewhere
   // TODON allow to define a buffer type?
   binaryValue?: Buffer
   // identifier: string[] // TODON maybe can use additionalContext instead?
   readonly context?: ContextParams & TContext // TODON decide between context and input and align
 }
 
-export type TransformFunction<TContext = ContextParams> = (
-  item: GeneratedItem<ContextParams & TContext>
-) => types.PickyRequired<Partial<GeneratedItem<TContext>>, 'value'> // TODON fill out the others from input if missing
+// TODON see if can consolidate single and multi
+// export type TransformSingleFunction<
+//   TContext = ContextParams, TSourceVal = Values, TTargetVal extends unknown = Values
+// > = (
+//   item: GeneratedItem<ContextParams & TContext, TSourceVal>
+// ) => GeneratedItem<TContext, TTargetVal>
+// TODON changed to having value be unknown - adjust assumptions!
+export type TransformFunction<
+  TContext = ContextParams, TSourceVal = Values, TTargetVal extends unknown = Values
+> = (
+  item: GeneratedItem<ContextParams & TContext, TSourceVal>
+) => GeneratedItem<TContext, TTargetVal>[]
+
+export type SingleValueTransformationFunction<
+  TContext = ContextParams, TSourceVal = Values, TTargetVal extends unknown = Values
+> = (
+  item: GeneratedItem<ContextParams & TContext, TSourceVal>
+) => GeneratedItem<TContext, TTargetVal> | undefined
+
+export type AdjustFunction<TContext = ContextParams, TSourceVal = Values, TTargetVal extends unknown = Values> = (
+  item: GeneratedItem<ContextParams & TContext, TSourceVal>
+) => types.PickyRequired<Partial<GeneratedItem<TContext, TTargetVal>>, 'value'>
+
 
 // TODON adjust similarly to lodash?
 // type SortKey = ArgsWithCustomizer<(value: Values) => unknown, {
@@ -49,23 +69,41 @@ export type TransformFunction<TContext = ContextParams> = (
 //   descending?: boolean // false = ascending (default)
 // }>
 
-export type ExtractionParams<TContext = ContextParams> = {
+/**
+ * transformation steps:
+ * - if root is specified, look at the value under that path instead of the entire object
+ * - if pick is specified, pick the specified paths
+ * - if omit is specified, omit the specified paths
+ * - if nestUnderField is specified, nest the entire object under the specified path
+ * - if adjust is specified, run the function on the current transformation result and return the final value
+ */
+export type TransformDefinition<TContext = ContextParams, TTargetVal = Values> = {
   // return field name (can customize e.g. to "type => types")
   root?: string
-  // TODON generalize later
-  // root?: ArgsWithCustomizer<
-  //   string | undefined,
-  //   string,
-  //   TContext
-  // >
-  toType: string // TODON not needed in deploy change-to-request, decide if worth customizing
+  // TODON expand similarly to pickBy? if needed
+  pick?: string[]
+  omit?: string[]
+  nestUnderField?: string // TODON replaces deployAsField
+  single?: boolean
+  // TODON allow to only override the values in all the functions (and fill in the rest from the item)
+  adjust?: AdjustFunction<TContext, unknown, TTargetVal>
+
+  // TODON add guards here? or separately?
+}
+
+export type ExtractionParams<TContext = ContextParams> = {
+  transformValue?: TransformDefinition<TContext>
+
+  // context to pass to request
+  // TODON not working with ArgsWithCustomizer, probably because of the Record
+  // TODON for now assuming all args are nested paths inside the value, and anything else will be a function
+  context?: Partial<ContextParams & TContext> // TODON see if needed
 
   // the default identifier of this fragment is determined by the resulting value's service id
   // if a different one is needed, it can be customized here
   // TODON define function if/when needed (similarly to transform?)
   // identifier?: IdentifierFunction
 
-  nestUnderField?: string // TODON replaces deployAsField
   // default false, set to true to view all responses from all pages combined
   // aggregate?: { // TODON see if can replace with dependencies on individual items?
   //   sortBy: SortKey[] // TODON define
@@ -73,15 +111,6 @@ export type ExtractionParams<TContext = ContextParams> = {
   // aggregate?: boolean
   // // on fetch - singleton, on deploy - whether to split to individual requests or batch
   // single?: boolean // moved to transformation
-  // TODON expand similarly to pickBy
-  pick?: string[]
-  omit?: string[]
-  transform?: TransformFunction<TContext> // TODON allow to only override the values in all the functions
-
-  // context to pass to request
-  // TODON not working with ArgsWithCustomizer, probably because of the Record
-  // TODON for now assuming all args are nested paths inside the value, and anything else will be a function
-  context?: Partial<ContextParams & TContext> // TODON see if needed
 }
 
 export type InstanceChangeAndGroup = {
@@ -90,13 +119,6 @@ export type InstanceChangeAndGroup = {
 }
 
 export type FilterCondition = (args: InstanceChangeAndGroup) => boolean
-
-// TODON maybe avoid complete customization so we know what to fetch?
-export type ExtractionDefinition<TContext = ContextParams> = ArgsWithCustomizer<
-  GeneratedItem<TContext>[], // TODON decide if should be a generator
-  ExtractionParams<TContext>,
-  GeneratedItem<TContext>[]
->
 
 export type OptionsWithDefault<T, K extends string> = {
   options: Record<K, T>
