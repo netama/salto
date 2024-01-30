@@ -21,7 +21,7 @@ import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
-import { Requester } from '../requester'
+import { Requester } from '../request/requester'
 import { TypeResourceFetcher, ValueGeneratedItem } from '../types'
 import { HTTPEndpointIdentifier } from '../../definitions/system'
 import { GeneratedItem } from '../../definitions/system/shared'
@@ -30,7 +30,6 @@ import { computeArgCombinations } from './request_parameters'
 import { findUnresolvedArgs } from '../../elements' // TODON move
 import { recurseIntoSubresources } from './subresources'
 import { createValueTransformer, ARG_PLACEHOLDER_MATCHER } from '../utils'
-import { getLogPrefix } from '../../utils'
 
 const log = logger(module)
 
@@ -48,12 +47,6 @@ const log = logger(module)
 //   const dependsOnContext = Object.values(context).filter(isDependsOnDefinition).map(def => def.typeName)
 //   return () => []
 // }
-
-const getEmptyTypeResourceFetcher = (): TypeResourceFetcher => ({
-  fetch: async () => ({ success: true }),
-  done: () => true,
-  getItems: () => [],
-})
 
 // TODON move to new location
 export const replaceParams = (origValue: string, paramValues: Record<string, unknown>): string => (
@@ -110,6 +103,7 @@ const calculateContextArgs = ({ contextDef, initialRequestContext, availableReso
           createValueTransformer<{}, Values>(arg.transformValue)({
             typeName: arg.parentTypeName,
             value: { ...item.value, ...item.context },
+            context: item.context, // TODON duplicate data, simplify
           }))
         .filter(lowerdashValues.isDefined)
       ))
@@ -122,7 +116,6 @@ const calculateContextArgs = ({ contextDef, initialRequestContext, availableReso
 
 export const createTypeResourceFetcher = ({
   adapterName,
-  accountName,
   typeName,
   defs,
   typeToEndpoints,
@@ -131,17 +124,16 @@ export const createTypeResourceFetcher = ({
   initialRequestContext,
 }: {
   adapterName: string
-  accountName: string
   typeName: string
   defs: Record<string, FetchResourceDefinition>
   typeToEndpoints: Record<string, HTTPEndpointIdentifier[]>
   query: ElementQuery
   requester: Requester
   initialRequestContext?: Record<string, unknown>
-}): TypeResourceFetcher => {
+}): TypeResourceFetcher | undefined => {
   if (!query.isTypeMatch(typeName)) {
-    log.info('[%s] type %s does not match query, skipping it and all its dependencies', getLogPrefix(adapterName, accountName), typeName)
-    return getEmptyTypeResourceFetcher()
+    log.info('[%s] type %s does not match query, skipping it and all its dependencies', adapterName, typeName)
+    return undefined // getEmptyTypeResourceFetcher()
   }
   const endpoints = typeToEndpoints[typeName] ?? []
 
@@ -156,7 +148,7 @@ export const createTypeResourceFetcher = ({
     const validItems = _.filter(items, item => lowerdashValues.isPlainObject(item.value)) as ValueGeneratedItem[]
     if (validItems.length < items.length) {
       // TODON add better logging
-      log.warn('[%s] omitted %d items of type %s that did not match the value guard', getLogPrefix(adapterName, accountName), items.length - validItems.length, typeName)
+      log.warn('[%s] omitted %d items of type %s that did not match the value guard', adapterName, items.length - validItems.length, typeName)
     }
 
     return validItems
@@ -176,13 +168,13 @@ export const createTypeResourceFetcher = ({
         const allArgs = findUnresolvedArgs(endpoint.path) // TODON get from all parts of the definition!
         const relevantArgRoots = _.uniq(allArgs.map(arg => arg.split('.')[0]).filter(arg => arg.length > 0)) // TODON move
         const contexts = computeArgCombinations(contextPossibleArgs, relevantArgRoots)
-        return collections.asynciterable.awu(requester.request({
+        return requester.request({
           endpointIdentifier: endpoint,
           contexts,
           callerIdentifier: {
             typeName,
           },
-        })).toArray()
+        })
       }))).flat()
 
       // TODOM make sure these are _all_ generated items, not only the ones relevant for this type -
@@ -201,21 +193,24 @@ export const createTypeResourceFetcher = ({
         return {
           ...item,
           value: _.defaults({}, item.value, ...fieldValues),
+          context: item.context,
         }
       }))
       const toServiceID = serviceIdCreator(def.serviceIDFields ?? [], typeName)
-      const groupedFragments = _.groupBy(allFragments, toServiceID)
+      const groupedFragments = _.groupBy(allFragments, ({ value }) => toServiceID(value))
       // TODON recursively merge arrays?
       const mergedFragments = _(groupedFragments)
         .mapValues(fragments => ({
           typeName,
-          fragments,
           // concat arrays
           value: _.mergeWith({}, ...fragments.map(fragment => fragment.value), (first: unknown, second: unknown) => (
             (Array.isArray(first) && Array.isArray(second))
               ? first.concat(second)
               : undefined
           )),
+          context: {
+            fragments,
+          },
         }))
         .mapValues(item => collections.array.makeArray(
           createValueTransformer<{ fragments: GeneratedItem[] }, Values>(def.mergeAndTransform)(item)
@@ -228,7 +223,7 @@ export const createTypeResourceFetcher = ({
         success: true,
       }
     } catch (e) {
-      log.error('[%s] Error caught while fetching %s: %s. stack: %s', getLogPrefix(adapterName, accountName), typeName, e, (e as Error).stack)
+      log.error('[%s] Error caught while fetching %s: %s. stack: %s', adapterName, typeName, e, (e as Error).stack)
       done = true
       if (_.isError(e)) {
         return {

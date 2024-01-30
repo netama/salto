@@ -14,12 +14,9 @@
 * limitations under the License.
 */
 import { Values } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, GeneratedItem, TransformDefinition } from '../shared'
+import { AdjustFunction, ArgsWithCustomizer, ContextParams, GeneratedItem, TransformDefinition } from '../shared'
 
-export type ResourceTransformFunc = (args: {
-  value: Values
-  fragments: GeneratedItem[]
-}) => Values
+export type ResourceTransformFunc = AdjustFunction<{ fragments: GeneratedItem[] }>
 
 export type Resource = {
   typeName: string
@@ -74,15 +71,9 @@ export const isRecurseIntoConditionByField = (
   'fromField' in condition
 )
 
-// TODON decide if similarly relevant in deploy?
-// TODON input and output should be based on calculateContextArgs (and similarly for other ArgsWithCustomizers)
-// export type ContextParamDefinitions<
-//   C extends types.XOR<DependsOnDefinition, FixedValueContextDefinition>
-// > = ArgsWithCustomizer<Record<string, unknown[]>, ContextWithDependencies<C>>
-
 // TODON add ArgsWithCustomizer per arg / globally, similarly to ContextParamDefinitions
 type RecurseIntoContextParamDefinition = {
-  fromField: string
+  fromField: string // TODON replace with transformation config to align
 }
 type RecurseIntoContext = {
   args: Record<string, RecurseIntoContextParamDefinition>
@@ -112,8 +103,10 @@ type RecurseIntoDefinition = {
   // recurseAfter?: string[]
 }
 
-type ContextCombinationDefinition = {
+export type ContextCombinationDefinition = {
   fixed?: Record<string, FixedValueContextDefinition>
+  // TODON decide if similarly relevant in deploy?
+  // TODON input and output should be based on calculateContextArgs (and similarly for other ArgsWithCustomizers)
   // each dependsOn combination provides a cartesian product of its possible arguments
   dependsOn?: Record<string, DependsOnDefinition>
   // TODON not supported yet, add support

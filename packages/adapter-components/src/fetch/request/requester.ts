@@ -15,18 +15,16 @@
 */
 import _ from 'lodash'
 import { logger } from '@salto-io/logging'
-import { collections } from '@salto-io/lowerdash'
-import { ResponseValue, Response, ClientDataParams } from '../client'
-import { ContextParams, GeneratedItem } from '../definitions/system/shared'
-import { ApiDefinitions, HTTPEndpointIdentifier, mergeWithDefault } from '../definitions'
-import { TypeEndpointRelations } from './dependencies'
-import { ResourceIdentifier, IdentifiedItem } from './types'
-// import { createPaginator } from '../client'
-import { noPagination } from '../client/pagination/pagination'
-import { FetchExtractionDefinition } from '../definitions/system/requests/endpoint'
-import { replaceArgs } from './resource/request_parameters'
-import { getLogPrefix } from '../utils'
-import { createValueTransformer } from './utils'
+import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
+import { ResponseValue } from '../../client'
+import { ContextParams, GeneratedItem } from '../../definitions/system/shared'
+import { ApiDefinitions, HTTPEndpointIdentifier, mergeWithDefault } from '../../definitions'
+import { TypeEndpointRelations } from '../dependencies'
+import { ResourceIdentifier, IdentifiedItem } from '../types'
+import { FetchExtractionDefinition } from '../../definitions/system/requests/endpoint'
+import { createValueTransformer } from '../utils'
+import { traversePages } from './pagination/pagination'
+import { noPagination } from './pagination'
 
 const log = logger(module)
 
@@ -37,14 +35,14 @@ export type Requester = {
     contexts: ContextParams[]
     callerIdentifier: ResourceIdentifier
   // TODON improve to make this return partial errors as the return value
-  }) => AsyncIterable<IdentifiedItem>
+  }) => Promise<IdentifiedItem[]> // TODON decide if should convert to generator
   // TODON if want to return errors -
   // }) => Generator<IdentifiedItem, { errors?: Record<string, string[]> }>
 }
 
-type ItemExtractor = (pages: Response<ResponseValue | ResponseValue[]>[]) => GeneratedItem[]
+type ItemExtractor = (pages: ResponseValue[]) => GeneratedItem[]
 
-export const createExtractor = (extractorDef: FetchExtractionDefinition): ItemExtractor => {
+const createExtractor = (extractorDef: FetchExtractionDefinition): ItemExtractor => {
   if (extractorDef.custom !== undefined) {
     return extractorDef.custom(extractorDef)
   }
@@ -52,25 +50,33 @@ export const createExtractor = (extractorDef: FetchExtractionDefinition): ItemEx
   const { toType, context } = extractorDef
   // TODON in order to aggregate, assuming got all pages - see if we want to change this to a stream
   return pages => (
-    pages.flatMap(page => collections.array.makeArray(transform({ value: page, typeName: toType, context })))
+    pages.flatMap(page => collections.array.makeArray(transform({
+      value: page,
+      typeName: toType,
+      context: context ?? {},
+    })))
   )
 }
 
+
 // TODON action won't be needed once narrowing the definitions type?
-export const getRequester = <ClientOptions extends string, PaginationOptions extends string | 'none', Action extends string>({
-  adapterName,
-  accountName,
-  clients,
-  pagination,
-  endpointToClient,
-  // requestCache, // TODON move to client? or keep here?
-}: {
+export const getRequester = <
+  ClientOptions extends string,
+  PaginationOptions extends string | 'none',
+  TAdditionalClientArgs extends Record<string, unknown>,
+  Action extends string
+>({
+    adapterName,
+    clients,
+    pagination,
+    endpointToClient, // TODON calculate inside?
+    // requestCache, // TODON move to client? or keep here?
+  }: {
   adapterName: string
-  accountName: string
-  clients: ApiDefinitions<ClientOptions, PaginationOptions, Action>['clients']
-  pagination: ApiDefinitions<ClientOptions, PaginationOptions, Action>['pagination']
+  clients: ApiDefinitions<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>['clients']
+  pagination: ApiDefinitions<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>['pagination']
   endpointToClient: TypeEndpointRelations<ClientOptions>['endpointToClient']
-  requestCache?: Record<string, unknown>
+  // requestCache?: Record<string, unknown>
 }): Requester => {
   const clientDefs = _.mapValues(
     clients.options,
@@ -80,13 +86,13 @@ export const getRequester = <ClientOptions extends string, PaginationOptions ext
     })
   )
 
-  const request: Requester['request'] = async function *request({ callerIdentifier, contexts, endpointIdentifier }) {
+  const request: Requester['request'] = async ({ callerIdentifier, contexts, endpointIdentifier }) => {
     if (endpointToClient[endpointIdentifier.path] === undefined) {
       if (clients.options[clients.default].strict) {
         throw new Error(`Could not find client for endpoint ${endpointIdentifier.path}`)
       }
       // TODON make this a pattern of how to use adapter/client?
-      log.error('[%s] Could not find client for endpoint %s, falling back to default client (%s)', getLogPrefix(adapterName, accountName), endpointIdentifier.path, clients.default)
+      log.error('[%s] Could not find client for endpoint %s, falling back to default client (%s)', adapterName, endpointIdentifier.path, clients.default)
     }
     const clientName = endpointToClient[endpointIdentifier.path] ?? clients.default
     const clientDef = clientDefs[clientName]
@@ -97,59 +103,54 @@ export const getRequester = <ClientOptions extends string, PaginationOptions ext
     const paginationOption = endpointDef?.pagination
     const paginationDef = paginationOption !== undefined
       ? pagination[paginationOption]
-      : { funcCreator: noPagination }
+      : { funcCreator: noPagination, clientArgs: undefined }
     // TODON extend to "full" client
     const { clientArgs } = paginationDef
     const mergedDef = _.merge({}, clientArgs, endpointDef)
     const extractors = (mergedDef.responseExtractors ?? [])
       // only extract items of the requested type -
       // TODON make sure ok (+ cache response in the requester by context to avoid calling client again!)
-      .filter(def => def.toType === callerIdentifier.typeName)
+      .filter(def => def.toType === callerIdentifier.typeName) // TODON avoid filtering + instead route to correct one?
       .map(createExtractor)
     if (extractors.length === 0) {
       log.error('unexpected 0 extractors for endpoint %s:%s', endpointIdentifier.path, endpointIdentifier.method)
-      return
+      return []
     }
-
-    // TODON pass contexts to paginator
-    // const paginator = createPaginator({
-    //   client: clientDef.httpClient,
-    //   paginationFuncCreator: paginationDef.funcCreator,
-    //   asyncRun: true, // TODON confirm ok
-    // })
+    const callArgs = _.pick(mergedDef, ['queryArgs', 'headers', 'body'])
 
     // TODON use context, cache request+response including callerIdentifier
-    // TODON refactor paginator and use it here
-    // TODON replace args recursively instead!
-
-    const replaceAllArgs = (context: ContextParams): ClientDataParams => ({
-      // TODON rename to path
-      url: replaceArgs(endpointIdentifier.path, context),
-      // TODON use body if not only GET?
-      headers: mergedDef.headers !== undefined
-        ? _.mapValues(mergedDef.headers, val => replaceArgs(val, context))
-        : undefined,
-      queryParams: mergedDef.queryArgs !== undefined
-        ? _.mapValues(mergedDef.queryArgs, val => replaceArgs(val, context))
-        : undefined,
-    })
-    const pagesWithContext = await Promise.all(contexts.map(async args => ({
-      context: args,
-      // TODON replace with paginator and flatten
-      pages: [await clientDef.httpClient[endpointIdentifier.method](replaceAllArgs(args))],
-    })))
     // TODON extract items + use correct ids (fake temp code for testing!!! should continue)
+    // TODON replace args in endpoint and initial args
+    const pagesWithContext = await traversePages({
+      client: clientDef.httpClient,
+      paginationDef,
+      endpointIdentifier,
+      contexts,
+      callArgs,
+    })
+
     const itemsWithContext = extractors
       .flatMap(extractor => pagesWithContext.map(({ context, pages }) => ({
         items: extractor(pages),
         context,
       })))
       .flatMap(({ items, context }) => items.flatMap(item => ({ ...item, context })))
-    yield* itemsWithContext.map(item => ({
-      callerIdentifier,
-      typeName: callerIdentifier.typeName,
-      value: item,
-    }))
+    return itemsWithContext
+      .map(item => ({
+        callerIdentifier,
+        ...item,
+        // TODON taking from item - make sure ok
+        // typeName: callerIdentifier.typeName,
+        // value: item,
+        // context: item.context, // TODON ??? not sure accurate
+      }))
+      .filter(item => {
+        if (!lowerdashValues.isPlainRecord(item.value)) {
+          log.warn('extracted invalid item for caller %s %s', callerIdentifier.typeName, callerIdentifier.identifier)
+          return false
+        }
+        return true
+      }) as IdentifiedItem[]
   }
 
   return { request }

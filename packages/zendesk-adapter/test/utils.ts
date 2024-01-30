@@ -20,7 +20,7 @@ import { Change, InstanceElement, ReadOnlyElementsSource, getChangeData } from '
 import { DEFAULT_CONFIG, ZendeskConfig } from '../src/config'
 import ZendeskClient from '../src/client/client'
 import { paginate } from '../src/client/pagination'
-import { BrandIdToClient } from '../src/filter'
+import { BrandSpecificClientInterface } from '../src/client/brand_specific_client'
 
 type FilterCreatorParams = {
     client: ZendeskClient
@@ -28,7 +28,7 @@ type FilterCreatorParams = {
     config: ZendeskConfig
     fetchQuery: elementUtils.query.ElementQuery
     elementsSource: ReadOnlyElementsSource
-    brandIdToClient: BrandIdToClient
+    brandIdToClient: BrandSpecificClientInterface['getClient']
 }
 
 export const createFilterCreatorParams = ({
@@ -42,7 +42,7 @@ export const createFilterCreatorParams = ({
   config = DEFAULT_CONFIG,
   fetchQuery = elementUtils.query.createMockQuery(),
   elementsSource = buildElementsSourceFromElements([]),
-  brandIdToClient = {},
+  brandIdToClient = () => undefined, // TODON
 } : Partial<FilterCreatorParams>) : FilterCreatorParams => ({
   client, paginator, config, fetchQuery, elementsSource, brandIdToClient,
 })

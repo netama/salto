@@ -22,7 +22,7 @@ import { ApiDefinitions, mergeWithDefault } from '../definitions'
 import { getUniqueConfigSuggestions } from '../elements/ducktype'
 import { ProcessedSources } from './source_processor'
 import { computeDependencies } from './dependencies'
-import { getRequester } from './requester'
+import { getRequester } from './request/requester'
 import { createResourceManager } from './resource/resource_manager'
 import { getElementGenerator } from './element'
 import { FetchElements } from '../elements'
@@ -38,13 +38,13 @@ const { isDefined } = lowerdashValues
  * Supports one level of dependency between the type's endpoints, using the dependsOn field
  * (note that it will need to be extended in order to support longer dependency chains).
  */
-export const getAllElements = async <
+export const getElements = async <
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
+  TAdditionalClientArgs extends Record<string, unknown> = {},
   Action extends string = ActionName
 >({
   adapterName,
-  accountName,
   fetchQuery,
   definitions, // TODON sub-type to avoid depending on the deploy stuff?
   processedSources,
@@ -55,14 +55,13 @@ export const getAllElements = async <
   // isErrorTurnToConfigSuggestion,
   // customInstanceFilter,
   additionalRequestContext,
-  requestCache,
+  // requestCache,
 }: {
   adapterName: string
-  accountName: string
   fetchQuery: ElementQuery
-  definitions: types.PickyRequired<ApiDefinitions<ClientOptions, PaginationOptions, Action>, 'clients' | 'pagination' | 'fetch'> // TODON maybe pick some?
+  definitions: types.PickyRequired<ApiDefinitions<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>, 'clients' | 'pagination' | 'fetch'> // TODON maybe pick some?
   // objectTypes?: Record<string, ObjectType>
-  processedSources?: ProcessedSources<ClientOptions, PaginationOptions, Action>
+  processedSources?: ProcessedSources<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>
   // shouldAddRemainingTypes?: boolean
   // computeGetArgs?: ComputeGetArgsFunc
   getElemIdFunc?: ElemIdGetter
@@ -73,7 +72,7 @@ export const getAllElements = async <
   // TODON use https://www.npmjs.com/package/json-stable-stringify for keys? + allow providing the cache as input to help with debugging? show Shir
   // TODON if using for reproduction as well - allow exporting / getting in from adapter,
   // and allow importing from location
-  requestCache?: Record<string, unknown> // TODON define type for caching requests and responses
+  // requestCache?: Record<string, unknown> // TODON define type for caching requests and responses
 }): Promise<FetchElements> => {
   // TODON assume only passing definitions for relevant components for this fetch? or adding to fetch query?
   const { predefinedTypes, additionalDefs } = processedSources ?? {}
@@ -83,25 +82,23 @@ export const getAllElements = async <
   )
   const { clients, fetch, pagination /* , initializing */ } = mergedDefs
 
-
   // TODON make smart merge - the "top-level" defaults should only be set if isTopLevel is true!!!
+  // and similarly in some other parts. if doing only once, can make this slightly less generic
   const instanceDefs = mergeWithDefault(fetch.instances)
 
-  const dependencies = computeDependencies(mergedDefs)
+  const dependencies = computeDependencies<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>(mergedDefs)
 
   const requester = getRequester({
     adapterName,
-    accountName,
     clients, // TODON should contain the client it's wrapping
     pagination,
     endpointToClient: dependencies.endpointToClient,
-    requestCache,
+    // requestCache,
   })
   // TODON make sure the "omit" part of the field adjustments happens *only* when creating the final intsance,
   // so that it can be used up to that point
   const elementGenerator = getElementGenerator({
     adapterName,
-    accountName,
     // TODON ensure some values are there? e.g. elemID, by requiring them in the default
     elementDefs: _.pickBy(_.mapValues(instanceDefs, def => def.element ?? {}), isDefined),
     // TODON decide if want openAPI to have generated object types, or only populated the config
@@ -125,7 +122,6 @@ export const getAllElements = async <
   // maintain aggregated context by resource (should also be a graph? check old implementation of recurseInto)
   const resourceManager = createResourceManager({
     adapterName,
-    accountName,
     resourceDefs: _.pickBy(_.mapValues(instanceDefs, def => def.resource), isDefined),
     typeToEndpoints: dependencies.typeToEndpoints,
     requester,

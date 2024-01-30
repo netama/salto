@@ -15,7 +15,7 @@
 */
 import { types } from '@salto-io/lowerdash'
 import { Change, InstanceElement } from '@salto-io/adapter-api'
-import { ArgsWithCustomizer, ContextParams, ExtractionParams, GeneratedItem } from '../shared'
+import { AdjustFunction, ArgsWithCustomizer, ContextParams, ExtractionParams, GeneratedItem } from '../shared'
 import { HTTPEndpointIdentifier } from '../requests'
 
 // TODON see if can consolidate the { args: Record<srting, primitive> } types
@@ -37,7 +37,7 @@ export type HTTPRequest = types.XOR<
 >
 
 // TODON renamed from transform to transformValue, continue adjusting
-export type DeployTransformRequest = HTTPRequest['transformValue']
+export type DeployAdjustRequest = AdjustFunction<{ change: Change<InstanceElement> }>
 export type HTTPRequestDefinition = ArgsWithCustomizer<
   HTTPRequest,
   HTTPRequest

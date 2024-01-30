@@ -31,6 +31,7 @@ import { DeployApiDefinitions } from './deploy'
 export type ApiDefinitions<
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
+  TAdditionalClientArgs extends Record<string, unknown> = {},
   Action extends string = ActionName
 > = {
   // sources are processed and used to populate initial options for clients and components, in order of definition,
@@ -46,18 +47,12 @@ export type ApiDefinitions<
   // but need to be "registered" here in order to be used by the infra
   // TODON should be initialized in adapter creator?
   // TODON can avoid default?
-  clients: OptionsWithDefault<ApiClientDefinition<PaginationOptions>, ClientOptions>
+  clients: OptionsWithDefault<ApiClientDefinition<PaginationOptions, TAdditionalClientArgs>, ClientOptions>
 
   // supported pagination options. when missing, no pagination is used (TODON add warning)
   pagination: Record<PaginationOptions, PaginationDefinitions>
 
   // references: ReferenceDefinitions // already defined elsewhere
-
-  // TODON decide if there's a reason to formalize components - vs just having a pattern
-  // for how to have them in different files and merge together
-  // (since overlaps are not allowed anyway)
-  // TODON the advantage is the ability to add a prefix for all of them - decide if worth it
-  // components: Record<ComponentNames, ComponentDefinitions<Action, ClientOptions>>
 
   // TODON do NOT have here defaults+customizations either - these are "development" tools for generating the
   // final config. instead, should be a list of final definitions when called in-memory!

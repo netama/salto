@@ -18,7 +18,7 @@ import { Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { TransformDefinition, TransformFunction, SingleValueTransformationFunction } from '../definitions/system/shared'
-import { DATA_FIELD_ENTIRE_OBJECT } from '../config' // TODON move from old location
+import { DATA_FIELD_ENTIRE_OBJECT } from '../definitions'
 
 const log = logger(module)
 

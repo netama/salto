@@ -48,6 +48,6 @@ export type TypeResourceFetcher = {
 export type TypeFetcherCreator = ({ typeName, context }: {
   typeName: string
   context?: Record<string, unknown>
-}) => TypeResourceFetcher
+}) => TypeResourceFetcher | undefined
 
 // export type FetchItemGenerator = Generator<IdentifiedItem, { errors?: Record<string, string[]> }>

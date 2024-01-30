@@ -13,18 +13,17 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { SaltoError } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
 import { Client } from './client'
 import { Config } from './config'
 
 export const { filtersRunner } = filterUtils
 
-export type FilterResult = {
-  errors?: SaltoError[]
-}
-
-export type Filter = filterUtils.Filter<FilterResult>
+export type Filter = filterUtils.Filter<filterUtils.FilterResult>
 
 export type FilterContext = Pick<Config, 'fetch' | 'apiComponents' | 'references'>
-export type FilterCreator<Credentials> = filterUtils.FilterCreator<Client<Credentials>, FilterContext>
+export type FilterCreator<Credentials> = filterUtils.FilterCreator<
+  Client<Credentials>,
+  FilterContext,
+  filterUtils.FilterResult
+>

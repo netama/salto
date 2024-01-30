@@ -20,7 +20,6 @@ import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementQuery } from './query'
 import { FetchElements } from '../elements'
 import { ElementFetchDefinition } from '../definitions/system/fetch/element'
-import { getLogPrefix } from '../utils'
 
 const log = logger(module)
 
@@ -44,7 +43,6 @@ export type ElementGenerator = {
 
 export const getElementGenerator = (args: {
   adapterName: string
-  accountName: string
   fetchQuery: ElementQuery
   elementDefs: Record<string, ElementFetchDefinition>
   // TODON decide if want openAPI to have generated object types, or only populated the config
@@ -62,7 +60,7 @@ export const getElementGenerator = (args: {
     const valueGuard = args.elementDefs[typeName]?.topLevel?.valueGuard ?? lowerdashValues.isPlainObject
     const [validEntries, invalidEntries] = _.partition(entries, valueGuard)
     // TODON add better logging
-    log.warn('[%s] omitted %d entries of type %s that did not match the value guard', getLogPrefix(args.adapterName, args.accountName), invalidEntries.length, typeName)
+    log.warn('[%s] omitted %d entries of type %s that did not match the value guard', args.adapterName, invalidEntries.length, typeName)
 
     // TODON should be a map and not a list, keyed by the service id - starting with _something_ and will update
     if (valuesByType[typeName] === undefined) {

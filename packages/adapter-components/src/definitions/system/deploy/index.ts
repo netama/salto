@@ -15,4 +15,4 @@
 */
 
 export { DeployApiDefinitions, DeployApiDefinitionsNoDefault, DeployableRequestDefinitions, InstanceDeployApiDefinitions, ValueReferenceResolver } from './deploy'
-export { HTTPRequest, DeployTransformRequest } from './request'
+export { HTTPRequest, DeployAdjustRequest } from './request'

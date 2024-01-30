@@ -43,6 +43,10 @@ export const recurseIntoSubresources = ({ def, typeFetcherCreator, availableReso
           typeName: recurseDef.typeName,
           context: nestedRequestContext,
         })
+        if (typeFetcher === undefined) {
+          // TODON add debug log
+          return []
+        }
         const recurseRes = await typeFetcher.fetch({ availableResources, typeFetcherCreator })
         if (!recurseRes.success) {
           // TODON throw error

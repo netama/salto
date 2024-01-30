@@ -16,6 +16,10 @@
 import { types } from '@salto-io/lowerdash'
 import { Change, ChangeGroup, InstanceElement, Values } from '@salto-io/adapter-api'
 
+export const DATA_FIELD_ENTIRE_OBJECT = '.'
+
+export type NameMappingOptions = 'lowercase' | 'uppercase'
+
 // TODON see if can "flatten" by using some symbol for default (and strings for the rest) - but think about runtime!
 // TODON can also use some "magic" placeholder, e.g. __default__ but ugly...
 export type DefaultWithCustomizations<T, K extends string = string> = {
@@ -36,7 +40,7 @@ export type GeneratedItem<TContext = ContextParams, TVal = unknown> = {
   // TODON allow to define a buffer type?
   binaryValue?: Buffer
   // identifier: string[] // TODON maybe can use additionalContext instead?
-  readonly context?: ContextParams & TContext // TODON decide between context and input and align
+  readonly context: ContextParams & TContext // TODON decide between context and input and align
 }
 
 // TODON see if can consolidate single and multi
@@ -58,7 +62,7 @@ export type SingleValueTransformationFunction<
   item: GeneratedItem<ContextParams & TContext, TSourceVal>
 ) => GeneratedItem<TContext, TTargetVal> | undefined
 
-export type AdjustFunction<TContext = ContextParams, TSourceVal = Values, TTargetVal extends unknown = Values> = (
+export type AdjustFunction<TContext = ContextParams, TSourceVal = unknown, TTargetVal extends unknown = Values> = (
   item: GeneratedItem<ContextParams & TContext, TSourceVal>
 ) => types.PickyRequired<Partial<GeneratedItem<TContext, TTargetVal>>, 'value'>
 

@@ -51,19 +51,20 @@ export type ClientDataParams = ClientBaseParams & {
 
 export type ClientParams = ClientBaseParams | ClientDataParams
 
-export interface HTTPReadClientInterface { // TODON eliminate, align get() to just be another command
-  getSinglePage(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  get(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  head(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  options(params: ClientBaseParams): Promise<Response<ResponseValue | ResponseValue[]>>
+export interface HTTPReadClientInterface<TAdditionalArgs = {}> {
+  // TODON eliminate, align get() to just be another command
+  getSinglePage(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  get(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  head(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  options(params: ClientBaseParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
   getPageSize(): number
 }
 
-export interface HTTPWriteClientInterface {
-  post(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  put(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  delete(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
-  patch(params: ClientDataParams): Promise<Response<ResponseValue | ResponseValue[]>>
+export interface HTTPWriteClientInterface<TAdditionalArgs = {}> {
+  post(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  put(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  delete(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
+  patch(params: ClientDataParams & TAdditionalArgs): Promise<Response<ResponseValue | ResponseValue[]>>
 }
 
 export type HttpMethodToClientParams = {

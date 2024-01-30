@@ -13,10 +13,5 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
-
-export const getLogPrefix = (adapterName: string, accountName: string): string => (
-  accountName === adapterName
-    ? `${accountName}(${adapterName})}`
-    : `${accountName}`
-)
+export { cursorPagination, itemOffsetPagination, offsetAndLimitPagination, pageOffsetAndLastPagination, pageOffsetPagination, noPagination, defaultPathChecker, PathCheckerFunc } from './pagination_functions'
+export { traversePages } from './pagination'

@@ -101,6 +101,9 @@ export const computeArgCombinations = (
   const potentialArgsByName = Object.entries(outputArgs !== undefined ? _.pick(possibleArgs, outputArgs) : possibleArgs)
     .map(([argName, argValues]) => argValues.map(val => ({ [argName]: val })))
 
+  if (potentialArgsByName.length === 0) {
+    return [{}]
+  }
   return potentialArgsByName.reduce((acc, argChoices) => acc.flatMap(
     combo => argChoices.map(arg => ({ ...combo, ...arg }))
   ))

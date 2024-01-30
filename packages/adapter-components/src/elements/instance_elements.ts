@@ -22,7 +22,8 @@ import { pathNaclCase, naclCase, TransformFunc, transformValuesSync } from '@sal
 import { logger } from '@salto-io/logging'
 import { RECORDS_PATH, SETTINGS_NESTED_PATH } from './constants'
 import { TransformationConfig, TransformationDefaultConfig, getConfigWithDefault, shouldNestFiles,
-  RecurseIntoCondition, isRecurseIntoConditionByField, AdapterApiConfig, dereferenceFieldName, NameMappingOptions } from '../config'
+  RecurseIntoCondition, isRecurseIntoConditionByField, AdapterApiConfig, dereferenceFieldName } from '../config'
+import { NameMappingOptions } from '../definitions'
 
 const log = logger(module)
 

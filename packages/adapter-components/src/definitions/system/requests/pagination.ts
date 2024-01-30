@@ -13,16 +13,33 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Values } from '@salto-io/adapter-api'
-import { PaginationFuncCreator } from '../../../client'
+import { ClientBaseParams, HTTPReadClientInterface, HTTPWriteClientInterface, ResponseValue } from '../../../client'
+import { ContextParams } from '../shared'
+import { HTTPEndpointIdentifier, RequestArgs } from './endpoint'
 
 // TODON decide if should move a level up to match the api.ts structure?
 
+export type ClientRequestArgsNoPath<TAdditionalArgs extends object = {}> = Omit<ClientBaseParams & TAdditionalArgs, 'url'>
+
+export type PaginationFunc<TAdditionalArgs extends object = {}> = ({
+  responseData,
+  currentParams,
+  responseHeaders,
+  endpointIdentifier,
+}: {
+  responseData: ResponseValue | ResponseValue[]
+  currentParams: ClientRequestArgsNoPath<TAdditionalArgs>
+  responseHeaders?: Record<string, unknown>
+  endpointIdentifier: HTTPEndpointIdentifier
+}) => ClientRequestArgsNoPath<TAdditionalArgs>[] // TODON change response value?
+
+export type PaginationFuncCreator<TAdditionalArgs extends object = {}> = (args: {
+  client: HTTPReadClientInterface & HTTPWriteClientInterface
+  endpointIdentifier: HTTPEndpointIdentifier
+  params: ContextParams
+} & TAdditionalArgs) => PaginationFunc<TAdditionalArgs>
+
 export type PaginationDefinitions = {
   funcCreator: PaginationFuncCreator // TODON should probably adjust + have headers / query args / params
-  clientArgs?: {
-    headers?: Record<string, string>
-    queryArgs?: Record<string, string>
-    params?: Record<string, Values>
-  }
+  clientArgs?: RequestArgs
 }

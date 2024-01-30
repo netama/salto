@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Value } from '@salto-io/adapter-api'
+import { Values } from '@salto-io/adapter-api'
 import { ArgsWithCustomizer, ContextParams, DefaultWithCustomizations, ExtractionParams, GeneratedItem } from '../shared'
 import { Response, ResponseValue } from '../../../client'
 
@@ -41,25 +41,34 @@ type FetchExtractionParams<TContext = ContextParams> = ExtractionParams<TContext
 export type FetchExtractionDefinition = ArgsWithCustomizer<
   GeneratedItem[], // TODON decide if should be a generator
   FetchExtractionParams,
-  Response<ResponseValue | ResponseValue[]>[]
+  ResponseValue[]
 >
 
-export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = {
+export type RequestArgs = {
   headers?: Record<string, string>
   queryArgs?: Record<string, string>
-  omitBody?: boolean
+  params?: Record<string, Values>
   // TODOON decide if should have body as input like this, or just allow requests to customize it
+  // TODON decide if want to support body
   // TODON allow x-www-form-urlencoded + URLSearchParams, but not in a structured way yet?
-  body?: Value // TODON decide if want to support
+  body?: unknown
+}
+
+export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = RequestArgs & {
+  omitBody?: boolean
   // TODON copy more/naming from axios?
 
   // override default expected HTTP codes
-  checkSuccess?: ArgsWithCustomizer<
+  checkSuccess?: ArgsWithCustomizer< // TODON use
     boolean,
     // TODON decide on name
-    { HTTPSuccessCodes: number[] },
+    { httpSuccessCodes: number[] },
     Response<ResponseValue | ResponseValue[]>
   >
+
+  // TODON not needed if getting the clientArgs instead?
+  // // additional context args that will be passed to the client
+  // additionalContext?: ContextParams
 
   pagination?: PaginationOptions
 
@@ -70,7 +79,8 @@ export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = {
   readonly?: boolean // safe for fetch
   // TODON decide if should key (group) by type (though usually a single extractor so probably not necessary,
   // since will still need n array)
-  responseExtractors?: FetchExtractionDefinition[]
+  // TODON make sure omit on nested field works (it should?)
+  responseExtractors?: Omit<FetchExtractionDefinition, 'transformValue.single'>[]
 }
 
 export type HTTPEndpoint<

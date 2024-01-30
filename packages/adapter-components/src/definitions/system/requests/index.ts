@@ -14,6 +14,6 @@
 * limitations under the License.
 */
 
-export { ApiClientDefinition } from './client'
+export { ApiClientDefinition, RESTApiClientDefinition } from './client'
 export { HTTPEndpointIdentifier, EndpointDefinition, HTTPEndpoint, HTTPMethod, EndpointByPathAndMethod, HTTPEndpointDetails } from './endpoint'
 export { PaginationDefinitions } from './pagination'

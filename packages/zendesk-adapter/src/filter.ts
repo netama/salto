@@ -13,28 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ReadOnlyElementsSource, SaltoError } from '@salto-io/adapter-api'
+import { ReadOnlyElementsSource } from '@salto-io/adapter-api'
 import { filterUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import ZendeskClient from './client/client'
 import { FilterContext } from './config'
+import { BrandSpecificClientInterface } from './client/brand_specific_client'
 
 export const { filtersRunner } = filterUtils
 
-export type FilterResult = {
-  errors?: SaltoError[]
-}
-
-export type Filter = filterUtils.Filter<FilterResult>
-export type BrandIdToClient = Record<string, ZendeskClient>
+export type Filter = filterUtils.Filter<filterUtils.FilterResult>
+export type FilterResult = filterUtils.FilterResult
 
 export type FilterAdditionalParams = {
   elementsSource: ReadOnlyElementsSource
-  brandIdToClient?: BrandIdToClient
+  brandIdToClient: BrandSpecificClientInterface['getClient']
   fetchQuery: elementUtils.query.ElementQuery
 }
 
 export type FilterCreator = filterUtils.FilterCreator<
     ZendeskClient,
     FilterContext,
-    FilterResult,
+    filterUtils.FilterResult,
     FilterAdditionalParams>

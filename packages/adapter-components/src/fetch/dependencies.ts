@@ -45,18 +45,19 @@ const getExtractedTypes = <PaginationOptions extends string | 'none'>(
 const getEndpointToClient = <
   ClientOptions extends string,
   PaginationOptions extends string | 'none',
+  TAdditionalClientArgs extends Record<string, unknown>,
   Action extends ActionName
 >(
-    clientDefs: ApiDefinitions<ClientOptions, PaginationOptions, Action>['clients']
+    clientDefs: ApiDefinitions<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>['clients']
   ): Record<string, HTTPEndpointIdentifier[]> => {
   // TODON handle casting
-  const allEndpoints = {
-    ...Object.values(
-      _.mapValues(
-        clientDefs.options, options => mergeWithDefault(options.endpoints) as ClientEndpoints<PaginationOptions>
-      )
-    ),
-  } as unknown as Record<string, Record<HTTPMethod, HTTPEndpointDetails<PaginationOptions>>>
+  const allEndpointsByClient = _.mapValues(
+    clientDefs.options, options => mergeWithDefault(options.endpoints) as ClientEndpoints<PaginationOptions>
+  )
+  const allEndpoints = _.merge(
+    {},
+    ...Object.values(allEndpointsByClient),
+  ) as Record<string, Record<HTTPMethod, HTTPEndpointDetails<PaginationOptions>>>
 
   const endpointToExtractedType = _.mapValues(allEndpoints, (methodToDetails, path) => (
     _.mapValues(methodToDetails, (details, method) => getExtractedTypes(details).map(type => ({ path, method, type })))
@@ -73,9 +74,10 @@ const getEndpointToClient = <
 export const computeDependencies = <
   ClientOptions extends string,
   PaginationOptions extends string | 'none',
-  Action extends ActionName
+  TAdditionalClientArgs extends Record<string, unknown>,
+  Action extends string
 >(
-    defs: Pick<ApiDefinitions<ClientOptions, PaginationOptions, Action>, 'fetch' | 'clients'>
+    defs: Pick<ApiDefinitions<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>, 'fetch' | 'clients'>
   ): TypeEndpointRelations<ClientOptions> => {
   if (defs.fetch?.instances === undefined) {
     throw new Error('no fetch information') // TODON
@@ -85,7 +87,7 @@ export const computeDependencies = <
   const endpointsByClient: Record<ClientOptions, string[]> = _.mapValues(
     defs.clients.options,
     // options => mergeWithDefault(options.endpoints)
-    options => Object.keys(options.endpoints)
+    options => Object.keys(options.endpoints.customizations)
   )
   // TODON see if can avoid casts
   const endpointToClient = Object.fromEntries(Object.entries(endpointsByClient).flatMap(

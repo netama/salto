@@ -16,15 +16,15 @@
 import _ from 'lodash'
 import { DAG } from '@salto-io/dag'
 import { logger } from '@salto-io/logging'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementGenerator } from '../element'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
-import { Requester } from '../requester'
+import { Requester } from '../request/requester'
 import { HTTPEndpointIdentifier } from '../../definitions'
 import { createTypeResourceFetcher } from './type_fetcher'
 import { FetchResourceDefinition } from '../../definitions/system/fetch/resource'
 import { TypeFetcherCreator } from '../types'
-import { getLogPrefix } from '../../utils'
 
 const log = logger(module)
 
@@ -67,7 +67,6 @@ const createDependencyGraph = (defs: Record<string, FetchResourceDefinition>): D
 
 export const createResourceManager = ({
   adapterName,
-  accountName,
   resourceDefs,
   typeToEndpoints,
   requester,
@@ -75,7 +74,6 @@ export const createResourceManager = ({
   initialRequestContext,
 }: {
   adapterName: string
-  accountName: string
   resourceDefs: Record<string, FetchResourceDefinition>
   typeToEndpoints: Record<string, HTTPEndpointIdentifier[]>
   requester: Requester
@@ -86,7 +84,6 @@ export const createResourceManager = ({
     // TODON simplify?
     const createTypeFetcher: TypeFetcherCreator = ({ typeName, context }) => (createTypeResourceFetcher({
       adapterName,
-      accountName,
       typeName,
       defs: resourceDefs,
       typeToEndpoints,
@@ -95,16 +92,22 @@ export const createResourceManager = ({
       initialRequestContext: _.defaults({}, initialRequestContext, context),
     }))
     const directFetchResourceDefs = _.pickBy(resourceDefs, def => def.directFetch)
-    const resourceFetchers = _.mapValues(
-      directFetchResourceDefs,
-      (_def, typeName) => createTypeFetcher({ typeName })
+    const resourceFetchers = _.pickBy(
+      _.mapValues(
+        directFetchResourceDefs,
+        (_def, typeName) => createTypeFetcher({ typeName })
+      ),
+      lowerdashValues.isDefined,
     )
     const graph = createDependencyGraph(resourceDefs)
     await graph.walkAsync(async typeName => {
       const resourceFetcher = resourceFetchers[typeName]
+      if (resourceFetcher === undefined) {
+        return
+      }
       // TODON improve performance - only get the context from the dependsOn types
       const availableResources = _.mapValues(
-        _.pickBy(resourceFetchers, fetcher => fetcher.done),
+        _.pickBy(resourceFetchers, fetcher => fetcher.done()),
         fetcher => fetcher.getItems()
       )
       const res = await resourceFetcher.fetch({
@@ -118,11 +121,11 @@ export const createResourceManager = ({
       }
       // TODON pass errers to the generator so that it produces them at the end?
       elementGenerator.processEntries({
-        typeName: String(typeName),
+        typeName: String(typeName), // TDOON avoid conversion?
         entries: resourceFetcher.getItems()?.map(item => item.value) ?? [],
       })
     })
-  }, '[%s] fetching resources for account', getLogPrefix(adapterName, accountName)),
+  }, '[%s] fetching resources for account', adapterName),
 })
 
 /*

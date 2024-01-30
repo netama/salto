@@ -14,6 +14,16 @@
 * limitations under the License.
 */
 
-export { FetchApiDefinitions, FetchApiDefinitionsNoDefault, InstanceFetchApiDefinitions } from './fetch'
-export { Resource, ResourceTransformFunc, ContextCombinationDefinition } from './resource'
-export { ElementFieldCustomization, FieldIDPart, ElementFetchDefinitionWithCustomizer } from './element'
+import _ from 'lodash'
+import { Values } from '@salto-io/adapter-api'
+import { ContextParams } from '../../definitions'
+import { replaceArgs } from '../resource/request_parameters'
+
+// replace all placeholder args recursively
+export const replaceAllArgs = <T extends Values = Values>({ context, value }: {
+  context: ContextParams
+  value: T
+}): T => (_.cloneDeepWith(
+    value,
+    val => (_.isString(val) ? replaceArgs(val, context) : val),
+  ))

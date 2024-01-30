@@ -14,4 +14,5 @@
 * limitations under the License.
 */
 export * as query from './query'
-export { getAllElements } from './fetch'
+export { getElements } from './fetch'
+export * as request from './request'

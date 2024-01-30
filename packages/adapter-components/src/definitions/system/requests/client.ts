@@ -13,16 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { AdapterHTTPClient } from '../../../client'
+import { HTTPReadClientInterface, HTTPWriteClientInterface } from '../../../client'
 import { EndpointByPathAndMethod } from './endpoint'
 
 
 // TODON other clients - libraries (then it will be the function names?),
 // input/output is the responsibility of the resource
-export type RESTApiClientDefinition<PaginationOptions extends string> = {
+export type RESTApiClientDefinition<
+  PaginationOptions extends string,
+  TAdditionalClientArgs extends Record<string, unknown> = {},
+> = {
   // TODON adjust interface to just support by operation, clarify pagination behavior?
   // TODON alternatively, connect directly with pagination?
-  httpClient: AdapterHTTPClient<{}, {}> // TODON expand interface so don't need a class here?
+  // TODON how to restrict/require/?? write interface?
+  httpClient: HTTPReadClientInterface<TAdditionalClientArgs> & HTTPWriteClientInterface<TAdditionalClientArgs>
+  // when specified, the additional args will be expected to appear in the context
+  // TODON if exposing here, should use to validate as though these are additional args passed to the endpoint
+  // TODON only require when not empty?
+  clientArgs: Record<keyof TAdditionalClientArgs, string>
+
   // TODON see if needed - additional args for initialization / requests
   // TODON do we need this at all? or just use the client directly?
   // initializationArgs?: {
@@ -37,8 +46,13 @@ export type RESTApiClientDefinition<PaginationOptions extends string> = {
   // when true, only the defined endpoints are supported. when false,
   // unknown endpoints are supported with the default config.
   // TODON extend to allowed patterns by method and path instead?
+  // TODON make this a property of the operation and not the client? so can reuse between fetch&deploy
   strict: boolean
 }
 
 // TODON expand to other client types
-export type ApiClientDefinition<PaginationOptions extends string> = RESTApiClientDefinition<PaginationOptions>
+export type ApiClientDefinition<
+  PaginationOptions extends string,
+  TAdditionalClientArgs extends Record<string, unknown> = {}
+> =
+  RESTApiClientDefinition<PaginationOptions, TAdditionalClientArgs>

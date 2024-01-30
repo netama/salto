@@ -21,7 +21,7 @@ import {
 import { client as clientUtils, config as configUtils, deployment as deploymentUtils, elements as elementUtils } from '@salto-io/adapter-components'
 import { logDuration, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { collections } from '@salto-io/lowerdash'
+import { collections, objects } from '@salto-io/lowerdash'
 import { Client } from '../client'
 import { FETCH_CONFIG, Config, createConfigType, API_COMPONENTS_CONFIG, extendApiDefinitionsFromSwagger } from '../config'
 import { Filter, filtersRunner } from '../filter'
@@ -76,7 +76,16 @@ export class AdapterImpl<Credentials, Co extends Config> implements AdapterOpera
     // this.paginator = paginator
     this.fetchQuery = elementUtils.query.createElementQuery(config[FETCH_CONFIG])
     this.createFiltersRunner = () => (
-      filtersRunner({ client, paginator, config, fetchQuery: this.fetchQuery }, filterCreators)
+      filtersRunner(
+        {
+          client,
+          paginator,
+          config,
+          fetchQuery: this.fetchQuery,
+        },
+        filterCreators,
+        objects.concatObjects,
+      )
     )
     this.userConfig = config // TODON add back when using the infra! (in inheriting adapter?)
     this.configInstance = configInstance // TODON check if really needed
