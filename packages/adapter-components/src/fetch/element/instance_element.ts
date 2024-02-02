@@ -16,7 +16,7 @@
 import { logger } from '@salto-io/logging'
 import { mergeSingleDefWithDefault } from '../../definitions'
 import { GenerateTypeArgs } from '../../definitions/system/fetch/fetch'
-import { InstancesAndTypes } from '../../definitions/system/fetch/element'
+import { ElementsAndErrors } from '../../definitions/system/fetch/element'
 import { InvalidSingletonType } from '../../config/shared'
 import { generateType } from './type_element'
 import { createInstance, toInstanceValue } from './instance_utils'
@@ -29,7 +29,7 @@ const log = logger(module)
  * Note: it is recommended to re-generate types after all instances of all types have been created,
  * since there might be some overlaps between subtypes.
  */
-export const generateInstancesForType = (args: Omit<GenerateTypeArgs, 'parentName' | 'isMapWithDynamicType' | 'typeNameOverrides'>): InstancesAndTypes => {
+export const generateInstancesForType = (args: Omit<GenerateTypeArgs, 'parentName' | 'isMapWithDynamicType' | 'typeNameOverrides'>): ElementsAndErrors => {
   const { elementDefs, entries, adapterName, typeName, getElemIdFunc } = args
   const { element: elementDef } = mergeSingleDefWithDefault(
     elementDefs.default,

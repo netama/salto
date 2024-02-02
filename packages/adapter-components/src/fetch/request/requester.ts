@@ -100,6 +100,7 @@ export const getRequester = <
     if (endpointDef === undefined && clientDef.strict) {
       throw new Error(`Could not find endpoint definition ${endpointIdentifier.path} in client ${clientName}`)
     }
+    // TODON check if there are any remaining args that have not been replaced!!!
     const paginationOption = endpointDef?.pagination
     const paginationDef = paginationOption !== undefined
       ? pagination[paginationOption]

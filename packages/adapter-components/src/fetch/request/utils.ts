@@ -25,5 +25,5 @@ export const replaceAllArgs = <T extends Values = Values>({ context, value }: {
   value: T
 }): T => (_.cloneDeepWith(
     value,
-    val => (_.isString(val) ? replaceArgs(val, context) : val),
+    val => (_.isString(val) ? replaceArgs(val, context) : undefined),
   ))

@@ -884,7 +884,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       fieldCustomizations: {
         custom_field_options: {
           standalone: {
-            typeName: 'organizatio_field__custom_field_options',
+            typeName: 'organization_field__custom_field_options',
             addParentAnnotation: true,
             referenceFromParent: true,
           },

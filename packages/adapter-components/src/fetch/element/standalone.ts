@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ElemIdGetter, InstanceElement, ReferenceExpression, isObjectType } from '@salto-io/adapter-api'
+import { ElemIdGetter, InstanceElement, ReferenceExpression, getDeepInnerTypeSync, isObjectType, isReferenceExpression } from '@salto-io/adapter-api'
 import { TransformFuncSync, transformValuesSync } from '@salto-io/adapter-utils'
 import { collections } from '@salto-io/lowerdash'
 import { FetchApiDefinitions } from '../../definitions/system/fetch/fetch'
@@ -26,21 +26,22 @@ const extractStandaloneInstancesFromField = ({ elementDefs, instanceOutput, getE
   getElemIdFunc?: ElemIdGetter
   parent: InstanceElement
 }): TransformFuncSync => ({ value, field }) => {
-  if (field === undefined) {
+  if (field === undefined || isReferenceExpression(value)) {
     return value
   }
   const parentType = field.parent.elemID.name
   // TODON make sure to overwrite field type to standalone value
   const standaloneDef = _.merge(
     elementDefs.customizations[parentType]?.element?.ignoreDefaultFieldCustomizations
-      ? {}
+      ? undefined
       : elementDefs.default?.element?.fieldCustomizations?.[field.name]?.standalone,
     elementDefs.customizations[parentType]?.element?.fieldCustomizations?.[field.name]?.standalone,
   )
-  if (standaloneDef === undefined) {
+  if (standaloneDef?.typeName === undefined) {
     return value
   }
-  const fieldType = field.getTypeSync()
+  // TODON expecting only lists, not maps - verify (and technically, only one nesting level - unless we flatten)
+  const fieldType = getDeepInnerTypeSync(field.getTypeSync())
   // TODON better handling
   if (!isObjectType(fieldType)) {
     throw new Error(`field type for ${field.elemID.getFullName()} is not an object type`)

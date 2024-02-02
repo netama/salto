@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import { types } from '@salto-io/lowerdash'
-import { ElemID, ElemIdGetter, InstanceElement, ObjectType, RestrictionAnnotationType, Values } from '@salto-io/adapter-api'
+import { ElemID, ElemIdGetter, InstanceElement, ObjectType, RestrictionAnnotationType, SaltoError, Values } from '@salto-io/adapter-api'
 import { ArgsWithCustomizer, NameMappingOptions } from '../shared'
 // TODON handle dependency cycles better later
 // eslint-disable-next-line import/no-cycle
@@ -103,13 +103,14 @@ export type ElementFieldCustomization = types.XOR<
   }>
 >
 
-export type InstancesAndTypes = {
+export type ElementsAndErrors = {
   instances: InstanceElement[]
   types: ObjectType[]
   // by default, types are re-generated once all instances have been created,
   // in order to avoid having the same type defined in different ways based on partial information.
   // if this should not be done, set this to true.
   typesAreFinal?: boolean
+  errors?: SaltoError[]
 }
 
 export type ElemIDCreatorArgs = {
@@ -127,7 +128,7 @@ export type FetchTopLevelElementDefinition<TVal extends Values = Values> = {
   // for simplicty, we only allow customizing top-level elements for simplicity
   // note: this is also responsible for all standalone!!!
   // eslint-disable-next-line no-use-before-define
-  custom?: ((args: Partial<ElementFetchDefinition<TVal>>) => (input: GenerateTypeArgs) => InstancesAndTypes)
+  custom?: ((args: Partial<ElementFetchDefinition<TVal>>) => (input: GenerateTypeArgs) => ElementsAndErrors)
 
   // TODON only relevant for top-level
   singleton?: boolean // TODON move here insetad of elem id + XOR

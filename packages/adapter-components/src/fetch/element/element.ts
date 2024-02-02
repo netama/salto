@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { ElemIdGetter, Element, ObjectType, Values } from '@salto-io/adapter-api'
+import { ElemIdGetter, Element, ObjectType, SeverityLevel, Values } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementQuery } from '../query'
@@ -23,6 +23,7 @@ import { generateInstancesForType } from './instance_element'
 import { FetchApiDefinitions } from '../../definitions/system/fetch'
 import { mergeSingleDefWithDefault } from '../../definitions'
 import { adjustFieldTypes } from './type_utils'
+import { InvalidSingletonType } from '../../config/shared'
 
 const log = logger(module)
 
@@ -77,17 +78,35 @@ export const getElementGenerator = ({ adapterName, elementDefs, predefinedTypes,
     valuesByType[typeName].push(...validEntries)
   }
   const generate: ElementGenerator['generate'] = () => {
-    const allElements = Object.entries(valuesByType).flatMap(([typeName, values]) => generateInstancesForType({
-      adapterName,
-      elementDefs,
-      entries: values,
-      typeName,
-      definedTypes: predefinedTypes, // TDOON align names?
-      getElemIdFunc,
-    }))
-    const instances = allElements.flatMap(e => e.instances)
+    const allResults = Object.entries(valuesByType).flatMap(([typeName, values]) => {
+      try {
+        return generateInstancesForType({
+          adapterName,
+          elementDefs,
+          entries: values,
+          typeName,
+          definedTypes: predefinedTypes, // TDOON align names?
+          getElemIdFunc,
+        })
+      } catch (e) { // TODON use
+        // TODON add replacement for isErrorTurnToConfigSuggestion
+        // if (isErrorTurnToConfigSuggestion?.(e)
+        //   && (reversedSupportedTypes[args.typeName] !== undefined)) {
+        //   const typesToExclude = reversedSupportedTypes[args.typeName]
+        //   typesToExclude.forEach(type => {
+        //     configSuggestions.push({ typeToExclude: type })
+        //   })
+        //   return { elements: [], errors: [] }
+        // }
+        if (e instanceof InvalidSingletonType) {
+          return { instances: [], types: [], errors: [{ message: e.message, severity: 'Warning' as SeverityLevel }] }
+        }
+        throw e
+      }
+    })
+    const instances = allResults.flatMap(e => e.instances)
     // TODON check for overlaps?
-    const [finalTypeLists, typeListsToAdjust] = _.partition(allElements, t => t.typesAreFinal)
+    const [finalTypeLists, typeListsToAdjust] = _.partition(allResults, t => t.typesAreFinal)
     const finalTypeNames = new Set(finalTypeLists.flatMap(t => t.types).map(t => t.elemID.name))
     const definedTypes = _.keyBy(
       // concatenating in this order so that the final types will take precedence (TODON verify)
@@ -99,6 +118,7 @@ export const getElementGenerator = ({ adapterName, elementDefs, predefinedTypes,
     // TODON errors, configChanges
     return {
       elements: (instances as Element[]).concat(Object.values(definedTypes)),
+      errors: allResults.flatMap(t => t.errors ?? []),
       // TODON errors, configChanges - from somewhere else?
     }
     // TODON filter based on query! but should also remove sub-resources so should do only at teh end
