@@ -13,4 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { createFetchDefinitions } from './fetch'
+import { definitions } from '@salto-io/adapter-components'
+import { FETCH_DEFAULTS } from './defaults'
+import { SUPPORT_FETCH_DEF } from './support'
+import { getGuideFetchDef } from './guide'
+import { ZendeskFetchConfig, isGuideEnabled } from '../../config'
+
+export const createFetchDefinitions = (userConfig: ZendeskFetchConfig): definitions.fetch.FetchApiDefinitions => ({
+  instances: {
+    default: FETCH_DEFAULTS,
+    customizations: {
+      ...(isGuideEnabled(userConfig))
+        ? getGuideFetchDef(userConfig)
+        : {},
+      ...SUPPORT_FETCH_DEF,
+    },
+  },
+})

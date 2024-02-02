@@ -13,7 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-
 export { FetchApiDefinitions, FetchApiDefinitionsNoDefault, InstanceFetchApiDefinitions } from './fetch'
 export { Resource, ResourceTransformFunc, ContextCombinationDefinition } from './resource'
-export { ElementFieldCustomization, FieldIDPart, ElementFetchDefinitionWithCustomizer } from './element'
+export { ElementFieldCustomization, FieldIDPart, ElementFetchDefinition } from './element'

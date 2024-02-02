@@ -16,6 +16,7 @@
 import _ from 'lodash'
 import { createSaltoElementError, getChangeData, isModificationChange } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 
 export const AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA: Record<string, unknown> = {
   bearer_token: { token: '123456' },
@@ -26,7 +27,11 @@ export const AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA: Record<string, unknown> = {
 /**
  * Removes the authentication data from webhook if it wasn't changed
  */
-export const transform: definitions.DeployTransformRequest = ({ value, context }) => {
+export const transform: definitions.deploy.DeployAdjustRequest = ({ value, context }) => {
+  if (!lowerdashValues.isPlainRecord(value)) {
+    throw new Error('!') // TODON add type guard
+  }
+
   if (isModificationChange(context.change)) {
     if (_.isEqual(
       context.change.data.before.value.authentication,
@@ -37,8 +42,8 @@ export const transform: definitions.DeployTransformRequest = ({ value, context }
       value.authentication = null
     }
   }
-  if (value.authentication) {
-    const placeholder = AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA[value.authentication.type]
+  if (lowerdashValues.isPlainRecord(value.authentication)) {
+    const placeholder = AUTH_TYPE_TO_PLACEHOLDER_AUTH_DATA[value.authentication.type as string] // TODON
     if (placeholder === undefined) {
       throw createSaltoElementError({ // caught by deployChanges
         message: `Unknown auth type was found for webhook: ${value.authentication.type}`,

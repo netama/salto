@@ -104,7 +104,9 @@ type RecurseIntoDefinition = {
 }
 
 export type ContextCombinationDefinition = {
-  fixed?: Record<string, FixedValueContextDefinition>
+  // TODON allow multiple values as well?
+  // TODON decide if it's better to duplicate the endpoints based on the params instead? (from Ori's comment)
+  hardcoded?: Record<string, FixedValueContextDefinition>
   // TODON decide if similarly relevant in deploy?
   // TODON input and output should be based on calculateContextArgs (and similarly for other ArgsWithCustomizers)
   // each dependsOn combination provides a cartesian product of its possible arguments
@@ -123,6 +125,8 @@ export type FetchResourceDefinition = {
   // set to true if the resource should be fetched on its own. set to false for types only fetched via recurseInto
   directFetch: boolean // TODON after refactor might not be needed?
   // TODON make sure to also mark the fields
+  // Ori's suggestive question: can this include parameters from the context?
+  // (if so - elem id service id fields should be separate)
   serviceIDFields?: string[]
 
   // context arg name to type info
@@ -131,7 +135,7 @@ export type FetchResourceDefinition = {
   // TODON custom is ONLY used for calculating the result - dependencies are based on config!!!
   // TODON add extra function if need something else
   // TODON convert to array of possible combinations when the need arises
-  context?: ContextCombinationDefinition
+  context?: ContextCombinationDefinition // stopped here with Ori
 
   // target field name to sub-resource info
   // can be used to add nested fields containing other fetched types' responses (after the response was received),
@@ -139,8 +143,9 @@ export type FetchResourceDefinition = {
   // TODON rename - maybe subresources?
   recurseInto?: Record<string, RecurseIntoDefinition>
 
-  // construct the final value from all fetched fragments, which are grouped by the service id and parent resource id.
+  // construct the final value from all fetched fragments, which are grouped by the service id
   // default behavior: merge all fragments together while concatenating array values.
+  // note: on overlaps the latest fragment wins ??
   // note: concatenation order between fragments is not defined.
   mergeAndTransform?: TransformDefinition<{ fragments: GeneratedItem[] }>
 

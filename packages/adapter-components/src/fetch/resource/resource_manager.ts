@@ -17,7 +17,7 @@ import _ from 'lodash'
 import { DAG } from '@salto-io/dag'
 import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
-import { ElementGenerator } from '../element'
+import { ElementGenerator } from '../element/element'
 import { ElementQuery } from '../query'
 // TODON move to types.ts so can define in a better place?
 import { Requester } from '../request/requester'

@@ -13,4 +13,18 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { createFetchDefinitions } from './fetch'
+import { ActionName } from '@salto-io/adapter-api'
+import { definitions } from '@salto-io/adapter-components'
+import { DEPLOY_DEFAULTS } from './defaults'
+import { SUPPORT_DEPLOY_DEF } from './support'
+import { GUIDE_DEPLOY_DEF } from './guide'
+
+export const createDeployDefinitions = (): definitions.deploy.DeployApiDefinitions<ActionName> => ({
+  instances: {
+    default: DEPLOY_DEFAULTS,
+    customizations: {
+      ...GUIDE_DEPLOY_DEF, // TODON decide if should disable defs when not enabled in user config?
+      ...SUPPORT_DEPLOY_DEF,
+    },
+  },
+})

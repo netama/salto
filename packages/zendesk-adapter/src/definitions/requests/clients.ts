@@ -13,29 +13,44 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { definitions } from '@salto-io/adapter-components'
-import { PaginationOptions } from './pagination'
 import { GUIDE_BRAND_SPECIFIC_ENDPOINTS, GUIDE_GLOBAL_ENDPOINTS, SUPPORT_ENDPOINTS } from './endpoints'
-import ZendeskClient from '../../client/client'
+import { ClientOptions, ClientsDefinition, RESTApiClientDefinition } from '../types'
 
-// TODON improve typing
-export type ClientOptions = 'global' | 'by_brand'
-
-export const CLIENTS: definitions.ApiDefinitions<ClientOptions, PaginationOptions>['clients'] = {
+export const createClientDefinitions = (clients: Record<ClientOptions, RESTApiClientDefinition['httpClient']>): ClientsDefinition => ({
   // TODON decide if want a default here, or in definitions?
   // TODON if no default (probably?) - cleanup types + ensure no overlaps (no need?) + error out when missing?
   default: 'global',
   options: {
     global: {
-      httpClient: ZendeskClient, // TODON generalize to match adapter-creator
+      httpClient: clients.global,
+      clientArgs: {},
       endpoints: {
-        ...SUPPORT_ENDPOINTS,
-        ...GUIDE_GLOBAL_ENDPOINTS,
+        default: {
+          get: {
+            pagination: 'oldCursor',
+            checkSuccess: {
+              httpSuccessCodes: [200],
+            },
+          },
+          delete: {
+            omitBody: true,
+          },
+        },
+        customizations: {
+          ...SUPPORT_ENDPOINTS,
+          ...GUIDE_GLOBAL_ENDPOINTS,
+        },
       },
+      strict: true, // TODON pass based on operation (strict in fetch, not strict in deploy) instead
     },
     by_brand: {
-      httpClient: ZendeskBrandSpecificClient, // TODON
+      httpClient: clients.by_brand,
+      clientArgs: {
+        subdomain: '{brand.subdomain}',
+        brandId: '{brand.id}',
+      },
       endpoints: GUIDE_BRAND_SPECIFIC_ENDPOINTS,
+      strict: true, // TODON pass based on operation (strict in fetch, not strict in deploy) instead
     },
   },
-}
+})

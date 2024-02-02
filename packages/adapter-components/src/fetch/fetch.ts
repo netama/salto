@@ -14,8 +14,9 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { InstanceElement, ElemIdGetter, ActionName } from '@salto-io/adapter-api'
-// import { logger } from '@salto-io/logging'
+import { InstanceElement, ElemIdGetter, ActionName, isObjectType } from '@salto-io/adapter-api'
+import { safeJsonStringify } from '@salto-io/adapter-utils'
+import { logger } from '@salto-io/logging'
 import { types, values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementQuery } from './query'
 import { ApiDefinitions, mergeWithDefault } from '../definitions'
@@ -24,11 +25,11 @@ import { ProcessedSources } from './source_processor'
 import { computeDependencies } from './dependencies'
 import { getRequester } from './request/requester'
 import { createResourceManager } from './resource/resource_manager'
-import { getElementGenerator } from './element'
+import { getElementGenerator } from './element/element'
 import { FetchElements } from '../elements'
 
 const { isDefined } = lowerdashValues
-// const log = logger(module)
+const log = logger(module)
 
 /**
  * Helper function for the adapter fetch implementation:
@@ -86,6 +87,9 @@ export const getElements = async <
   // and similarly in some other parts. if doing only once, can make this slightly less generic
   const instanceDefs = mergeWithDefault(fetch.instances)
 
+  log.debug('original config: %s', safeJsonStringify(fetch.instances))
+  log.debug('merged config: %s', safeJsonStringify(instanceDefs))
+
   const dependencies = computeDependencies<ClientOptions, PaginationOptions, TAdditionalClientArgs, Action>(mergedDefs)
 
   const requester = getRequester({
@@ -100,9 +104,10 @@ export const getElements = async <
   const elementGenerator = getElementGenerator({
     adapterName,
     // TODON ensure some values are there? e.g. elemID, by requiring them in the default
-    elementDefs: _.pickBy(_.mapValues(instanceDefs, def => def.element ?? {}), isDefined),
+    elementDefs: fetch.instances, // _.pickBy(_.mapValues(instanceDefs, def => def.element ?? {}), isDefined),
     // TODON decide if want openAPI to have generated object types, or only populated the config
-    predefinedTypes,
+    // TODON when extending to primitives as well, will need to adjust
+    predefinedTypes: _.pickBy(predefinedTypes, isObjectType),
     fetchQuery,
     getElemIdFunc,
     // customInstanceFilter, // TODON check if can move to earlier
@@ -138,7 +143,7 @@ export const getElements = async <
   // * when generate() is called, the element generators produce instances and types that match all resources
   await resourceManager.fetch(fetchQuery)
   // only after all queries have completed and all events have been processed we should generate the instances and types
-  const { elements, errors, configChanges } = await elementGenerator.generate()
+  const { elements, errors, configChanges } = elementGenerator.generate()
 
   // TODON consider some play with service ids vs (potentially non-unique) instance names -
   // TODON maybe keep indexed by type + service id, and keep a generic option to add a fallback,

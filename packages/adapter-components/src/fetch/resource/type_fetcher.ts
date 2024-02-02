@@ -81,13 +81,13 @@ const calculateContextArgs = ({ contextDef, initialRequestContext, availableReso
   initialRequestContext?: Record<string, unknown>
   availableResources: Record<string, ValueGeneratedItem[] | undefined>
 }): Record<string, unknown[]> => {
-  // initial args take precedence over fixed args if there's a conflict
-  const { dependsOn, fixed } = contextDef ?? {}
+  // initial args take precedence over hardcoded args if there's a conflict
+  const { dependsOn, hardcoded } = contextDef ?? {}
   const predefinedArgs = _.mapValues(
     _.defaults(
       {},
       initialRequestContext ?? {},
-      fixed ?? {},
+      hardcoded ?? {},
     ),
     collections.array.makeArray,
   )

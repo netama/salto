@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { values } from '@salto-io/lowerdash'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { Value, Values } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 
@@ -22,19 +22,29 @@ const valToString = (val: Value): string | string[] => (_.isArray(val) ? val.map
 
 // TODON missing type guard (in current code as well)
 // TODON consider only working with value to simplify function? or adding a wrapper
-export const transform: definitions.DeployTransformRequest = ({ value }) => ({
-  value: {
-    ..._.omit(value, 'conditions', 'execution'),
-    all: (value.conditions.all ?? []) // transformation? keep as custom code (for transformation)?
-      .map((e: Values) => ({ ...e, value: valToString(e.value) })),
-    any: (value.conditions.any ?? [])
-      .map((e: Values) => ({ ...e, value: valToString(e.value) })),
-    output: { // same - can either transform as pick + some mapping, or keep custom
-      ...value.execution,
-      group_by: value.execution.group_by?.toString(),
-      sort_by: value.execution.sort_by?.toString(),
-      columns: value.execution.columns?.filter(_.isPlainObject)
-        .map((c: Values) => c.id).filter(values.isDefined) ?? [],
+export const transform: definitions.deploy.DeployAdjustRequest = ({ value }) => {
+  if (!lowerdashValues.isPlainRecord(value)
+    || !lowerdashValues.isPlainObject(value.conditions)
+  ) {
+    throw new Error('!') // TODON add type guard
+  }
+
+  const tempValue = value as Values // TODON avoid
+
+  return {
+    value: {
+      ..._.omit(value, 'conditions', 'execution'),
+      all: (tempValue.conditions.all ?? []) // transformation? keep as custom code (for transformation)?
+        .map((e: Values) => ({ ...e, value: valToString(e.value) })),
+      any: (tempValue.conditions.any ?? [])
+        .map((e: Values) => ({ ...e, value: valToString(e.value) })),
+      output: { // same - can either transform as pick + some mapping, or keep custom
+        ...tempValue.execution,
+        group_by: tempValue.execution.group_by?.toString(),
+        sort_by: tempValue.execution.sort_by?.toString(),
+        columns: tempValue.execution.columns?.filter(_.isPlainObject)
+          .map((c: Values) => c.id).filter(lowerdashValues.isDefined) ?? [],
+      },
     },
-  },
-})
+  }
+}

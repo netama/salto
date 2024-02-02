@@ -16,13 +16,17 @@
 import { getChangeData, isInstanceElement, isReferenceExpression } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 import { getParents } from '@salto-io/adapter-utils'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { DEFAULT_CUSTOM_FIELD_OPTION_FIELD_NAME } from '../../../constants'
 
 // TODON continue after others are done
 // assuming not yet resolved?
-export const setDefaultFlag: definitions.DeployTransformRequest = item => {
+export const setDefaultFlag: definitions.deploy.DeployAdjustRequest = item => {
   const { value, context } = item
   const firstParent = getParents(getChangeData(context.change))?.[0]
+  if (!lowerdashValues.isPlainRecord(value)) {
+    throw new Error('!') // TODON add type guard
+  }
   const newValue = {
     ...value,
     default: value.default = (

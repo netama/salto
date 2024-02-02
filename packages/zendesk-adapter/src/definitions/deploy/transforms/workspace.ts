@@ -19,10 +19,10 @@ import { Values } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 
 // TODON missing type guard (in current code as well)
-export const transform: definitions.DeployTransformRequest = ({ value }) => ({
+export const transform: definitions.deploy.DeployAdjustRequest = ({ value }) => ({
   value: {
-    ..._.omit(value, 'selected_macros'),
-    macros: (value.selected_macros ?? [])
+    ..._.omit(value as Values, 'selected_macros'),
+    macros: ((value as Values).selected_macros ?? [])
       .filter(_.isPlainObject)
       .map((e: Values) => e.id)
       .filter(lowerdashValues.isDefined),

@@ -15,28 +15,47 @@
 */
 import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 
-export const omitByValue = (path: string, valueToOmit: unknown): definitions.DeployTransformRequest => ({ value }) => ({
-  value: _.get(value, path) === valueToOmit
-    ? _.omit(value, path)
-    : value,
-})
+export const omitByValue = (
+  path: string, valueToOmit: unknown,
+): definitions.deploy.DeployAdjustRequest => ({ value }) => {
+  if (!lowerdashValues.isPlainRecord(value)) {
+    throw new Error('!') // TODON add type guard
+  }
+
+  return {
+    value: _.get(value, path) === valueToOmit
+      ? _.omit(value, path)
+      : value,
+  }
+}
 
 export const replaceByValue = ({ path, oldValues, newValue }: {
   path: string
   oldValues: unknown[]
   newValue: unknown
-}): definitions.DeployTransformRequest => ({ value }) => ({
-  value: oldValues.find(v => _.isEqual(v, _.get(value, path))) !== undefined
-    ? _.set(value, path, newValue) // TODON assumes cloned! (see comment below)
-    : value,
-})
-
-export const undefinedToNull = (path: string): definitions.DeployTransformRequest => (item => {
-  if (_.get(item.value, path) !== undefined) {
-    return item
+}): definitions.deploy.DeployAdjustRequest => ({ value }) => {
+  if (!lowerdashValues.isPlainRecord(value)) {
+    throw new Error('!') // TODON add type guard
   }
-  const newVal = _.cloneDeep(item.value) // TODON for safety should clone in infra if reaching transform? so assume ok?
+
+  return {
+    value: oldValues.find(v => _.isEqual(v, _.get(value, path))) !== undefined
+      ? _.set(value, path, newValue) // TODON assumes cloned! (see comment below)
+      : value,
+  }
+}
+
+export const undefinedToNull = (path: string): definitions.deploy.DeployAdjustRequest => (({ value }) => {
+  if (!lowerdashValues.isPlainRecord(value)) {
+    throw new Error('!') // TODON add type guard
+  }
+
+  if (_.get(value, path) !== undefined) {
+    return { value }
+  }
+  const newVal = _.cloneDeep(value) // TODON for safety should clone in infra if reaching transform? so assume ok?
   _.set(newVal, path, null)
   return {
     value: newVal,

@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { Values } from '@salto-io/adapter-api'
+import { ObjectType, TypeElement, Values } from '@salto-io/adapter-api'
 import { ContextParams, GeneratedItem } from '../definitions/system/shared'
 
 export type ResourceIdentifier = {
@@ -50,4 +50,12 @@ export type TypeFetcherCreator = ({ typeName, context }: {
   context?: Record<string, unknown>
 }) => TypeResourceFetcher | undefined
 
-// export type FetchItemGenerator = Generator<IdentifiedItem, { errors?: Record<string, string[]> }>
+export type NestedTypeWithNestedTypes = {
+  type: TypeElement // TODON did not include map type, why?
+  nestedTypes: ObjectType[]
+}
+
+export type ObjectTypeWithNestedTypes = {
+  type: ObjectType
+  nestedTypes: ObjectType[]
+}

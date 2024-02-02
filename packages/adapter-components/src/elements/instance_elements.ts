@@ -16,7 +16,7 @@
 import _, { isEmpty } from 'lodash'
 import {
   InstanceElement, Values, ObjectType, ReferenceExpression, CORE_ANNOTATIONS, ElemID,
-  ElemIdGetter, OBJECT_SERVICE_ID, OBJECT_NAME, toServiceIdsString, ServiceIds,
+  ElemIdGetter,
 } from '@salto-io/adapter-api'
 import { pathNaclCase, naclCase, TransformFunc, transformValuesSync } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
@@ -24,6 +24,7 @@ import { RECORDS_PATH, SETTINGS_NESTED_PATH } from './constants'
 import { TransformationConfig, TransformationDefaultConfig, getConfigWithDefault, shouldNestFiles,
   RecurseIntoCondition, isRecurseIntoConditionByField, AdapterApiConfig, dereferenceFieldName } from '../config'
 import { NameMappingOptions } from '../definitions'
+import { createServiceIDs, getNameMapping } from '../fetch/element/id_utils'
 
 const log = logger(module)
 
@@ -40,17 +41,6 @@ export type InstanceCreationParams = {
   parent?: InstanceElement
   normalized?: boolean
   getElemIdFunc?: ElemIdGetter
-}
-
-const getNameMapping = (
-  name: string,
-  nameMapping?: NameMappingOptions,
-): string => {
-  switch (nameMapping) {
-    case 'lowercase': return name.toLowerCase()
-    case 'uppercase': return name.toUpperCase()
-    default: return name
-  }
 }
 
 export const joinInstanceNameParts = (
@@ -139,15 +129,6 @@ export const removeNullValues = (
     allowEmpty,
   }) ?? {}
 
-export const createServiceIds = (
-  entry: Values, serviceIdField: string, typeId: ElemID // TODON adjust to multiple
-): ServiceIds => ({
-  [serviceIdField]: entry[serviceIdField],
-  [OBJECT_SERVICE_ID]: toServiceIdsString({
-    [OBJECT_NAME]: typeId.getFullName(),
-  }),
-})
-
 export const getInstanceNaclName = ({
   entry,
   name,
@@ -178,7 +159,7 @@ export const getInstanceNaclName = ({
   return getElemIdFunc && serviceIdField
     ? getElemIdFunc(
       adapterName,
-      createServiceIds(entry, serviceIdField, typeElemId),
+      createServiceIDs({ entry, serviceIdFields: [serviceIdField], typeID: typeElemId }),
       desiredName
     ).name
     : desiredName

@@ -14,28 +14,42 @@
 * limitations under the License.
 */
 import { definitions } from '@salto-io/adapter-components'
-import { EVERYONE_USER_TYPE } from '../../constants'
+import { ARTICLE_ATTACHMENT_TYPE_NAME, ARTICLE_ORDER_TYPE_NAME, CATEGORY_ORDER_TYPE_NAME, EVERYONE_USER_TYPE, SECTION_ORDER_TYPE_NAME } from '../../constants'
 import { DEFAULT_ID_PARTS, NAME_ID_FIELD } from './shared'
+import { ZendeskFetchConfig } from '../../config'
 
 // TODON before finalizing, do another pass and make sure didn't accidentally leave "in"
 // fields as hidden/omitted because of hcange from override to merge
 
 const BRAND_ID_PART: definitions.fetch.FieldIDPart = { fieldName: 'brand', isReference: true }
 
-const BRAND_CONTEXT: definitions.fetch.ContextCombinationDefinition = {
+/**
+ * If Guide is enabled, filter and pass as context all brands selected by the user to include Guide.
+ */
+const getBrandContext = (userConfig: ZendeskFetchConfig): definitions.fetch.ContextCombinationDefinition => ({
   dependsOn: {
     brand: {
       parentTypeName: 'brand',
       transformValue: {
         // we need both the id and the subdomain
-        pick: ['id', 'subdomain'],
+        pick: ['id', 'subdomain', 'name'],
       },
+      // TODON only brands from userConfig.guide?.brands
       // TODON use brand.id and brand.subdomain in client requests + pass back
     },
   },
-}
+  conditions: [
+    {
+      fromField: 'subdomain',
+      // TODON based on getBrandsForGuide
+      match: userConfig.guide?.brands ?? [],
+    },
+  ],
+})
 
-export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiDefinitions> = {
+export const getGuideFetchDef = (
+  userConfig: ZendeskFetchConfig,
+): Record<string, definitions.fetch.InstanceFetchApiDefinitions> => ({
   // top-level, independent, global
   permission_group: {
     resource: {
@@ -45,7 +59,9 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       topLevel: {
         isTopLevel: true,
         elemID: { parts: DEFAULT_ID_PARTS },
-        serviceUrl: '/knowledge/permissions/{id}',
+        serviceUrl: {
+          path: '/knowledge/permissions/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -60,7 +76,9 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       topLevel: {
         isTopLevel: true,
         elemID: { parts: DEFAULT_ID_PARTS },
-        serviceUrl: '/knowledge/user_segments/edit/{id}',
+        serviceUrl: {
+          path: '/knowledge/user_segments/edit/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -85,7 +103,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   guide_settings: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -105,7 +123,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   guide_language_settings: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -123,7 +141,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   category: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -164,7 +182,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   section: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -302,7 +320,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   category_order: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -317,7 +335,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
   section_order: {
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -333,7 +351,7 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
     // TODON assuming context not needed since inherited from parent for endpoint? but not implemented yet...
     resource: {
       directFetch: true,
-      context: BRAND_CONTEXT,
+      context: getBrandContext(userConfig),
     },
     element: {
       topLevel: {
@@ -566,4 +584,26 @@ export const GUIDE_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchApiD
       },
     },
   },
-}
+})
+
+// Types in Zendesk Guide which relate to a certain brand
+export const GUIDE_BRAND_SPECIFIC_TYPES = ['article', 'section', 'category', 'guide_settings', 'guide_language_settings']
+
+// Types in Zendesk Guide that whose instances are shared across all brands
+export const GUIDE_GLOBAL_TYPES = ['permission_group', 'user_segment', 'theme']
+
+export const GUIDE_SUPPORTED_TYPES = [
+  ...GUIDE_BRAND_SPECIFIC_TYPES,
+  ...GUIDE_GLOBAL_TYPES,
+]
+
+export const GUIDE_TYPES_TO_HANDLE_BY_BRAND = [
+  GUIDE_BRAND_SPECIFIC_TYPES,
+  'article_translation',
+  'category_translation',
+  'section_translation',
+  ARTICLE_ATTACHMENT_TYPE_NAME,
+  CATEGORY_ORDER_TYPE_NAME,
+  SECTION_ORDER_TYPE_NAME,
+  ARTICLE_ORDER_TYPE_NAME,
+]

@@ -177,6 +177,7 @@ const getEntriesForType = async (
   }
   const entriesValues = (await getEntries(requestContext))
     // escape "field" names that contain '.'
+    // TODON do this recursively on values! adjust object types as well? (+ de-esacpe on deploy)
     .map(values => _.mapKeys(values, (_val, key) => naclCase(key)))
 
   const transformationConfigByType = getTransformationConfigByType(typesConfig)
@@ -204,14 +205,14 @@ const getEntriesForType = async (
 
   const instances = await awu(entriesValues).flatMap(async (entry, index) => {
     if (nestedFieldDetails !== undefined) {
-      const nestedEntries = getNestedEntries(entry, nestedFieldDetails.field.name, type)
+      const nestedEntries = getNestedEntries(entry, nestedFieldDetails.field.name, type) // TODON needed for swagger
       return awu(nestedEntries).map(
         (nestedEntry, nesteIndex) => {
           if (!isObjectType(nestedFieldDetails.type)) {
             log.error(`for typeName ${typeName} in adapter ${adapterName} nestedFieldDetails.type is not objectType returning undefined`)
             return undefined
           }
-          return toInstance({
+          return toInstance({ // TDOON step 2
             entry: nestedEntry,
             type: nestedFieldDetails.type,
             transformationConfigByType,
@@ -442,7 +443,7 @@ export const getAllElements = async ({
           })),
           errors: [],
         }
-      } catch (e) {
+      } catch (e) { // TODON use
         if (isErrorTurnToConfigSuggestion?.(e)
           && (reversedSupportedTypes[args.typeName] !== undefined)) {
           const typesToExclude = reversedSupportedTypes[args.typeName]

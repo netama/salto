@@ -36,6 +36,8 @@ export const mergeSingleDefWithDefault = <T extends Values | Values[], K extends
   )
 
 // TODON figure out the typing issue when not defaulting to string
+// TODON replace this with a "query" function that returns also for typenames that were not defined?
+// + allow correctly handling ignoreDefaultFieldCustomizations etc
 export function mergeWithDefault<T extends Values | Values[], K extends string = string>(
   defsWithDefault: DefaultWithCustomizations<T, K>
 ): Record<K, T>

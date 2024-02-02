@@ -17,6 +17,7 @@ import _ from 'lodash'
 import { createSaltoElementError, getChangeData } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 import { inspectValue } from '@salto-io/adapter-utils'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 
 const idsAreNumbers = (ids: unknown): ids is number[] => (
   _.isArray(ids) && ids.every(Number.isInteger)
@@ -25,10 +26,14 @@ const idsAreNumbers = (ids: unknown): ids is number[] => (
 export const transformForOrder: (
   orderFieldName: string,
   addPositions?: boolean,
-) => definitions.deploy.DeployTransformRequest = (orderFieldName, addPositions) => ({ value, ...args }) => {
+) => definitions.deploy.DeployAdjustRequest = (orderFieldName, addPositions) => ({ value, ...args }) => {
+  if (!lowerdashValues.isPlainRecord(value) || !Array.isArray(value.active)) {
+    throw new Error('!') // TODON add type guard
+  }
+
   const mergedOrderIDs = (value.active ?? []).concat(value.inactive ?? [])
 
-  const addPositionsToOrder = (ids: unknown): { id: number, position: number }[] => {
+  const addPositionsToOrder = (ids: unknown): { id: number; position: number }[] => {
     // TODON move to schema guard (only if the values exist)
     if (!idsAreNumbers(ids)) {
       throw createSaltoElementError({ // caught in try block // TODON verify or remove...

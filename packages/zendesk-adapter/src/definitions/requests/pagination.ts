@@ -13,20 +13,24 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { definitions } from '@salto-io/adapter-components'
-import { getWithCursorPagination } from '@salto-io/adapter-components/src/client'
-import { pathChecker } from '../../client/pagination'
+import { definitions, fetch as fetchUtils } from '@salto-io/adapter-components'
 import { CURSOR_BASED_PAGINATION_FIELD, PAGE_SIZE } from '../../config'
+import { PaginationOptions } from '../types'
 
-export type PaginationOptions = 'oldCursor' | 'cursor'
+const { cursorPagination } = fetchUtils.request.pagination
+
+export const pathChecker: fetchUtils.request.pagination.PathCheckerFunc = (current, next) => (
+  next === `${current}.json` || next === `${current}`
+)
 
 export const PAGINATION: Record<PaginationOptions, definitions.PaginationDefinitions> = {
   oldCursor: {
     // TODON see if can simplify and use the function directly
-    funcCreator: () => getWithCursorPagination(pathChecker, 'next_page'),
+    funcCreator: () => cursorPagination({ pathChecker, paginationField: 'next_page' }),
   },
   cursor: {
-    funcCreator: () => getWithCursorPagination(pathChecker, CURSOR_BASED_PAGINATION_FIELD),
+    // TODON look under meta.has_more and do not continue if false!
+    funcCreator: () => cursorPagination({ pathChecker, paginationField: CURSOR_BASED_PAGINATION_FIELD }),
     clientArgs: {
       queryArgs: {
         'page[size]': String(PAGE_SIZE),
@@ -34,5 +38,6 @@ export const PAGINATION: Record<PaginationOptions, definitions.PaginationDefinit
     },
   },
 }
+
 // TODO can replace with `satisfies Record<string, definitions.PaginationDefinitions>` after ts upgrade
 // export type PaginationOptions = types.InferKeys<typeof PAGINATION>

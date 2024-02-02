@@ -16,6 +16,7 @@
 import { FieldDefinition, ObjectType, ElemID, BuiltinTypes, CORE_ANNOTATIONS, Field, ListType } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import { ValidatorsActivationConfig } from '../../deployment/change_validators'
+import { ElemIDDefinition } from '../system/fetch/element'
 
 // TODON continue (didn't iterate on this the past few weeks so very outdated)
 
@@ -28,12 +29,24 @@ type FetchEntry<T extends Record<string, unknown> | undefined> = {
   criteria?: T
 }
 
+export type ElemIDCustomization = ElemIDDefinition & {
+  // when true - appends the added fields to the system-defined ones
+  // when false - overrides the system's default
+  extendSystemDefinition: boolean
+}
+
 export type UserFetchConfig<T extends Record<string, unknown> | undefined = DefaultFetchCriteria> = {
   include: FetchEntry<T>[]
   exclude: FetchEntry<T>[]
   hideTypes?: boolean
-  asyncPagination?: boolean // TODON move back in?
+  // TODON later - closed list of types based on definitions and top-level types? but for now can just validate
+  // TODON (informative, remove after discussions) - not using default+customizations to avoid questions about
+  // priorities between user default and system custom
+  // TODON - merge with this ***before*** merging system and defaults.
+  // TODON make sure to merge types correctly in these cases (e.g. flags etc, and the extends flags)
+  elemID?: Record<string, ElemIDCustomization> // TODON add!
 }
+
 
 export type UserDeployConfig = {
   changeValidators?: ValidatorsActivationConfig
@@ -85,7 +98,7 @@ export const createUserFetchConfigType = (
         annotations: { _required: true },
       },
       hideTypes: { refType: BuiltinTypes.BOOLEAN },
-      asyncPagination: { refType: BuiltinTypes.BOOLEAN },
+      elemID: { refType: BuiltinTypes.UNKNOWN }, // TODON fix!
       ...additionalFields,
     },
     annotations: {

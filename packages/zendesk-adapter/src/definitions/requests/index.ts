@@ -15,5 +15,5 @@
 */
 
 export * from './endpoints'
-export { CLIENTS as clients, ClientOptions } from './clients'
-export { PAGINATION as pagination, PaginationOptions } from './pagination'
+export { createClientDefinitions } from './clients'
+export { PAGINATION as pagination } from './pagination'

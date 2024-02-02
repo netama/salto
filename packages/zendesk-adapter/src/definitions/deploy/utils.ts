@@ -68,7 +68,9 @@ export const createStandardItemDeployConfigs = (typeArgs: Record<string, {
       requestsByAction: {
         default: {
           request: {
-            nestUnderField: typeName,
+            transformValue: {
+              nestUnderField: typeName,
+            },
           },
         },
         customizations: _.omit(standardCustomizationsByAction, withoutActions ?? []),
@@ -90,18 +92,20 @@ export const createStandardModifyOnlyDeployConfigs = (typeArgs: Record<string, {
     const standardCustomizationsByAction: DeployableRequestDefinitions = {
       request: {
         path,
-        nestUnderField,
         method: method ?? 'put',
-        transform: transformForOrderFieldName !== undefined
-          ? transformForOrder(transformForOrderFieldName, addPositions)
-          : undefined,
+        transformValue: {
+          nestUnderField,
+          adjust: transformForOrderFieldName !== undefined
+            ? transformForOrder(transformForOrderFieldName, addPositions)
+            : undefined,
+        },
       },
     }
 
     const standardConfig: InstanceDeployApiDefinitions = {
       requestsByAction: {
         customizations: {
-          modify: standardCustomizationsByAction,
+          modify: [standardCustomizationsByAction],
         },
       },
     }
@@ -128,24 +132,24 @@ export const createStandardTranslationDeployConfigs = (typeArgs: Record<string, 
         additionalResolvers,
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: `/api/v2/help_center/${parentPlural}/{parent_id}/translations`,
             method: 'post' as definitions.HTTPMethod,
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: `/api/v2/help_center/${parentPlural}/{parent_id}/translations/{locale}`,
             method: 'put' as definitions.HTTPMethod,
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/help_center/translations/{id}',
             method: 'delete' as definitions.HTTPMethod,
           },
-        },
+        }],
       },
     },
   })))

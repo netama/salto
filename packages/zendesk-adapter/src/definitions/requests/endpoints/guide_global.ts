@@ -14,41 +14,37 @@
 * limitations under the License.
 */
 import { definitions } from '@salto-io/adapter-components'
-import { paginate } from '../../../client/pagination'
-import { CURSOR_BASED_PAGINATION_FIELD, DEFAULT_QUERY_PARAMS, PAGE_SIZE } from '../../../config'
-import { PaginationOptions } from '../pagination'
+import { PAGE_SIZE } from '../../../config'
+import { PaginationOptions } from '../../types'
 
 // TODON Guide "global" endpoints - can consolidate with "support" ones?
-export const GUIDE_GLOBAL_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOptions> = {
-  default: {
-    // TODON no default pagination - warn when not specified (and add a "none" generic option to mark as "intentional"?)
-    delete: {
-      omitBody: true,
+export const GUIDE_GLOBAL_ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOptions>['customizations'] = {
+  // TODON no default pagination - warn when not specified (and add a "none" generic option to mark as "intentional"?)
+  '/api/v2/guide/permission_groups': {
+    get: {
+      pagination: 'oldCursor',
+      queryArgs: { per_page: String(PAGE_SIZE) },
+      responseExtractors: [
+        {
+          transformValue: {
+            root: 'permission_groups',
+          },
+          toType: 'permission_group',
+        },
+      ],
     },
   },
-  customizations: {
-    '/api/v2/guide/permission_groups': {
-      get: {
-        pagination: 'oldCursor',
-        queryArgs: { per_page: String(PAGE_SIZE) },
-        responseExtractors: [
-          {
-            root: 'permission_groups',
-            toType: 'permission_group',
-          },
-        ],
-      },
-    },
-    '/api/v2/help_center/user_segments': {
-      get: {
-        pagination: 'cursor',
-        responseExtractors: [
-          {
+  '/api/v2/help_center/user_segments': {
+    get: {
+      pagination: 'cursor',
+      responseExtractors: [
+        {
+          transformValue: {
             root: 'user_segments',
-            toType: 'user_segment',
           },
-        ],
-      },
+          toType: 'user_segment',
+        },
+      ],
     },
   },
 }

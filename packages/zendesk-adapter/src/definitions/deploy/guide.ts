@@ -41,7 +41,15 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
   ...createStandardItemDeployConfigs({
     category: {
       bulkPath: '/api/v2/help_center/categories',
-      overrides: { default: { request: { omit: [TRANSLATIONS_FIELD, SECTIONS_FIELD, BRAND_FIELD] } } },
+      overrides: {
+        default: {
+          request: {
+            transformValue: {
+              omit: [TRANSLATIONS_FIELD, SECTIONS_FIELD, BRAND_FIELD],
+            },
+          },
+        },
+      },
     },
   }),
   section: {
@@ -50,37 +58,43 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'section',
           context: {
             category_id: 'category_id',
           },
-          omit: [TRANSLATIONS_FIELD, 'attachments', 'brand'],
+          transformValue: {
+            nestUnderField: 'section',
+            omit: [TRANSLATIONS_FIELD, 'attachments', 'brand'],
+          },
         },
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/help_center/categories/{category_id}/sections',
             method: 'post',
-            omit: [
-              // TODON parent_section_id is modified after addition, see guide_parent_to_section filter - move here?
-              TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, PARENT_SECTION_ID_FIELD, BRAND_FIELD,
-            ],
+            transformValue: {
+              omit: [
+                // TODON parent_section_id is modified after addition, see guide_parent_to_section filter - move here?
+                TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, PARENT_SECTION_ID_FIELD, BRAND_FIELD,
+              ],
+            },
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: '/api/v2/help_center/sections/{section_id}',
             method: 'put',
-            omit: [TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, BRAND_FIELD],
+            transformValue: {
+              omit: [TRANSLATIONS_FIELD, ARTICLES_FIELD, SECTIONS_FIELD, BRAND_FIELD, BRAND_FIELD],
+            },
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/help_center/sections/{section_id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -88,32 +102,34 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'article',
           context: {
             section_id: 'section_id',
           },
-          omit: ['translations', 'attachments', 'brand'],
+          transformValue: {
+            nestUnderField: 'article',
+            omit: ['translations', 'attachments', 'brand'],
+          },
         },
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/api/v2/help_center/sections/{section_id}/articles',
             method: 'post',
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: '/api/v2/help_center/articles/{id}',
             method: 'put',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/api/v2/help_center/articles/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -133,12 +149,12 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
     changeGroupId: groupWithFirstParent,
     requestsByAction: {
       customizations: {
-        remove: {
+        remove: [{
           request: {
             path: '/api/v2/help_center/articles/attachments/{id}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -147,33 +163,37 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'translation',
           context: {
             locale: 'locale',
           },
-          omit: ['brand'], // TODON theoretically can omit by default in this client if aggregating (or mark field as local-only...)
+          transformValue: {
+            omit: ['brand'], // TODON theoretically can omit by default in this client if aggregating (or mark field as local-only...)
+            nestUnderField: 'translation',
+          },
         },
       },
       customizations: {
-        add: {
+        add: [{
           request: {
             path: '/hc/api/internal/help_center_translations',
             method: 'post',
-            nestUnderField: 'locales',
+            transformValue: {
+              nestUnderField: 'locales',
+            },
           },
-        },
-        modify: {
+        }],
+        modify: [{
           request: {
             path: '/hc/api/internal/help_center_translations/{locale}',
             method: 'put',
           },
-        },
-        remove: {
+        }],
+        remove: [{
           request: {
             path: '/hc/api/internal/help_center_translations/{locale}',
             method: 'delete',
           },
-        },
+        }],
       },
     },
   },
@@ -181,20 +201,22 @@ export const GUIDE_DEPLOY_DEF: Record<string, InstanceDeployApiDefinitions> = {
     requestsByAction: {
       default: {
         request: {
-          nestUnderField: 'translation',
           context: {
             locale: 'locale',
           },
-          omit: [DEFAULT_LOCALE], // TODON not omitting brand, make sure intentional
+          transformValue: {
+            nestUnderField: 'translation',
+            omit: [DEFAULT_LOCALE], // TODON not omitting brand, make sure intentional
+          },
         },
       },
       customizations: {
-        modify: {
+        modify: [{
           request: {
             path: '/hc/api/internal/general_settings',
             method: 'put',
           },
-        },
+        }],
         // old TODO - check what happens when help center (guide) is created or removed (SALTO-2914)
       },
     },

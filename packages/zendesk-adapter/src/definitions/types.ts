@@ -13,10 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import _ from 'lodash'
 import { types } from '@salto-io/lowerdash'
 import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
+
+// TODON improve typing
+export type ClientOptions = 'global' | 'by_brand'
+export type PaginationOptions = 'oldCursor' | 'cursor'
 
 // TODON move to adapter-components if recurs outside zendesk
 
@@ -24,3 +27,6 @@ export type DeployDefWithDefault = types.PickyRequired<definitions.deploy.Deploy
 export type DeployDefNoDefault = definitions.deploy.DeployApiDefinitionsNoDefault<ActionName>['instances']
 export type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefinitions<ActionName>
 export type DeployableRequestDefinitions = definitions.deploy.DeployableRequestDefinitions // TODON not needed?
+
+export type ClientsDefinition = definitions.ApiDefinitions<ClientOptions, PaginationOptions>['clients']
+export type RESTApiClientDefinition = definitions.RESTApiClientDefinition<PaginationOptions>

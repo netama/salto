@@ -13,4 +13,6 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { createFetchDefinitions } from './fetch'
+// export {} from './instance'
+export { generateType } from './type_element'
+export { adjustFieldTypes } from './type_utils'

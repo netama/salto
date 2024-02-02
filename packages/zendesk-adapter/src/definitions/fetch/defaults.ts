@@ -27,7 +27,9 @@ export const FETCH_DEFAULTS: types.RecursivePartial<definitions.fetch.InstanceFe
   element: {
     topLevel: {
       elemID: { parts: DEFAULT_ID_PARTS },
-      path: { nestUnderParent: true },
+      path: { nestUnder: { // TODON ?
+        parent: true,
+      } },
     },
     fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
   },

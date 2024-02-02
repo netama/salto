@@ -24,7 +24,7 @@ import { AdapterDuckTypeApiConfig, getConfigWithDefault } from '../../config'
  */
 export const replaceInstanceTypeForDeploy = ({
   instance, config,
-}: {
+}: { // TODON will be needed in new infra as well
   instance: InstanceElement
   config: AdapterDuckTypeApiConfig
 }): InstanceElement => {

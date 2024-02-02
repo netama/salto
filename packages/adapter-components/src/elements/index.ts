@@ -21,9 +21,10 @@ import { computeGetArgs, simpleGetArgs, createUrl, replaceUrlParams } from '../f
 import { RECORDS_PATH, TYPES_PATH, SUBTYPES_PATH, SETTINGS_NESTED_PATH } from './constants'
 import { findDataField, returnFullEntry, FindNestedFieldFunc } from './field_finder'
 import { filterTypes } from './type_elements'
-import { getInstanceName, generateInstanceNameFromConfig, createServiceIds, removeNullValues, toBasicInstance } from './instance_elements'
+import { getInstanceName, generateInstanceNameFromConfig, removeNullValues, toBasicInstance } from './instance_elements'
 import { FetchElements } from './element_getter'
 import { findUnresolvedArgs } from '../config/request' // TODON move / replace
+import { createServiceIDs as createServiceIds } from '../fetch/element/id_utils' // TODON move / replace
 
 const { getAllElements } = ducktype
 

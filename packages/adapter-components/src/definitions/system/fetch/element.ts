@@ -14,21 +14,61 @@
 * limitations under the License.
 */
 import { types } from '@salto-io/lowerdash'
-import { RestrictionAnnotationType, TypeElement, Values } from '@salto-io/adapter-api'
+import { ElemID, ElemIdGetter, InstanceElement, ObjectType, RestrictionAnnotationType, Values } from '@salto-io/adapter-api'
 import { ArgsWithCustomizer, NameMappingOptions } from '../shared'
-import { Resource } from './resource'
+// TODON handle dependency cycles better later
+// eslint-disable-next-line import/no-cycle
+import { GenerateTypeArgs } from './fetch'
 
 export type FieldIDPart = ArgsWithCustomizer<
   string | undefined,
   {
     fieldName: string
-    condition?: () => boolean
+    condition?: (value: Values) => boolean
     // TODON adjust, but should allow at least lowercase / uppercase and maybe some customizations
-    mapping?: NameMappingOptions
+    mapping?: NameMappingOptions // TODON replace with function instead of enum
+    // when true, the elem ids are re-calculated after all references have been generated
+    // TODON always assume reference if defined by the user? since they only see what's in the nacls.
+    // assuming we should make sure not to delete anything pre-existing?
     isReference?: boolean
     // allowNull?: boolean
+  },
+  Values
+>
+
+export type IDPartsDefinition = {
+  // extendsDefault?: boolean, // when true, also include the "default" id fields? doesn't seem needed
+  parts?: FieldIDPart[]
+  // the delimiter to use between parts - default is '_'
+  delimiter?: string
+}
+
+export type ElemIDDefinition = IDPartsDefinition & {
+  // default - true when parent annotation exists?
+  // set to false when not needed? TODON check what's needed for Shir's regeneration, maybe have all we need now?
+  extendsParent?: boolean
+}
+
+export type ElemIDOrSingleton = types.XOR<
+  ElemIDDefinition,
+  {
+    singleton: true // TODON move out
   }
 >
+
+export type PathDefinition = { // instead of fileName
+  // Shir: in JSM object types, the "parent" might be another field rather than the parent annotation
+  // (also in workato...)
+  // TODON implement, add documentation
+  nestUnder?: types.OneOf<{ // TODON may need two booleans to decide if to create the parent's folder or not?
+    parent: true
+    parentFromField: string
+  }>
+  // TODON implement later
+  // alwaysCreateFolder?: boolean
+  // when id parts info is missing, inherited from elemID (but the values are nacl-cased)
+  pathParts?: IDPartsDefinition[]
+}
 
 type StandaloneFieldDefinition = {
   typeName: string
@@ -53,67 +93,86 @@ export type ElementFieldCustomization = types.XOR<
     standalone?: StandaloneFieldDefinition
     restrictions?: RestrictionAnnotationType
   },
-  {
+  types.OneOf<{
+    // omit the field
     omit: true
-  }
+    // set the field to a map and determine its inner type dynamically.
+    // the type is determined dynamically, since if the inner type is known, fieldType can be used instead.
+    // note: will not work if hardCodedType is true
+    isMapWithDynamicType: true
+  }>
 >
 
-type ElemIDOrSingleton = types.XOR<
-  {
-    // default - true when parent annotation exists?
-    // set to false when not needed? TODO check what's needed for Shir's regeneration, maybe have all we need now?
-    extendsParent?: boolean
-    // extendsDefault?: boolean, // when true, also include the "default" id fields? doesn't seem needed
-    parts?: FieldIDPart[]
-  },
-  {
-    singleton: true
-  }
->
+export type InstancesAndTypes = {
+  instances: InstanceElement[]
+  types: ObjectType[]
+  // by default, types are re-generated once all instances have been created,
+  // in order to avoid having the same type defined in different ways based on partial information.
+  // if this should not be done, set this to true.
+  typesAreFinal?: boolean
+}
+
+export type ElemIDCreatorArgs = {
+  elemIDDef: ElemIDOrSingleton
+  getElemIdFunc?: ElemIdGetter
+  serviceIDDef?: string[]
+  typeID: ElemID
+  defaultName: string
+}
+
+export type FetchTopLevelElementDefinition<TVal extends Values = Values> = {
+  // set to true if element has instances. set to false for subtypes
+  isTopLevel: true // TODON placeholder so that there will be something to set
+
+  // for simplicty, we only allow customizing top-level elements for simplicity
+  // note: this is also responsible for all standalone!!!
+  // eslint-disable-next-line no-use-before-define
+  custom?: ((args: Partial<ElementFetchDefinition<TVal>>) => (input: GenerateTypeArgs) => InstancesAndTypes)
+
+  // TODON only relevant for top-level
+  singleton?: boolean // TODON move here insetad of elem id + XOR
+  elemID?: ArgsWithCustomizer<string, ElemIDOrSingleton, Values, ElemIDCreatorArgs>
+  path?: PathDefinition
+
+  // TODON decide on input
+  serviceUrl?: ArgsWithCustomizer<string, { path: string }, Values>
+
+  // when true, instances of this type will be hidden (_hidden_value = true on type)
+  hide?: boolean
+  // alias, important attributes, ?
+
+  // type guard to use to validate the type is correct.
+  // when missing, we only validate that this is a plain object, and do not cast to the more accurate type
+  // TODON make sure to cast by allowing to template InstanceElement's on the value type like Ori suggested
+  // TODON start without? but have simple util functions for type guards for each relevant function
+  valueGuard?: (val: unknown) => val is TVal
+}
 
 export type ElementFetchDefinition<TVal extends Values = Values> = {
-  topLevel?: {
-    // set to true if element has instances. set to false for subtypes
-    isTopLevel: true // TODON placeholder so that there will be something to set
-    // TODON only relevant for top-level
-    elemID?: ElemIDOrSingleton
-    path?: { // instead of fileName
-      // Shir: in JSM object types, the "parent" might be another field (also in workato...)
-      nestUnderParent?: boolean // TODON may need two booleans to decide if to create the parent's folder or not?
-      alwaysCreateFolder?: boolean
-      // when missing, inherited from elemID
-      fields?: FieldIDPart[]
-    }
-    serviceUrl?: ArgsWithCustomizer<string, string, Element> // TODON maybe expand functionality (today string)
-    // when true, instances of this type will be hidden (_hidden_value = true on type)
-    hide?: boolean
-    // alias, important attributes, ?
-    hardCodedType?: boolean // when false, extend the "defined" type (if exists) with ducktype
+  topLevel?: FetchTopLevelElementDefinition<TVal>
 
-    // type guard to use to validate the type is correct.
-    // when missing, we only validate that this is a plain object, and do not cast to the more accurate type
-    // TODON make sure to cast by allowing to template InstanceElement's on the value type like Ori suggested
-    valueGuard?: (val: unknown) => val is TVal
-  }
+  // when false, extend the "defined" type (if exists) with ducktype
+  // when set to true, we use the existing type without attempting to extend it (but we still hide and omit fields).
+  // if no type with the specified name is available, nested types will be set to unknown,
+  // and top-level types will be set to an empty type (with additionalProperties allowed).
+  // TODON initially not implementing - if a type is found, it will be used. can extend later
+  // replaceHardCodedType?: boolean // TODON maybe mark on the swagger instead?
 
-  // // // // // type manipulations (relevant also for subtypes)
+  // when enabled, we assume all fields that are not explicitly mentioned in fieldCustomizations
+  // are additionalProperties, and determine their type using the ducktype logic
+  // TODON needs adjustments (maybe call otherFieldsAreDynamic if can co-live with other types?)
+  // TODON instead of the original hasDynamicFields - can nest under a "values" field, and override the type to map
+  // hasDynamicFields?: boolean
+
   // replaces: fieldsToHide, fieldsToOmit, standaloneFields
   // all values are optional? make sure can "define" a field without customizing it?
   fieldCustomizations?: Record<string, ElementFieldCustomization>
   // when true, do not extend default definitions for field customizations
   ignoreDefaultFieldCustomizations?: boolean
-  // fieldsToOmit?: FieldToOmitType[] // TODON should not be under customizations since contradicts the rest?
+
+  // TODON add option to define annotations, including addditionalProperties (but just all annotations?)
+
 
   // TODON adding for now, see if can avoid with field type overrides
   sourceTypeName?: string
 }
-
-// TODON decide if Element or Instance (types might be defined separately since they have different customizations?)
-export type ElementFetchDefinitionWithCustomizer = ArgsWithCustomizer<
-  Element[], // TODON divide into type elements and instance elements?
-  ElementFetchDefinition,
-  {
-    resources: Resource[]
-    definedTypes: Record<string, TypeElement>
-  }
->

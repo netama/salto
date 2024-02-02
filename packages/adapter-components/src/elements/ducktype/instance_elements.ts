@@ -25,7 +25,7 @@ import { toBasicInstance, InstanceCreationParams } from '../instance_elements'
  *    this as a map type.
  */
 export const toInstance = async (args: InstanceCreationParams & {
-  hasDynamicFields?: boolean
+  hasDynamicFields?: boolean // TODON need to migrate (workato)
 }): Promise<InstanceElement | undefined> => {
   const inst = await toBasicInstance({
     ...args,

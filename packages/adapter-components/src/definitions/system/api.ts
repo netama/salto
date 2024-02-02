@@ -31,7 +31,7 @@ import { DeployApiDefinitions } from './deploy'
 export type ApiDefinitions<
   ClientOptions extends string = 'main',
   PaginationOptions extends string | 'none' = 'none',
-  TAdditionalClientArgs extends Record<string, unknown> = {},
+  TAdditionalClientArgs extends Record<string, unknown> = {}, // TODON check if can omit
   Action extends string = ActionName
 > = {
   // sources are processed and used to populate initial options for clients and components, in order of definition,

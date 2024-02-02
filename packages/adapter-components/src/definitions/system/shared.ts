@@ -29,8 +29,8 @@ export type DefaultWithCustomizations<T, K extends string = string> = {
 }
 
 // TODON decide about default input
-export type ArgsWithCustomizer<ResponseType, Args, Input = unknown> = Args & {
-  custom?: ((args: Partial<Args>) => (input: Input) => ResponseType)
+export type ArgsWithCustomizer<ResponseType, Args, Input = unknown, AdditionalArgs = {}> = Args & {
+  custom?: ((args: Partial<Args> & AdditionalArgs) => (input: Input) => ResponseType)
 }
 export type ContextParams = Record<string, unknown>
 
@@ -96,7 +96,7 @@ export type TransformDefinition<TContext = ContextParams, TTargetVal = Values> =
 }
 
 export type ExtractionParams<TContext = ContextParams> = {
-  transformValue?: TransformDefinition<TContext>
+  transformValue?: TransformDefinition<TContext> // TODON rename to avoid overlaps with transformValue
 
   // context to pass to request
   // TODON not working with ArgsWithCustomizer, probably because of the Record

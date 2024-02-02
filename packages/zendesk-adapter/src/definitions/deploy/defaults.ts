@@ -28,6 +28,8 @@ export const DEPLOY_DEFAULTS: InstanceDeployApiDefinitions = {
         context: DEFAULT_CONTEXT,
       },
     },
+    customizations: {
+    },
   },
   changeGroupId: groupByType,
 }

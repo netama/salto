@@ -15,7 +15,8 @@
 */
 // import { ActionName } from '@salto-io/adapter-api'
 // import { definitions, deployment as deploymentUtils } from '@salto-io/adapter-components'
-// import { ARTICLE_ATTACHMENT_TYPE_NAME, CUSTOM_OBJECT_FIELD_OPTIONS_TYPE_NAME, SECTION_TYPE_NAME, TICKET_FIELD_CUSTOM_FIELD_OPTION } from '../../constants'
+// import { ARTICLE_ATTACHMENT_TYPE_NAME, CUSTOM_OBJECT_FIELD_OPTIONS_TYPE_NAME, SECTION_TYPE_NAME,
+// TICKET_FIELD_CUSTOM_FIELD_OPTION } from '../../constants'
 // import { ClientOptions } from '../requests'
 // import { DeployDefWithDefault } from './utils'
 

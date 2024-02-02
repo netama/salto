@@ -96,7 +96,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/people/team/groups',
+        serviceUrl: {
+          path: '/admin/people/team/groups',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -148,7 +150,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
         elemID: {
           parts: [{ fieldName: 'description' }],
         },
-        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/settings/tokens/',
+        serviceUrl: {
+          path: '/admin/apps-integrations/apis/zendesk-api/settings/tokens/',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -171,7 +175,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
             { fieldName: 'token' },
           ],
         },
-        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
+        serviceUrl: {
+          path: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -191,7 +197,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
         elemID: {
           parts: [{ fieldName: 'identifier' }],
         },
-        serviceUrl: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
+        serviceUrl: {
+          path: '/admin/apps-integrations/apis/zendesk-api/oauth_clients',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -232,7 +240,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/apps-integrations/webhooks/webhooks/{id}/details',
+        serviceUrl: {
+          path: '/admin/apps-integrations/webhooks/webhooks/{id}/details',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -285,7 +295,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
             { fieldName: 'product' },
           ],
         },
-        serviceUrl: '/admin/apps-integrations/apps/support-apps',
+        serviceUrl: {
+          path: '/admin/apps-integrations/apps/support-apps',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -305,7 +317,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/apps-integrations/apps/support-apps',
+        serviceUrl: {
+          path: '/admin/apps-integrations/apps/support-apps',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -430,7 +444,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
             { fieldName: 'raw_agent_label' },
           ],
         },
-        serviceUrl: '/admin/objects-rules/tickets/ticket_statuses/edit/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/tickets/ticket_statuses/edit/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -463,7 +479,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/workspaces/agent-workspace/contextual-workspaces',
+        serviceUrl: {
+          path: '/admin/workspaces/agent-workspace/contextual-workspaces',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -499,7 +517,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/account/brand_management/brands',
+        serviceUrl: {
+          path: '/admin/account/brand_management/brands',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -526,7 +546,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/objects-rules/tickets/ticket-forms/edit/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/tickets/ticket-forms/edit/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -555,7 +577,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
             { fieldName: 'type' },
           ],
         },
-        serviceUrl: '/admin/apps-integrations/targets/targets',
+        serviceUrl: {
+          path: '/admin/apps-integrations/targets/targets',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -572,7 +596,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/workspaces/agent-workspace/dynamic_content',
+        serviceUrl: {
+          path: '/admin/workspaces/agent-workspace/dynamic_content',
+        },
       },
       fieldCustomizations: {
         variants: {
@@ -597,7 +623,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/objects-rules/rules/slas',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/slas',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -614,7 +642,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/people/team/roles/{id}',
+        serviceUrl: {
+          path: '/admin/people/team/roles/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -637,7 +667,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/agent/organizations/{id}/tickets',
+        serviceUrl: {
+          path: '/agent/organizations/{id}/tickets',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -658,7 +690,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/workspaces/agent-workspace/views/{id}',
+        serviceUrl: {
+          path: '/admin/workspaces/agent-workspace/views/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -679,7 +713,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/objects-rules/rules/automations/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/automations/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -697,7 +733,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/workspaces/agent-workspace/macros/{id}',
+        serviceUrl: {
+          path: '/admin/workspaces/agent-workspace/macros/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -736,7 +774,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'title' }] },
-        serviceUrl: '/admin/objects-rules/rules/triggers/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/triggers/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -758,7 +798,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           { fieldName: 'raw_title' },
           { fieldName: 'type' },
         ] },
-        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        },
       },
       fieldCustomizations: {
         custom_field_options: {
@@ -799,7 +841,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'key' }] },
-        serviceUrl: '/agent/admin/user_fields/{id}',
+        serviceUrl: {
+          path: '/agent/admin/user_fields/{id}',
+        },
       },
       fieldCustomizations: {
         custom_field_options: {
@@ -833,7 +877,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'key' }] },
-        serviceUrl: '/agent/admin/organization_fields/{id}',
+        serviceUrl: {
+          path: '/agent/admin/organization_fields/{id}',
+        },
       },
       fieldCustomizations: {
         custom_field_options: {
@@ -866,7 +912,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/objects-rules/rules/triggers',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/triggers',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -899,7 +947,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('active'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'active', sortByFields: ['position', 'title'] }),
       },
     },
     element: {
@@ -912,7 +960,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue(),
+        adjust: transforms.toOrderValue({ sortByFields: ['position', 'title'] }),
       },
     },
     element: {
@@ -925,7 +973,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('active'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'active', sortByFields: ['position'] }),
       },
     },
     element: {
@@ -938,7 +986,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('active'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'active', sortByFields: ['position'] }),
       },
     },
     element: {
@@ -951,7 +999,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('active'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'active', sortByFields: ['position'] }),
       },
     },
     element: {
@@ -964,7 +1012,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('active'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'active', sortByFields: ['position', 'title'] }),
       },
     },
     element: {
@@ -977,7 +1025,7 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     resource: {
       directFetch: true,
       mergeAndTransform: {
-        adjust: transforms.toOrderValue('activated'),
+        adjust: transforms.toOrderValue({ activeFieldName: 'activated', sortByFields: ['position'] }), // TODON need to fix
       },
     },
     element: {
@@ -1028,7 +1076,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/objects-rules/rules/schedules',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/schedules',
+        },
       },
       fieldCustomizations: {
         holidays: {
@@ -1064,7 +1114,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
     element: {
       topLevel: {
         isTopLevel: true,
-        serviceUrl: '/admin/objects-rules/rules/routing',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/routing',
+        },
       },
       fieldCustomizations: {
         values: {
@@ -1128,7 +1180,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { extendsParent: true },
-        serviceUrl: '/admin/objects-rules/rules/schedules', // TODON wasn't in old config but I think better
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/schedules', // TODON wasn't in old config but I think better
+        },
       },
       fieldCustomizations: {
         id: {
@@ -1151,7 +1205,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
       topLevel: {
         isTopLevel: true,
         elemID: { extendsParent: true },
-        serviceUrl: '/admin/objects-rules/rules/routing',
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/routing',
+        },
       },
       fieldCustomizations: {
         id: {
@@ -1170,7 +1226,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           extendsParent: true,
           parts: [{ fieldName: 'value' }],
         },
-        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        },
       },
       fieldCustomizations: {
 
@@ -1201,7 +1259,9 @@ export const SUPPORT_FETCH_DEF: Record<string, definitions.fetch.InstanceFetchAp
           extendsParent: true,
           parts: [{ fieldName: 'value' }],
         },
-        serviceUrl: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        serviceUrl: {
+          path: '/admin/objects-rules/tickets/ticket-fields/{id}',
+        },
       },
       fieldCustomizations: {
         id: {
