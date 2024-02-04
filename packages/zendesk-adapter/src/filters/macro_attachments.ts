@@ -257,6 +257,7 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
       errors,
     }
   },
+  // pattern - file uploads (share with article attachments, app logos, brand logos, okta brand logos?)
   deploy: async (changes: Change<InstanceElement>[]) => {
     const [relevantChanges, leftoverChanges] = _.partition(
       changes,
@@ -306,9 +307,9 @@ const filterCreator: FilterCreator = ({ config, client }) => ({
           return
         }
         const instance = getChangeData(change)
-        const response = await addAttachment(client, instance)
+        const response = await addAttachment(client, instance) // TODON generalize to other attachment flows
         if (!Array.isArray(response.data)) {
-          deploymentUtils.assignServiceId({
+          deploymentUtils.assignServiceId({ // add id
             change,
             apiDefinitions: config.apiDefinitions,
             response: response.data,

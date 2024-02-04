@@ -15,12 +15,12 @@
 */
 
 import { buildElementsSourceFromElements } from '@salto-io/adapter-utils'
-import { client as clientUtils, elements as elementUtils } from '@salto-io/adapter-components'
-import { ReadOnlyElementsSource } from '@salto-io/adapter-api'
+import { client as clientUtils, deployment as deploymentUtils, elements as elementUtils } from '@salto-io/adapter-components'
+import { Change, InstanceElement, ReadOnlyElementsSource, getChangeData } from '@salto-io/adapter-api'
 import { DEFAULT_CONFIG, ZendeskConfig } from '../src/config'
 import ZendeskClient from '../src/client/client'
 import { paginate } from '../src/client/pagination'
-import { BrandIdToClient } from '../src/filter'
+import { BrandSpecificClientInterface } from '../src/client/brand_specific_client'
 
 type FilterCreatorParams = {
     client: ZendeskClient
@@ -28,7 +28,7 @@ type FilterCreatorParams = {
     config: ZendeskConfig
     fetchQuery: elementUtils.query.ElementQuery
     elementsSource: ReadOnlyElementsSource
-    brandIdToClient: BrandIdToClient
+    brandIdToClient: BrandSpecificClientInterface['getClient']
 }
 
 export const createFilterCreatorParams = ({
@@ -42,7 +42,20 @@ export const createFilterCreatorParams = ({
   config = DEFAULT_CONFIG,
   fetchQuery = elementUtils.query.createMockQuery(),
   elementsSource = buildElementsSourceFromElements([]),
-  brandIdToClient = {},
+  brandIdToClient = () => undefined, // TODON
 } : Partial<FilterCreatorParams>) : FilterCreatorParams => ({
   client, paginator, config, fetchQuery, elementsSource, brandIdToClient,
 })
+
+export const createMockDefaultDeployChangeAddId = (id: number, fieldName = 'id') => ({ change }:
+    { change: Change<InstanceElement> }) => {
+  if (change.action === 'add') {
+    getChangeData(change).value[fieldName] = id
+  }
+}
+
+export const mockDefaultDeployChangeThrow: typeof deploymentUtils.defaultDeployChange = async ({
+  change, convertError,
+}) => {
+  throw convertError(getChangeData(change).elemID, new Error('err'))
+}

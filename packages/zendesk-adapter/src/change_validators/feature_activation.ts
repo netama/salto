@@ -18,7 +18,7 @@ import {
   isInstanceChange, isModificationChange,
 } from '@salto-io/adapter-api'
 import { detailedCompare } from '@salto-io/adapter-utils'
-import { ACCOUNT_SETTING_TYPE_NAME } from '../filters/account_settings'
+import { ACCOUNT_SETTING_TYPE_NAME } from '../constants'
 
 /**
  * Warns the user if he activates a feature, some features may cost money or be limited

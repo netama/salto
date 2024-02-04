@@ -33,7 +33,7 @@ const log = logger(module)
 const ORG_ENDPOINT_TO_FILTER = 'organizations/'
 const OMIT_REPLACEMENT = '<OMITTED>'
 
-type LogsFilterConfig = {
+export type LogsFilterConfig = {
   allowOrganizationNames?: boolean
 }
 

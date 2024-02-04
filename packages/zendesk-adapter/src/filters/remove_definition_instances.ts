@@ -20,13 +20,13 @@ import { FilterCreator } from '../filter'
 
 // We don't fetch those type names (except for trigger_definition) by default
 // But since we did in the past and we want to be backward compatible, we keep them in the filter
-// Can be removed after SALTO-1792
+// Can be removed after SALTO-1792 // TODON this was done, remove now?
 const DEFINITION_TYPE_NAMES = [
-  'macro_definition',
-  'macros_actions',
-  'trigger_definition',
-  'sla_policy_definition',
-  'routing_attribute_definition',
+  // 'macro_definition',
+  // 'macros_actions',
+  'trigger_definition', // extracting channels in another filter (can move this there)
+  // 'sla_policy_definition',
+  // 'routing_attribute_definition',
 ]
 
 /**
@@ -37,6 +37,7 @@ const filterCreator: FilterCreator = () => ({
   onFetch: async elements => {
     _.remove(elements,
       element =>
+        // TODON move to config (typesToOmitOnFetch / a generic filter)
         isInstanceElement(element) && DEFINITION_TYPE_NAMES.includes(element.elemID.typeName))
   },
 })

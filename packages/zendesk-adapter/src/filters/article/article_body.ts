@@ -16,21 +16,17 @@
 import _ from 'lodash'
 import { logger } from '@salto-io/logging'
 import {
-  Change, Element, getChangeData, InstanceElement, isAdditionOrModificationChange,
-  isInstanceChange, isInstanceElement, isReferenceExpression, isTemplateExpression, ReferenceExpression,
-  SaltoError, TemplateExpression, TemplatePart, UnresolvedReference,
+  Element, InstanceElement,
+  isInstanceElement, isReferenceExpression, isTemplateExpression, ReferenceExpression,
+  SaltoError, TemplatePart, UnresolvedReference,
 } from '@salto-io/adapter-api'
 import {
-  applyFunctionToChangeData,
   compactTemplate,
   createTemplateExpression,
   extractTemplate,
   getParent,
-  replaceTemplatesWithValues,
-  resolveTemplates,
   safeJsonStringify,
 } from '@salto-io/adapter-utils'
-import { collections } from '@salto-io/lowerdash'
 import { FilterCreator } from '../../filter'
 import {
   ARTICLE_TRANSLATION_TYPE_NAME,
@@ -40,7 +36,6 @@ import { FETCH_CONFIG, isGuideEnabled, ZendeskConfig } from '../../config'
 import { ELEMENTS_REGEXES, getBrandsForGuide, transformReferenceUrls } from '../utils'
 
 const log = logger(module)
-const { awu } = collections.asynciterable
 
 const BODY_FIELD = 'body'
 const URL_REGEX = /(https?:[0-9a-zA-Z;,/?:@&=+$-_.!~*'()#]+)/
@@ -218,59 +213,44 @@ export const articleBodyOnFetch = (elements: Element[], config: ZendeskConfig): 
 /**
  * Process body value in article translation instances to reference other objects
  */
-const filterCreator: FilterCreator = ({ config }) => {
-  const deployTemplateMapping: Record<string, TemplateExpression> = {}
-  return {
+const filterCreator: FilterCreator = ({ config }) => (
+  // const deployTemplateMapping: Record<string, TemplateExpression> = {}
+  {
     name: 'articleBodyFilter',
     onFetch: async (elements: Element[]) => {
       if (!isGuideEnabled(config[FETCH_CONFIG])) {
         return undefined
       }
-      return articleBodyOnFetch(elements, config)
+      return articleBodyOnFetch(elements, config) // custom
     },
-    preDeploy: async (changes: Change<InstanceElement>[]) => {
-      await awu(changes)
-        .filter(isAdditionOrModificationChange)
-        .filter(isInstanceChange)
-        .filter(change => getChangeData(change).elemID.typeName === ARTICLE_TRANSLATION_TYPE_NAME)
-        .forEach(async change => {
-          await applyFunctionToChangeData<Change<InstanceElement>>(
-            change,
-            instance => {
-              try {
-                replaceTemplatesWithValues(
-                  { values: [instance.value], fieldName: 'body' },
-                  deployTemplateMapping,
-                  prepRef,
-                )
-              } catch (e) {
-                log.error(`Error serializing article translation body in deployment for ${instance.elemID.getFullName()}: ${e}, stack: ${e.stack}`)
-              }
-              return instance
-            }
-          )
-        })
-    },
-
-    onDeploy: async (changes: Change<InstanceElement>[]) => {
-      await awu(changes)
-        .filter(isAdditionOrModificationChange)
-        .filter(isInstanceChange)
-        .filter(change => getChangeData(change).elemID.typeName === ARTICLE_TRANSLATION_TYPE_NAME)
-        .forEach(async change => {
-          await applyFunctionToChangeData<Change<InstanceElement>>(
-            change,
-            instance => {
-              resolveTemplates(
-                { values: [instance.value], fieldName: 'body' },
-                deployTemplateMapping,
-              )
-              return instance
-            }
-          )
-        })
-    },
+    // replaced by deploy config as articleBodyPrepRef
+    // preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    //   changes,
+    //   typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
+    //   func: instance => {
+    //     try {
+    //       replaceTemplatesWithValues( // templates
+    //         { values: [instance.value], fieldName: 'body' },
+    //         deployTemplateMapping,
+    //         prepRef,
+    //       )
+    //     } catch (e) {
+    //       log.error(`Error serializing article translation body in deployment for
+    // ${instance.elemID.getFullName()}: ${e}, stack: ${e.stack}`)
+    //     }
+    //   },
+    // }),
+    // onDeploy: changes => applyInPlaceforInstanceChangesOfType({
+    //   changes,
+    //   typeNames: [ARTICLE_TRANSLATION_TYPE_NAME],
+    //   func: instance => {
+    //     resolveTemplates(
+    //       { values: [instance.value], fieldName: 'body' },
+    //       deployTemplateMapping,
+    //     )
+    //   },
+    // }),
   }
-}
+)
 
 export default filterCreator

@@ -14,10 +14,10 @@
 * limitations under the License.
 */
 import {
-  Change, getChangeData, InstanceElement, isInstanceElement, Element,
+  getChangeData, InstanceElement, isInstanceElement, Element,
   ReferenceExpression, TemplateExpression,
 } from '@salto-io/adapter-api'
-import { extractTemplate, replaceTemplatesWithValues, resolveTemplates } from '@salto-io/adapter-utils'
+import { applyInPlaceforInstanceChangesOfType, extractTemplate, replaceTemplatesWithValues, resolveTemplates } from '@salto-io/adapter-utils'
 import _ from 'lodash'
 import { FilterCreator } from '../filter'
 import { FETCH_CONFIG, IdLocator } from '../config'
@@ -104,34 +104,40 @@ const filterCreator: FilterCreator = ({ config }) => {
     name: 'handleAppInstallationsFilter',
     onFetch: async (elements: InstanceElement[]): Promise<void> =>
       getAppInstallations(elements)
+        // see if can generalize with other template expression logic?
         .forEach(app => replaceFieldsWithTemplates(app, _.groupBy(elements.filter(
           e => [TICKET_FIELD_TYPE_NAME, // before it was the values of ZENDESK_REFERENCE_TYPE_TO_SALTO_TYPE
             ...APP_INSTLLATION_SPECIFIC_TYPES]
             .includes((e.elemID.typeName))
         ), e => e.elemID.typeName), locators)),
-    preDeploy: async (changes: Change<InstanceElement>[]): Promise<void> =>
-      getAppInstallations(changes.map(getChangeData))
-        .forEach(app => {
-          const convertTemplatesToValues = (fieldName: string): void => {
-            replaceTemplatesWithValues({ fieldName, values: [app.value.settings] },
-              deployTemplateMapping, (part: ReferenceExpression) => {
-                if (isInstanceElement(part.value) && part.value.value.id) {
-                  return _.toString(part.value.value.id)
-                }
-                return part
-              })
-          }
-          runFunctionOnLocatedFields(app, locators, convertTemplatesToValues)
-        }),
-    onDeploy: async (changes: Change<InstanceElement>[]): Promise<void> => {
-      getAppInstallations(changes.map(getChangeData))
-        .forEach(app => {
-          const resolveTemplateForApp = (fieldName: string): void => {
-            resolveTemplates({ fieldName, values: [app.value.settings] }, deployTemplateMapping)
-          }
-          runFunctionOnLocatedFields(app, locators, resolveTemplateForApp)
-        })
-    },
+    preDeploy: changes => applyInPlaceforInstanceChangesOfType({
+      changes,
+      typeNames: [APP_INSTALLATION_TYPE_NAME],
+      additionalCondition: change => getChangeData(change).value.settings, // TODON improve condition
+      func: inst => {
+        const convertTemplatesToValues = (fieldName: string): void => {
+          replaceTemplatesWithValues({ fieldName, values: [inst.value.settings] },
+            deployTemplateMapping, (part: ReferenceExpression) => {
+              if (isInstanceElement(part.value) && part.value.value.id) {
+                return _.toString(part.value.value.id)
+              }
+              return part
+            })
+        }
+        runFunctionOnLocatedFields(inst, locators, convertTemplatesToValues)
+      },
+    }),
+    onDeploy: changes => applyInPlaceforInstanceChangesOfType({ // restore
+      changes,
+      typeNames: [APP_INSTALLATION_TYPE_NAME],
+      additionalCondition: change => getChangeData(change).value.settings, // TODON improve condition
+      func: inst => {
+        const resolveTemplateForApp = (fieldName: string): void => {
+          resolveTemplates({ fieldName, values: [inst.value.settings] }, deployTemplateMapping)
+        }
+        runFunctionOnLocatedFields(inst, locators, resolveTemplateForApp)
+      },
+    }),
   })
 }
 

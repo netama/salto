@@ -15,10 +15,10 @@
 */
 import {
   ObjectType, ElemID, InstanceElement,
-  ReferenceExpression, CORE_ANNOTATIONS, toChange,
+  ReferenceExpression, CORE_ANNOTATIONS, toChange, getChangeData,
 } from '@salto-io/adapter-api'
 import { filterUtils } from '@salto-io/adapter-components'
-import { createFilterCreatorParams } from '../utils'
+import { createFilterCreatorParams, mockDefaultDeployChangeThrow } from '../utils'
 import { DYNAMIC_CONTENT_ITEM_TYPE_NAME, ZENDESK } from '../../src/constants'
 import filterCreator, { DYNAMIC_CONTENT_ITEM_VARIANT_TYPE_NAME, VARIANTS_FIELD_NAME } from '../../src/filters/dynamic_content'
 
@@ -29,7 +29,7 @@ jest.mock('@salto-io/adapter-components', () => {
     ...actual,
     deployment: {
       ...actual.deployment,
-      deployChange: jest.fn((...args) => mockDeployChange(...args)),
+      defaultDeployChange: jest.fn((...args) => mockDeployChange(...args)),
     },
   }
 })
@@ -218,17 +218,20 @@ describe('dynmaic content filter', () => {
 
     it('should pass the correct params to deployChange when we add both parent and children', async () => {
       const clonedElements = [resolvedParent, child1Resolved, child2Resolved].map(e => e.clone())
-      mockDeployChange
-        .mockImplementation(async () => ({
+      mockDeployChange.mockImplementationOnce(async ({ change }) => {
+        getChangeData<InstanceElement>(change).value.id = 11
+        return {
           item: { id: 11, variants: [{ id: 22, locale_id: 1 }, { id: 33, locale_id: 2 }] },
-        }))
+        }
+      })
       const res = await filter.deploy(clonedElements.map(e => ({ action: 'add', data: { after: e } })))
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedElements[0] } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -245,14 +248,15 @@ describe('dynmaic content filter', () => {
       clonedElements[0].value.id = 11
       clonedElements[1].value.id = 22
       clonedElements[2].value.id = 33
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter.deploy(clonedElements.map(e => ({ action: 'remove', data: { before: e } })))
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'remove', data: { before: clonedElements[0] } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(0)
@@ -271,7 +275,7 @@ describe('dynmaic content filter', () => {
           e.value.name = `${e.value.name}-edited`
           return e
         })
-      mockDeployChange.mockImplementation(async () => ({}))
+      mockDeployChange.mockImplementation()
       const res = await filter.deploy(beforeElements.map((e, i) => ({
         action: 'modify', data: { before: e, after: afterElements[i] },
       })))
@@ -282,8 +286,9 @@ describe('dynmaic content filter', () => {
           {
             change: { action: 'modify', data: { before: e, after: afterElements[i] } },
             client: expect.anything(),
-            endpointDetails: expect.anything(),
-            fieldsToOmit: undefined,
+            apiDefinitions: expect.anything(),
+            convertError: expect.anything(),
+            deployEqualValues: true,
           },
         )
       })
@@ -296,16 +301,15 @@ describe('dynmaic content filter', () => {
     })
     it('should return error if deployChange failed', async () => {
       const clonedResolvedParent = resolvedParent.clone()
-      mockDeployChange.mockImplementation(async () => {
-        throw new Error('err')
-      })
+      mockDeployChange.mockImplementation(mockDefaultDeployChangeThrow)
       const res = await filter.deploy([{ action: 'add', data: { after: clonedResolvedParent } }])
       expect(mockDeployChange).toHaveBeenCalledTimes(1)
       expect(mockDeployChange).toHaveBeenCalledWith({
         change: { action: 'add', data: { after: clonedResolvedParent } },
         client: expect.anything(),
-        endpointDetails: expect.anything(),
-        undefined,
+        apiDefinitions: expect.anything(),
+        convertError: expect.anything(),
+        deployEqualValues: true,
       })
       expect(res.leftoverChanges).toHaveLength(0)
       expect(res.deployResult.errors).toHaveLength(1)

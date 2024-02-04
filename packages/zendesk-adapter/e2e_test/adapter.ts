@@ -36,13 +36,11 @@ export type Opts = {
 }
 
 export const realAdapter = (
-  { adapterParams, credentials, elementsSource }: Opts, config = DEFAULT_CONFIG
+  { credentials, elementsSource }: Opts, config = DEFAULT_CONFIG
 ): Reals => {
-  const client = (
-    (adapterParams && adapterParams.client)
-    || new ZendeskClient({ credentials, config: config.client })
-  )
-  const adapter = new ZendeskAdapter({ client, credentials, config, elementsSource })
+  // TODON adjust. get the adapter's client instead of creating and passing in?
+  const client = new ZendeskClient({ credentials, config: config.client })
+  const adapter = new ZendeskAdapter({ credentials, config, elementsSource })
   return { client, adapter }
 }
 

@@ -16,20 +16,15 @@
 import _ from 'lodash'
 import Joi from 'joi'
 import {
-  Change, ChangeDataType, getChangeData, InstanceElement,
-  isAdditionOrModificationChange, isInstanceChange, ReferenceExpression, TemplatePart, toChange, Value,
+  Change, getChangeData, InstanceElement,
+  isAdditionOrModificationChange, isInstanceChange, ReferenceExpression, TemplatePart, Value,
 } from '@salto-io/adapter-api'
 import {
-  applyFunctionToChangeData,
   createSchemeGuard,
-  getParents,
-  resolveChangeElement,
-  references,
 } from '@salto-io/adapter-utils'
-import { logger } from '@salto-io/logging'
-import { collections, values as lowerDashValues } from '@salto-io/lowerdash'
+import { values as lowerDashValues } from '@salto-io/lowerdash'
 import wu from 'wu'
-import { references as referencesUtils } from '@salto-io/adapter-components'
+import { references as referencesUtils, deployment as deploymentUtils } from '@salto-io/adapter-components'
 import { lookupFunc } from './field_references'
 import { ZendeskFetchConfig } from '../config'
 import {
@@ -46,9 +41,6 @@ import {
 
 const { isDefined } = lowerDashValues
 const { createMissingInstance } = referencesUtils
-const { awu } = collections.asynciterable
-const log = logger(module)
-const { isArrayOfRefExprToInstances } = references
 export type Condition = {
   field: string | ReferenceExpression
   value?: unknown
@@ -60,40 +52,12 @@ export type SubjectCondition = {
 
 const TYPES_WITH_SUBJECT_CONDITIONS = ['routing_attribute_value']
 
-export const applyforInstanceChangesOfType = async (
-  changes: Change<ChangeDataType>[],
-  typeNames: string[],
-  func: (arg: InstanceElement) => Promise<InstanceElement> | InstanceElement,
-): Promise<void> => {
-  await awu(changes)
-    .filter(isAdditionOrModificationChange)
-    .filter(isInstanceChange)
-    .filter(change => typeNames.includes(getChangeData(change).elemID.typeName))
-    .forEach(change => applyFunctionToChangeData<Change<InstanceElement>>(
-      change,
-      func,
-    ))
-}
-
 export const createAdditionalParentChanges = async (
   childrenChanges: Change<InstanceElement>[],
   shouldResolve = true,
-): Promise<Change<InstanceElement>[] | undefined> => {
-  const childrenInstance = getChangeData(childrenChanges[0])
-  const parents = getParents(childrenInstance)
-  if (_.isEmpty(parents) || !isArrayOfRefExprToInstances(parents)) {
-    log.error(`Failed to update the following ${
-      childrenInstance.elemID.typeName} instances since they have no valid parent: ${
-      childrenChanges.map(getChangeData).map(e => e.elemID.getFullName())}`)
-    return undefined
-  }
-  const changes = parents.map(parent => toChange({
-    before: parent.value.clone(), after: parent.value.clone(),
-  }))
-  return shouldResolve
-    ? awu(changes).map(change => resolveChangeElement(change, lookupFunc)).toArray()
-    : changes
-}
+): Promise<Change<InstanceElement>[] | undefined> => deploymentUtils.createAdditionalParentChanges({
+  childrenChanges, shouldResolve, getLookUpName: lookupFunc,
+})
 
 const CONDITION_SCHEMA = Joi.array().items(Joi.object({
   field: [Joi.string().required(), Joi.object().required()],

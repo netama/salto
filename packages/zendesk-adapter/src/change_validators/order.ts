@@ -23,25 +23,25 @@ import { logger } from '@salto-io/logging'
 import { getInstancesFromElementSource } from '@salto-io/adapter-utils'
 import { createOrderTypeName } from '../filters/reorder/creator'
 import { ORG_FIELD_TYPE_NAME, TICKET_FORM_TYPE_NAME, USER_FIELD_TYPE_NAME } from '../constants'
-import { TYPE_NAME as AUTOMATION_TYPE_NAME } from '../filters/reorder/automation'
-import { TYPE_NAME as SLA_POLICY_TYPE_NAME } from '../filters/reorder/sla_policy'
-import { TYPE_NAME as VIEW_TYPE_NAME } from '../filters/reorder/view'
-import { TYPE_NAME as WORKSPACE_TYPE_NAME } from '../filters/reorder/workspace'
+// import { TYPE_NAME as AUTOMATION_TYPE_NAME } from '../filters/reorder/automation'
+// import { TYPE_NAME as SLA_POLICY_TYPE_NAME } from '../filters/reorder/sla_policy'
+// import { TYPE_NAME as VIEW_TYPE_NAME } from '../filters/reorder/view'
+// import { TYPE_NAME as WORKSPACE_TYPE_NAME } from '../filters/reorder/workspace'
 
 const log = logger(module)
 
 const RELEVANT_TYPE_NAMES = [
-  AUTOMATION_TYPE_NAME,
+  'automation',
   ORG_FIELD_TYPE_NAME,
-  SLA_POLICY_TYPE_NAME,
+  'sla_policy',
   TICKET_FORM_TYPE_NAME,
   USER_FIELD_TYPE_NAME,
-  VIEW_TYPE_NAME,
-  WORKSPACE_TYPE_NAME,
+  'view',
+  'workspace',
 ]
 
 const TYPE_NAME_TO_SPECIAL_ACTIVE_FIELD_NAME: Record<string, string> = {
-  [WORKSPACE_TYPE_NAME]: 'activated',
+  workspace: 'activated',
 }
 
 const isRelevantChange = (change: Change<InstanceElement>): boolean =>

@@ -474,18 +474,19 @@ const firstIterationFieldNameToTypeMappingDefs: ZendeskFieldReferenceDefinition[
     serializationStrategy: 'id',
     target: { type: 'view' },
   },
+  // TODON renamed from trigger_order_entry, make sure works correctly (under trigger_order)
   {
-    src: { field: 'active', parentTypes: ['trigger_order_entry'] },
+    src: { field: 'active', parentTypes: ['trigger_order__order'] },
     serializationStrategy: 'id',
     target: { type: 'trigger' },
   },
   {
-    src: { field: 'inactive', parentTypes: ['trigger_order_entry'] },
+    src: { field: 'inactive', parentTypes: ['trigger_order__order'] },
     serializationStrategy: 'id',
     target: { type: 'trigger' },
   },
   {
-    src: { field: 'category', parentTypes: ['trigger_order_entry'] },
+    src: { field: 'category', parentTypes: ['trigger_order__order'] },
     serializationStrategy: 'id',
     target: { type: 'trigger_category' },
   },

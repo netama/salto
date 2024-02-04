@@ -15,9 +15,11 @@
 */
 import { client as clientUtils, fetch as fetchUtils } from '@salto-io/adapter-components'
 
+// TODON remove - no longer needed, keeping for build
+
 const { getWithCursorPagination } = clientUtils
 
-const pathChecker: fetchUtils.request.pagination.PathCheckerFunc = (current, next) => (
+export const pathChecker: fetchUtils.request.pagination.PathCheckerFunc = (current, next) => (
   next === `${current}.json` || next === `${current}`
 )
 export const paginate: clientUtils.PaginationFuncCreator = () => (
