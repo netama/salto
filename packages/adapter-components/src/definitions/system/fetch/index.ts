@@ -13,7 +13,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export { ApiClientDefinition, RESTApiClientDefinition } from './client'
-export { EndpointDefinition, EndpointByPathAndMethod } from './endpoint'
-export { PaginationDefinitions } from './pagination'
-export { HTTPEndpointIdentifier, RequestArgs, HTTPMethod } from './types'
+/* eslint-disable import/no-cycle */
+
+export { ContextCombinationDefinition } from './dependencies'
+export { FetchApiDefinitions, InstanceFetchApiDefinitions } from './fetch'
+export { ResourceTransformFunc } from './resource'
+export { ElementFieldCustomization, FieldIDPart, ElementFetchDefinition } from './element'

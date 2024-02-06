@@ -15,3 +15,4 @@
 */
 
 export * from './transformation'
+export * from './types'

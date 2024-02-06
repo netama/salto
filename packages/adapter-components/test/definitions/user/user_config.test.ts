@@ -20,11 +20,12 @@ describe('config_shared', () => {
   describe('createUserFetchConfigType', () => {
     it('should return default type when no custom fields were added', () => {
       const type = createUserFetchConfigType('myAdapter')
-      expect(Object.keys(type.fields)).toHaveLength(4)
+      expect(Object.keys(type.fields)).toHaveLength(5)
       expect(type.fields.include).toBeDefined()
       expect(type.fields.exclude).toBeDefined()
       expect(type.fields.hideTypes).toBeDefined()
       expect(type.fields.asyncPagination).toBeDefined()
+      expect(type.fields.elemID).toBeDefined()
     })
   })
   describe('createUserDeployConfigType', () => {

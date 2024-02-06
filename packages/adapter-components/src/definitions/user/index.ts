@@ -14,4 +14,5 @@
 * limitations under the License.
 */
 
+// eslint-disable-next-line import/no-cycle
 export { UserFetchConfig, UserDeployConfig, createUserFetchConfigType, createUserDeployConfigType, DefaultFetchCriteria, DEPLOYER_FALLBACK_VALUE, DefaultMissingUserFallbackConfig, validateDefaultMissingUserFallbackConfig } from './user_config'
