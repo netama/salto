@@ -17,6 +17,10 @@
 			"path": "packages/adapter-utils"
 		},
 		{
+			"name": "adapter-wrapper",
+			"path": "packages/adapter-wrapper"
+		},
+		{
 			"name": "cli",
 			"path": "packages/cli"
 		},
@@ -111,6 +115,10 @@
 		{
 			"name": "stripe-adapter",
 			"path": "packages/stripe-adapter"
+		},
+		{
+			"name": "PLACEHOLDER-adapter",
+			"path": "packages/PLACEHOLDER-adapter"
 		},
 		{
 			"name": "aws-utils",
