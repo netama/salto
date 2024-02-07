@@ -19,10 +19,14 @@ import { createClientConfigType, ClientBaseConfig, ClientRateLimitConfig } from 
 import { UserFetchConfig, createUserFetchConfigType } from './fetch_config'
 import { UserDeployConfig, createChangeValidatorConfigType, createUserDeployConfigType } from './deploy_config'
 
-export type UserConfig = {
-  client: ClientBaseConfig<ClientRateLimitConfig>
-  fetch: UserFetchConfig
-  deploy?: UserDeployConfig
+export type UserConfig<
+  TClient extends ClientBaseConfig<ClientRateLimitConfig> = ClientBaseConfig<ClientRateLimitConfig>,
+  TFetch extends UserFetchConfig = UserFetchConfig,
+  TDeploy extends UserDeployConfig = UserDeployConfig,
+> = {
+  client: TClient
+  fetch: TFetch
+  deploy?: TDeploy
 }
 
 export type ConfigTypeCreator = (args: {
