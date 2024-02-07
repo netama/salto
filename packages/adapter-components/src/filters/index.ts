@@ -19,7 +19,9 @@ export {
   serviceUrlFilterCreatorDeprecated,
   configDefToInstanceFetchApiDefinitionsForServiceUrl,
 } from './service_url'
-export { referencedInstanceNamesFilterCreator } from './referenced_instance_names'
-export { queryFilterCreator, createParentChildGraph } from './query'
-export { hideTypesFilterCreator } from './hide_types'
 export { defaultDeployFilterCreator } from './default_deploy'
+export { fieldReferencesFilterCreator } from './field_references'
+export { hideTypesFilterCreator } from './hide_types'
+export { queryFilterCreator, createParentChildGraph } from './query'
+export { referencedInstanceNamesFilterCreator } from './referenced_instance_names'
+export { createCommonFilters } from './common_filters'
