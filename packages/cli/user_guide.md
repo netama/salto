@@ -78,6 +78,7 @@ Supported login parameters per service type:
 [okta](/packages/okta-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [SAP](/packages/sap-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [PLACEHOLDER](/packages/PLACEHOLDER-adapter/specific-cli-options.md#non-interactive-login-parameters),
+[confluence](/packages/confluence-adapter/specific-cli-options.md#non-interactive-login-parameters),
 
 ### **salto env \<command>**
 
