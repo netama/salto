@@ -18,11 +18,18 @@ import {
   FetchResult,
   AdapterOperations,
   DeployResult,
+  DeployModifiers,
   FetchOptions,
   ElemIdGetter,
   InstanceElement,
   isObjectType,
   ActionName,
+  isInstanceChange,
+  DeployOptions,
+  Change,
+  getChangeData,
+  SaltoError,
+  isSaltoError,
 } from '@salto-io/adapter-api'
 import {
   config as configUtils,
@@ -30,15 +37,20 @@ import {
   fetch as fetchUtils,
   filterUtils,
   elements as elementUtils,
+  deployment,
+  deploy as deployUtils,
+  references as referenceUtils,
 } from '@salto-io/adapter-components'
-import { logDuration, safeJsonStringify } from '@salto-io/adapter-utils'
+import { logDuration, restoreChangeElement, safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { collections, objects, types } from '@salto-io/lowerdash'
 import { Client } from '../client'
+import changeValidator from '../change_validator'
 import { AdapterParams } from './types'
 // import { analyzeConfig } from '../utils/config_initializer'
 
 const log = logger(module)
+const { awu } = collections.asynciterable
 const { getElements } = fetchUtils
 const { filterRunner } = filterUtils
 
@@ -183,23 +195,92 @@ export class AdapterImpl<
   /**
    * Deploy configuration elements to the given account.
    */
-  // eslint-disable-next-line class-methods-use-this
-  async deploy(): Promise<DeployResult> {
-    // TODON make this smarter based on the existence of some deploy config?
-    throw new Error('Not implemented.')
-    // TODON add default behavior
+  // TODON make this smarter based on the existence of some deploy config?
+  @logDuration('deploying account configuration')
+  async deploy({ changeGroup }: DeployOptions): Promise<DeployResult> {
+    const [instanceChanges, nonInstanceChanges] = _.partition(changeGroup.changes, isInstanceChange)
+    if (nonInstanceChanges.length > 0) {
+      log.warn(
+        `We currently can't deploy types. Therefore, the following changes will not be deployed: ${nonInstanceChanges.map(elem => getChangeData(elem).elemID.getFullName()).join(', ')}`,
+      )
+    }
+    const lookupFunc = referenceUtils.generateLookupFunc(
+      this.definitions.references?.rules ?? [],
+      // TODON allow passing in a custom fieldReferenceResolverCreator
+    )
+
+    const changesToDeploy = instanceChanges.map(change => ({
+      action: change.action,
+      data: _.mapValues(change.data, (instance: InstanceElement) =>
+        // TODON if can do in the infra in a "one-way" manner
+        deployUtils.overrideInstanceTypeForDeploy({
+          instance,
+          // TODON not "symmetric" with fetch which gets the definitions and not the query
+          defQuery: definitionUtils.queryWithDefault(this.definitions.fetch.instances),
+        }),
+      ),
+    })) as Change<InstanceElement>[]
+    const sourceChanges = _.keyBy(changesToDeploy, change => getChangeData(change).elemID.getFullName())
+    const runner = this.createFiltersRunner()
+    // TODON resolve changes later
+    // const resolvedChanges = await awu(changesToDeploy)
+    //   .map(async change =>
+    //     (SKIP_RESOLVE_TYPE_NAMES.includes(getChangeData(change).elemID.typeName)
+    //       ? change
+    //       : resolveChangeElement(
+    //         change,
+    //         lookupFunc,
+    //         async (element, getLookUpName, elementsSource) =>
+    //           resolveValues(element, getLookUpName, elementsSource, true),
+    //       )))
+    //   .toArray()
+    const saltoErrors: SaltoError[] = []
+    try {
+      await runner.preDeploy(changesToDeploy)
+    } catch (e) {
+      if (!isSaltoError(e)) {
+        throw e
+      }
+      return {
+        appliedChanges: [],
+        errors: [e],
+      }
+    }
+    const { deployResult } = await runner.deploy(changesToDeploy)
+    const appliedChangesBeforeRestore = [...deployResult.appliedChanges]
+    try {
+      await runner.onDeploy(appliedChangesBeforeRestore)
+    } catch (e) {
+      if (!isSaltoError(e)) {
+        throw e
+      }
+      saltoErrors.push(e)
+    }
+
+    const appliedChanges = await awu(appliedChangesBeforeRestore)
+      .map(change => restoreChangeElement(change, sourceChanges, lookupFunc))
+      .toArray()
+    const restoredAppliedChanges = deployUtils.restoreInstanceTypeFromChange({
+      appliedChanges,
+      originalInstanceChanges: instanceChanges,
+    })
+    return {
+      appliedChanges: restoredAppliedChanges,
+      errors: deployResult.errors.concat(saltoErrors),
+    }
   }
 
-  // public get deployModifiers(): DeployModifiers {
-  //   if (this.definitions.deploy?.instances !== undefined) {
-  //     return {
-  //       changeValidator,
-  //       getChangeGroupIds: deployment.grouping.getChangeGroupIdsFuncWithConfig(this.definitions.deploy.instances),
-  //       // TODON dependencyChanger
-  //     }
-  //   }
-  //   return {
-  //     changeValidator,
-  //   }
-  // }
+  // eslint-disable-next-line class-methods-use-this
+  public get deployModifiers(): DeployModifiers {
+    if (this.definitions.deploy?.instances !== undefined) {
+      return {
+        changeValidator,
+        getChangeGroupIds: deployment.grouping.getChangeGroupIdsFuncWithConfig(this.definitions.deploy.instances),
+        // TODON dependencyChanger
+      }
+    }
+    return {
+      changeValidator,
+    }
+  }
 }

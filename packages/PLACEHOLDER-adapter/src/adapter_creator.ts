@@ -20,7 +20,13 @@ import { Credentials, tokenCredentialsType } from './auth'
 import { DEFAULT_CONFIG, UserConfig } from './config'
 import { createConnection } from './client/connection'
 import { ADAPTER_NAME } from './constants'
-import { ClientOptions, PaginationOptions, createClientDefinitions, createFetchDefinitions } from './definitions'
+import {
+  ClientOptions,
+  PaginationOptions,
+  createClientDefinitions,
+  createDeployDefinitions,
+  createFetchDefinitions,
+} from './definitions'
 import { PAGINATION } from './definitions/requests/pagination'
 import { Action } from './definitions/types'
 
@@ -46,6 +52,7 @@ export const adapter = createAdapter<Credentials, UserConfig, ClientOptions, Pag
     clients: createClientDefinitions(clients),
     pagination: PAGINATION,
     fetch: createFetchDefinitions(userConfig.fetch),
+    deploy: createDeployDefinitions(),
   }),
   operationsCustomizations: {
     connectionCreatorFromConfig: () => createConnection,

@@ -15,11 +15,19 @@
  */
 import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
+import { types } from '@salto-io/lowerdash'
 
 export type Action = ActionName
 export type ClientOptions = 'main'
 export type PaginationOptions = 'cursor'
 
+export type DeployDefWithDefault = types.PickyRequired<
+  definitions.deploy.DeployApiDefinitions<Action, ClientOptions>['instances'],
+  'customizations'
+>
+export type DeployDefNoDefault = definitions.deploy.DeployApiDefinitionsNoDefault<Action, ClientOptions>['instances']
+export type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefinitions<Action, ClientOptions>
+export type DeployableRequestDefinitions = definitions.deploy.DeployableRequestDefinitions<ClientOptions>
 export type InstanceFetchApiDefinitions = definitions.fetch.InstanceFetchApiDefinitions<ClientOptions>
 export type FetchApiDefinitions = definitions.fetch.FetchApiDefinitions<ClientOptions>
 

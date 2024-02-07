@@ -13,8 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { deployment as deploymentUtils } from '@salto-io/adapter-components'
+import { DEFAULT_CONTEXT } from './utils'
+import { InstanceDeployApiDefinitions } from '../types'
 
-export * from './deploy'
-export * from './fetch'
-export * from './requests'
-export { ClientOptions, PaginationOptions } from './types'
+const { groupByType } = deploymentUtils.grouping
+
+export const DEPLOY_DEFAULTS: InstanceDeployApiDefinitions = {
+  requestsByAction: {
+    default: {
+      // TODON move template and reference resolution here in a generic way? first see cases
+      // additionalResolvers: [],
+      request: {
+        context: DEFAULT_CONTEXT,
+      },
+    },
+    customizations: {},
+  },
+  changeGroupId: groupByType,
+}

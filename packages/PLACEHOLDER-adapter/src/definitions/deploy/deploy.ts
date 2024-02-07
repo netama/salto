@@ -13,8 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ActionName } from '@salto-io/adapter-api'
+import { definitions } from '@salto-io/adapter-components'
+import { DEPLOY_DEFAULTS } from './defaults'
+import { DEPLOY_DEFINITIONS } from './all'
+import { ClientOptions } from '../types'
 
-export * from './deploy'
-export * from './fetch'
-export * from './requests'
-export { ClientOptions, PaginationOptions } from './types'
+export const createDeployDefinitions = (): definitions.deploy.DeployApiDefinitions<ActionName, ClientOptions> => ({
+  instances: {
+    default: DEPLOY_DEFAULTS,
+    customizations: DEPLOY_DEFINITIONS,
+  },
+})

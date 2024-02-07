@@ -13,8 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash'
+import { Change, getChangeData, InstanceElement, isAdditionChange, isModificationChange } from '@salto-io/adapter-api'
 
-export * from './deploy'
-export * from './fetch'
-export * from './requests'
-export { ClientOptions, PaginationOptions } from './types'
+export const shouldDeployIntervals = (change: Change<InstanceElement>): boolean => {
+  if (isAdditionChange(change) && getChangeData(change).value.intervals !== undefined) {
+    return true
+  }
+  if (
+    isModificationChange(change) &&
+    !_.isEqual(change.data.before.value.intervals, change.data.after.value.intervals)
+  ) {
+    return true
+  }
+  return false
+}
