@@ -36,57 +36,60 @@ export const createStandardItemDeployConfigs = (
     }
   >,
 ): Record<string, InstanceDeployApiDefinitions> =>
-  _.mapValues(typeArgs, ({ client, bulkPath, overrides, withoutActions, appendRequests, idField = 'id' }, typeName) => {
-    const standardCustomizationsByAction: Record<ActionName, DeployableRequestDefinitions[]> = {
-      add: [
-        {
-          request: {
-            endpoint: {
-              path: bulkPath,
-              method: 'post',
-              client,
+  _.mapValues(
+    typeArgs,
+    ({ client, bulkPath, overrides, withoutActions, appendRequests, idField = 'id' }, _typeName) => {
+      const standardCustomizationsByAction: Record<ActionName, DeployableRequestDefinitions[]> = {
+        add: [
+          {
+            request: {
+              endpoint: {
+                path: bulkPath,
+                method: 'post',
+                client,
+              },
             },
           },
-        },
-        ...(appendRequests?.add ?? []),
-      ],
-      modify: [
-        {
-          request: {
-            endpoint: {
-              path: `${bulkPath}/{${idField}}`,
-              method: 'put',
-              client,
+          ...(appendRequests?.add ?? []),
+        ],
+        modify: [
+          {
+            request: {
+              endpoint: {
+                path: `${bulkPath}/{${idField}}`,
+                method: 'put',
+                client,
+              },
             },
           },
-        },
-        ...(appendRequests?.modify ?? []),
-      ],
-      remove: [
-        {
-          request: {
-            endpoint: {
-              path: `${bulkPath}/{${idField}}`,
-              method: 'delete',
-              client,
+          ...(appendRequests?.modify ?? []),
+        ],
+        remove: [
+          {
+            request: {
+              endpoint: {
+                path: `${bulkPath}/{${idField}}`,
+                method: 'delete',
+                client,
+              },
             },
           },
-        },
-        ...(appendRequests?.remove ?? []),
-      ],
-    }
+          ...(appendRequests?.remove ?? []),
+        ],
+      }
 
-    const standardConfig: InstanceDeployApiDefinitions = {
-      requestsByAction: {
-        default: {
-          request: {
-            transformation: {
-              nestUnderField: typeName,
+      const standardConfig: InstanceDeployApiDefinitions = {
+        requestsByAction: {
+          default: {
+            request: {
+              // transformation: {
+              //   nestUnderField: typeName,
+              // },
             },
           },
+          customizations: _.omit(standardCustomizationsByAction, withoutActions ?? []),
         },
-        customizations: _.omit(standardCustomizationsByAction, withoutActions ?? []),
-      },
-    }
-    return _.merge(standardConfig, { requestsByAction: overrides ?? {} })
-  })
+      }
+      return _.merge(standardConfig, { requestsByAction: overrides ?? {} })
+    },
+  )

@@ -26,7 +26,7 @@ export const createClientDefinitions = (
       endpoints: {
         default: {
           get: {
-            pagination: 'cursor',
+            pagination: 'none',
             // only readonly endpoint calls are allowed during fetch. we assume by default that GET endpoints are safe
             readonly: true,
           },

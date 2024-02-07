@@ -14,68 +14,14 @@
  * limitations under the License.
  */
 import _ from 'lodash'
-import { deployment as deploymentUtils } from '@salto-io/adapter-components'
 import { createStandardItemDeployConfigs } from './utils'
 import { InstanceDeployApiDefinitions } from '../types'
-import { shouldDeployIntervals } from './conditions'
-
-const { groupWithFirstParent } = deploymentUtils.grouping
 
 export const DEPLOY_DEFINITIONS: Record<string, InstanceDeployApiDefinitions> = {
   ..._.merge(
     createStandardItemDeployConfigs({
-      group: { bulkPath: '/api/v2/groups' },
-      business_hours_schedule: {
-        bulkPath: '/api/v2/business_hours/schedules',
-        overrides: {
-          default: {
-            request: {
-              transformation: {
-                nestUnderField: 'schedule',
-                omit: ['holidays'],
-              },
-            },
-          },
-        },
-        appendRequests: {
-          add: [
-            {
-              condition: ({ change }) => shouldDeployIntervals(change),
-              request: {
-                endpoint: {
-                  path: '/api/v2/business_hours/schedules/{id}/workweek',
-                  method: 'put',
-                },
-                transformation: {
-                  root: 'intervals',
-                  nestUnderField: 'workweek',
-                },
-              },
-            },
-          ],
-          modify: [
-            {
-              condition: ({ change }) => shouldDeployIntervals(change),
-              request: {
-                endpoint: {
-                  path: '/api/v2/business_hours/schedules/{id}/workweek',
-                  method: 'put',
-                },
-                transformation: {
-                  root: 'intervals',
-                  nestUnderField: 'workweek',
-                },
-              },
-            },
-          ],
-        },
-      },
+      space: { bulkPath: '/wiki/rest/api/space', idField: 'key' },
     }),
-    {
-      dynamic_content_item__variants: {
-        changeGroupId: groupWithFirstParent,
-      },
-    },
   ),
   // TODON add more examples including transformations, move utility functions to adapter-components
 }

@@ -19,7 +19,7 @@ import { types } from '@salto-io/lowerdash'
 
 export type Action = ActionName
 export type ClientOptions = 'main'
-export type PaginationOptions = 'cursor'
+export type PaginationOptions = 'none'
 
 export type DeployDefWithDefault = types.PickyRequired<
   definitions.deploy.DeployApiDefinitions<Action, ClientOptions>['instances'],

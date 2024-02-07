@@ -13,20 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as transforms from './transforms'
 import { InstanceFetchApiDefinitions } from '../types'
 
 // TODO adjust
 export const FETCH_DEFINITIONS: Record<string, InstanceFetchApiDefinitions> = {
   // top-level, independent
-  group: {
+  space: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/groups',
+          path: '/wiki/api/v2/spaces',
         },
         transformation: {
-          root: 'groups',
+          root: 'results',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  content_old: {
+    requests: [
+      {
+        endpoint: {
+          path: '/wiki/rest/api/content',
+        },
+        transformation: {
+          root: 'results',
         },
       },
     ],
@@ -38,9 +57,9 @@ export const FETCH_DEFINITIONS: Record<string, InstanceFetchApiDefinitions> = {
       topLevel: {
         // isTopLevel should be set when the workspace can have instances of this type
         isTopLevel: true,
-        serviceUrl: {
-          path: '/some/path/to/group/with/potential/placeholder/{id}',
-        },
+        // serviceUrl: {
+        //   path: '/some/path/to/group/with/potential/placeholder/{id}',
+        // },
       },
       fieldCustomizations: {
         id: {
@@ -50,83 +69,42 @@ export const FETCH_DEFINITIONS: Record<string, InstanceFetchApiDefinitions> = {
       },
     },
   },
-  business_hours_schedule: {
+  content_cql: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/business_hours/schedules',
+          path: '/wiki/rest/api/content/search',
+          queryArgs: {
+            cql: 'type=page',
+          },
         },
         transformation: {
-          root: 'schedules',
+          root: 'results', // TODON make default?
         },
       },
     ],
     resource: {
+      // this type can be included/excluded based on the user's fetch query
       directFetch: true,
-      recurseInto: {
-        holidays: {
-          typeName: 'business_hours_schedule_holiday',
-          context: {
-            args: {
-              parent_id: {
-                fromField: 'id',
-              },
-            },
-          },
-        },
-      },
-      mergeAndTransform: {
-        adjust: transforms.transformBusinessHoursSchedule,
-      },
     },
     element: {
       topLevel: {
+        // isTopLevel should be set when the workspace can have instances of this type
         isTopLevel: true,
-        serviceUrl: {
-          path: '/admin/objects-rules/rules/schedules',
-        },
+        // serviceUrl: {
+        //   path: '/some/path/to/group/with/potential/placeholder/{id}',
+        // },
       },
       fieldCustomizations: {
-        holidays: {
-          standalone: {
-            typeName: 'business_hours_schedule_holiday',
-            addParentAnnotation: true,
-            referenceFromParent: true,
-            nestPathUnderParent: true,
-          },
+        id: {
+          fieldType: 'number',
+          hide: true,
         },
       },
     },
   },
 
   // top-level, dependent
-  business_hours_schedule_holiday: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/business_hours/schedules/{parent_id}/holidays',
-        },
-        transformation: {
-          root: 'holidays',
-        },
-      },
-    ],
-    element: {
-      topLevel: {
-        isTopLevel: true,
-        elemID: { extendsParent: true },
-      },
-    },
-  },
 
   // inner types
-  group__member: {
-    element: {
-      fieldCustomizations: {
-        id: {
-          hide: true,
-        },
-      },
-    },
-  },
 }
