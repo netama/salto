@@ -18,10 +18,10 @@ import { PaginationOptions } from '../types'
 
 export const ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOptions>['customizations'] = {
   // example - when not in strict mode, these are only needed when different from the default
-  '/api/v2/groups': {
-    get: {
-      pagination: 'cursor',
-      queryArgs: { type: 'a' },
-    },
-  },
+  // '/api/v2/groups': {
+  //   get: {
+  //     pagination: 'cursor',
+  //     queryArgs: { type: 'a' },
+  //   },
+  // },
 }

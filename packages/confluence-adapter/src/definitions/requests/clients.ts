@@ -24,7 +24,7 @@ export const createClientDefinitions = (clients: Record<ClientOptions, RESTApiCl
       endpoints: {
         default: {
           get: {
-            pagination: 'cursor',
+            pagination: 'offset',
             checkSuccess: {
               httpSuccessCodes: [200],
             },
