@@ -13,25 +13,61 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import axios from 'axios'
-import FormData from 'form-data'
-import { CookieJar } from 'tough-cookie'
-import { wrapper } from 'axios-cookiejar-support'
-import HTMLParser from 'node-html-parser'
+import _ from 'lodash'
 import { AccountInfo } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-components'
 import { logger } from '@salto-io/logging'
+import Joi from 'joi'
+import { createSchemeGuard } from '@salto-io/adapter-utils'
 import { Credentials } from '../auth'
 
 const log = logger(module)
+type AccountRes = {
+  data: {
+    account: {
+      sandbox: boolean
+    }
+  }
+}
 
-export const validateCredentials = async ({ connection }: {
-  // credentials: Credentials
+const EXPECTED_VALID_ACCOUNT_RES = Joi.object({
+  data: Joi.object({
+    account: Joi.object({
+      sandbox: Joi.boolean().required(),
+    }).unknown(true).required(),
+  }).unknown(true).required(),
+}).unknown(true).required()
+
+export const instanceUrl = (subdomain: string, domain?: string): string => (
+  _.isEmpty(domain) ? `https://${subdomain}.zendesk.com` : `https://${subdomain}.${domain}`
+)
+const baseUrl = instanceUrl
+
+const MARKETPLACE_NAME = 'Salto'
+const MARKETPLACE_ORG_ID = 5110
+const MARKETPLACE_APP_ID = 608042
+
+export const APP_MARKETPLACE_HEADERS = {
+  'X-Zendesk-Marketplace-Name': MARKETPLACE_NAME,
+  'X-Zendesk-Marketplace-Organization-Id': MARKETPLACE_ORG_ID,
+  'X-Zendesk-Marketplace-App-Id': MARKETPLACE_APP_ID,
+}
+
+const isValidAccountRes = createSchemeGuard<AccountRes>(EXPECTED_VALID_ACCOUNT_RES, 'Received an invalid current account response')
+
+export const validateCredentials = async ({ connection, credentials }: {
+  credentials: Credentials
   connection: clientUtils.APIConnection
 }): Promise<AccountInfo> => {
   try {
-    await connection.get('/api/v2/account') // TODO replace with some valid endpoint, validate response if needed
-    return { accountId: '' }
+    const res = await connection.get('/api/v2/account')
+    const accountId = instanceUrl(credentials.subdomain, credentials.domain)
+    if (isValidAccountRes(res)) {
+      const isProduction = !res.data.account.sandbox
+      return { accountId, isProduction }
+    }
+    log.warn('res is not valid for /api/v2/account, could not find if account is production')
+    return { accountId }
   } catch (e) {
     log.error('Failed to validate credentials: %s', e)
     throw new clientUtils.UnauthorizedError(e)
@@ -41,30 +77,14 @@ export const validateCredentials = async ({ connection }: {
 export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions => (
   clientUtils.axiosConnection({
     retryOptions,
-    baseURLFunc: async () => 'https://localhost:80', // TODO replace with base URL, creds can be used
-    authParamsFunc: async ({ token, username, password }: Credentials) => {
-      // TODO adjust / remove - sample for private APIs requiring cookies
-      const jar = new CookieJar()
-      const client = wrapper(axios.create({ jar }))
-      const { data } = await client.get('https://localhost:80/sign_in')
-      const root = HTMLParser.parse(data)
-      const authenticityToken = root.querySelector('TODO')?.attrs.value // TODO adjust query
-      const form = new FormData()
-      form.append('admin[email]', username)
-      form.append('admin[password]', password)
-      form.append('authenticity_token', authenticityToken)
-      await client.post(
-        'https://localhost:80/authenticate',
-        form,
-        { headers: form.getHeaders() },
-      )
-
-      // TODO return arguments that should be used by all client calls
-      return {
-        headers: { Authorization: `Bearer ${token}` },
-        jar, // TODO remove if cookies are not needed (usually not needed for public APIs)
-      }
-    },
+    baseURLFunc: async ({ subdomain, domain }) => baseUrl(subdomain, domain),
+    authParamsFunc: async ({ username, password }: Credentials) => ({
+      auth: {
+        username,
+        password,
+      },
+      headers: APP_MARKETPLACE_HEADERS,
+    }),
     credValidateFunc: validateCredentials,
   })
 )

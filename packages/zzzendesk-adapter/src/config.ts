@@ -17,9 +17,7 @@ import { elements, definitions } from '@salto-io/adapter-components'
 
 // TODO adjust this file
 
-export type UserFetchConfig = definitions.UserFetchConfig & {
-  // TODO add adapter-specific user-facing fetch flags here
-}
+export type UserFetchConfig = definitions.UserFetchConfig
 export type UserClientConfig = definitions.ClientBaseConfig<definitions.ClientRateLimitConfig>
 export type UserDeployConfig = definitions.UserDeployConfig
 export type UserConfig = definitions.UserConfig<UserClientConfig, UserFetchConfig, UserDeployConfig>

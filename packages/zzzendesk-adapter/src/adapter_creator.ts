@@ -16,7 +16,7 @@
 import { InstanceElement } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-components'
 import { createAdapter } from '@salto-io/adapter-wrapper'
-import { Credentials, tokenCredentialsType } from './auth'
+import { Credentials, usernamePasswordCredentialsType } from './auth'
 import { DEFAULT_CONFIG, UserConfig } from './config'
 import { createConnection } from './client/connection'
 import { ADAPTER_NAME } from './constants'
@@ -39,7 +39,7 @@ export const adapter = createAdapter<
   adapterName: ADAPTER_NAME,
   authenticationMethods: {
     basic: {
-      credentialsType: tokenCredentialsType,
+      credentialsType: usernamePasswordCredentialsType,
     },
   },
   validateCredentials: async config => validateCredentials(
@@ -49,7 +49,6 @@ export const adapter = createAdapter<
     },
   ),
   defaultConfig: DEFAULT_CONFIG,
-  // TODON should leave placeholder for client that will be filled by the wrapper
   definitionsCreator: ({ clients, userConfig }) => ({
     clients: createClientDefinitions(clients),
     pagination: PAGINATION,

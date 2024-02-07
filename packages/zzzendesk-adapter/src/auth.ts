@@ -17,23 +17,21 @@ import { ElemID, BuiltinTypes } from '@salto-io/adapter-api'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-// TODO adjust based on the needed auth (also below)
-export type TokenCredentials = {
-  // for public API
-  token: string
-  // for private API
+const SUBDOMAIN_MESSAGE = 'subdomain (https://<your subdomain>.zendesk.com)'
+const DOMAIN_MESSAGE = 'domain (optional) - only fill in if your account is not under zendesk.com (https://<subdomain>.<your zendesk domain>)'
+
+export type UsernamePasswordCredentials = {
   username: string
   password: string
+  subdomain: string
+  domain?: string
 }
 
-export const tokenCredentialsType = createMatchingObjectType<TokenCredentials>({
+export const usernamePasswordCredentialsType = createMatchingObjectType<
+  UsernamePasswordCredentials
+>({
   elemID: new ElemID(constants.ADAPTER_NAME),
   fields: {
-    // TODO adjust according to above
-    token: {
-      refType: BuiltinTypes.STRING,
-      annotations: { _required: true },
-    },
     username: {
       refType: BuiltinTypes.STRING,
       annotations: { _required: true },
@@ -42,7 +40,21 @@ export const tokenCredentialsType = createMatchingObjectType<TokenCredentials>({
       refType: BuiltinTypes.STRING,
       annotations: { _required: true },
     },
+    subdomain: {
+      refType: BuiltinTypes.STRING,
+      annotations: {
+        _required: true,
+        message: SUBDOMAIN_MESSAGE,
+      },
+    },
+    domain: {
+      refType: BuiltinTypes.STRING,
+      annotations: {
+        _required: false,
+        message: DOMAIN_MESSAGE,
+      },
+    },
   },
 })
 
-export type Credentials = TokenCredentials
+export type Credentials = UsernamePasswordCredentials

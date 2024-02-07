@@ -13,4 +13,4 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-export const ADAPTER_NAME = 'zendesk' // TODO adjust
+export const ADAPTER_NAME = 'zzzendesk' // TODO adjust
