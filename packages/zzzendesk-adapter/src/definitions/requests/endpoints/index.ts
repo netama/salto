@@ -13,15 +13,5 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { definitions } from '@salto-io/adapter-components'
-import { PaginationOptions } from '../types'
 
-export const ENDPOINTS: definitions.EndpointByPathAndMethod<PaginationOptions>['customizations'] = {
-  // example - when not in strict mode, these are only needed when different from the default
-  '/api/v2/groups': {
-    get: {
-      pagination: 'cursor',
-      queryArgs: { type: 'a' },
-    },
-  },
-}
+export { SUPPORT_ENDPOINTS } from './support'

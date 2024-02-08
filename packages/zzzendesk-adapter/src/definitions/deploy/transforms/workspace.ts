@@ -14,24 +14,17 @@
 * limitations under the License.
 */
 import _ from 'lodash'
-import { definitions } from '@salto-io/adapter-components'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
+import { Values } from '@salto-io/adapter-api'
+import { definitions } from '@salto-io/adapter-components'
 
-export const transform: definitions.fetch.ResourceTransformFunc = ({ value }) => {
-  if (!lowerdashValues.isPlainObject(value)) {
-    // TODON improve
-    throw new Error('Could not transform business hours schedule value')
-  }
-  // TODON add scheme guard instead of _.get
-  const startYear = _.get(value, 'start_date')?.split('-')[0]
-  const endYear = _.get(value, 'end_date')?.split('-')[0]
-  // const startYear = value.start_date?.split('-')[0]
-  // const endYear = value.end_date?.split('-')[0]
-  return {
-    value: {
-      ...value,
-      start_year: startYear,
-      end_year: endYear,
-    },
-  }
-}
+// TODON missing type guard (in current code as well)
+export const transform: definitions.deploy.DeployAdjustRequest = ({ value }) => ({
+  value: {
+    ..._.omit(value as Values, 'selected_macros'),
+    macros: ((value as Values).selected_macros ?? [])
+      .filter(_.isPlainObject)
+      .map((e: Values) => e.id)
+      .filter(lowerdashValues.isDefined),
+  },
+})

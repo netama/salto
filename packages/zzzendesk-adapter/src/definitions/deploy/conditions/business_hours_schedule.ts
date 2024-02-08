@@ -16,6 +16,21 @@
 import _ from 'lodash'
 import { Change, getChangeData, InstanceElement, isAdditionChange, isModificationChange } from '@salto-io/adapter-api'
 
+// type Interval = {
+//   // eslint-disable-next-line camelcase
+//   end_time: string
+//   // eslint-disable-next-line camelcase
+//   start_time: string
+// }
+
+// const isValidIntervals = (intervals: Values[]): intervals is Interval[] => (
+//   _.isArray(intervals)
+//     && _.every(
+//       intervals,
+//       interval => _.isPlainObject(interval) && ('end_time' in interval) && ('start_time' in interval)
+//     )
+// )
+
 export const shouldDeployIntervals = (change: Change<InstanceElement>): boolean => {
   if (isAdditionChange(change) && (getChangeData(change).value.intervals !== undefined)) {
     return true

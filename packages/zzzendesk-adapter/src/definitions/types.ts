@@ -18,8 +18,8 @@ import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 
 export type Action = ActionName
-export type ClientOptions = 'main'
-export type PaginationOptions = 'cursor'
+export type ClientOptions = 'global'
+export type PaginationOptions = 'cursor' | 'oldCursor'
 
 export type DeployDefWithDefault = types.PickyRequired<definitions.deploy.DeployApiDefinitions<Action, ClientOptions>['instances'], 'customizations'>
 export type DeployDefNoDefault = definitions.deploy.DeployApiDefinitionsNoDefault<Action, ClientOptions>['instances']

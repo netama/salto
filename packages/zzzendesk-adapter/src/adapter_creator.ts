@@ -59,6 +59,6 @@ export const adapter = createAdapter<
     connectionCreatorFromConfig: () => createConnection,
   },
   initialClients: {
-    main: undefined,
+    global: undefined,
   },
 })

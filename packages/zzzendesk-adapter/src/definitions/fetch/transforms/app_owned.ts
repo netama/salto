@@ -17,21 +17,21 @@ import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 
+// TODON generalize and move to adapter-components - keyBy (maybe even make this configurable?)
 export const transform: definitions.fetch.ResourceTransformFunc = ({ value }) => {
-  if (!lowerdashValues.isPlainObject(value)) {
+  if (!lowerdashValues.isPlainRecord(value)) {
     // TODON improve
     throw new Error('Could not transform business hours schedule value')
   }
-  // TODON add scheme guard instead of _.get
-  const startYear = _.get(value, 'start_date')?.split('-')[0]
-  const endYear = _.get(value, 'end_date')?.split('-')[0]
-  // const startYear = value.start_date?.split('-')[0]
-  // const endYear = value.end_date?.split('-')[0]
+  if (!Array.isArray(value.parameters) || !value.parameters.every(param => param.name !== undefined)) {
+    // TODON pass in service id context to help logging?
+    // TODON allow throwing and catch in a better way
+    throw new Error('unexpected parameters value')
+  }
   return {
     value: {
       ...value,
-      start_year: startYear,
-      end_year: endYear,
+      parameters: _.keyBy(value.parameters, 'name'),
     },
   }
 }

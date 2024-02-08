@@ -14,13 +14,13 @@
 * limitations under the License.
 */
 import { FETCH_DEFAULTS } from './defaults'
-import { FETCH_DEFINITIONS } from './all'
+import { SUPPORT_FETCH_DEF } from './support'
 import { UserFetchConfig } from '../../config'
 import { FetchApiDefinitions } from '../types'
 
 export const createFetchDefinitions = (_userConfig: UserFetchConfig): FetchApiDefinitions => ({
   instances: {
     default: FETCH_DEFAULTS,
-    customizations: FETCH_DEFINITIONS,
+    customizations: SUPPORT_FETCH_DEF,
   },
 })

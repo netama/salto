@@ -18,9 +18,25 @@ import { ClientOptions, PaginationOptions } from '../types'
 
 const { cursorPagination } = fetchUtils.request.pagination
 
+export const pathChecker: fetchUtils.request.pagination.PathCheckerFunc = (current, next) => (
+  next === `${current}.json` || next === `${current}`
+)
+
 export const PAGINATION: Record<PaginationOptions, definitions.PaginationDefinitions<ClientOptions>> = {
-  // replace with the correct pagination function(s)
+  oldCursor: {
+    // TODON see if can simplify and use the function directly
+    funcCreator: () => cursorPagination({ pathChecker, paginationField: 'next_page' }),
+  },
   cursor: {
-    funcCreator: () => cursorPagination({ pathChecker: fetchUtils.request.pagination.defaultPathChecker, paginationField: 'next' }),
+    // TODON look under meta.has_more and do not continue if false!
+    funcCreator: () => cursorPagination({ pathChecker, paginationField: 'links.next' }),
+    clientArgs: {
+      queryArgs: {
+        'page[size]': String(100),
+      },
+    },
   },
 }
+
+// TODO can replace with `satisfies Record<string, definitions.PaginationDefinitions>` after ts upgrade
+// export type PaginationOptions = types.InferKeys<typeof PAGINATION>

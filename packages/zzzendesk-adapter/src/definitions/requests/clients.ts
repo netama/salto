@@ -13,29 +13,33 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { ENDPOINTS } from './endpoints'
+import { SUPPORT_ENDPOINTS } from './endpoints'
 import { ClientOptions, ClientsDefinition, RESTApiClientDefinition } from '../types'
 
 export const createClientDefinitions = (clients: Record<ClientOptions, RESTApiClientDefinition['httpClient']>): ClientsDefinition => ({
-  default: 'main',
+  // TODON decide if want a default here, or in definitions?
+  // TODON if no default (probably?) - cleanup types + ensure no overlaps (no need?) + error out when missing?
+  default: 'global',
   options: {
-    main: {
-      httpClient: clients.main,
+    global: {
+      httpClient: clients.global,
+      clientArgs: {},
       endpoints: {
         default: {
           get: {
-            pagination: 'cursor',
+            pagination: 'oldCursor',
             checkSuccess: {
               httpSuccessCodes: [200],
             },
-            // only readonly endpoint calls are allowed during fetch. we assume by default that GET endpoints are safe
             readonly: true,
           },
           delete: {
             omitBody: true,
           },
         },
-        customizations: ENDPOINTS,
+        customizations: {
+          ...SUPPORT_ENDPOINTS,
+        },
       },
     },
   },

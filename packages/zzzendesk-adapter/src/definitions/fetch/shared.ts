@@ -16,8 +16,7 @@
 import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 
-// TODO examples - adjust
-// Note: hiding fields inside arrays is not supported, and can result in a corrupted workspace.
+// TODON adjust types?
 export const DEFAULT_FIELDS_TO_HIDE: Record<string, definitions.fetch.ElementFieldCustomization> = {
   created_at: {
     hide: true,
@@ -33,7 +32,16 @@ export const DEFAULT_FIELDS_TO_HIDE: Record<string, definitions.fetch.ElementFie
   },
 }
 export const DEFAULT_FIELDS_TO_OMIT: Record<string, definitions.fetch.ElementFieldCustomization> = {
-  _links: {
+  extended_input_schema: {
+    omit: true,
+  },
+  extended_output_schema: {
+    omit: true,
+  },
+  url: {
+    omit: true,
+  },
+  count: {
     omit: true,
   },
 }

@@ -16,12 +16,12 @@
 import { ActionName } from '@salto-io/adapter-api'
 import { definitions } from '@salto-io/adapter-components'
 import { DEPLOY_DEFAULTS } from './defaults'
-import { DEPLOY_DEFINITIONS } from './all'
+import { SUPPORT_DEPLOY_DEF } from './support'
 import { ClientOptions } from '../types'
 
 export const createDeployDefinitions = (): definitions.deploy.DeployApiDefinitions<ActionName, ClientOptions> => ({
   instances: {
     default: DEPLOY_DEFAULTS,
-    customizations: DEPLOY_DEFINITIONS,
+    customizations: SUPPORT_DEPLOY_DEF,
   },
 })

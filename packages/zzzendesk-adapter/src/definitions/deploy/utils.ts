@@ -16,10 +16,13 @@
 import _ from 'lodash'
 import { types } from '@salto-io/lowerdash'
 import { ActionName } from '@salto-io/adapter-api'
+import { definitions } from '@salto-io/adapter-components'
+import { transformForOrder } from './transforms'
 import { InstanceDeployApiDefinitions, DeployableRequestDefinitions, ClientOptions } from '../types'
 
 export const DEFAULT_CONTEXT = {
   id: 'id',
+  // TODON make sure doesn't break when no parent exists
   parent_id: '_parent.0.id',
 }
 
@@ -86,3 +89,95 @@ export const createStandardItemDeployConfigs = (typeArgs: Record<string, {
     return _.merge(standardConfig, { requestsByAction: overrides ?? {} })
   }))
 )
+
+export const createStandardModifyOnlyDeployConfigs = (typeArgs: Record<string, {
+  path: string
+  nestUnderField?: string
+  method?: definitions.HTTPMethod
+  transformForOrderFieldName?: string
+  addPositions?: boolean
+  overrides?: types.RecursivePartial<InstanceDeployApiDefinitions['requestsByAction']> // TODON customize all types once here and use
+  client?: ClientOptions
+}>): Record<string, InstanceDeployApiDefinitions> => (
+  _.mapValues(typeArgs, (({
+    client, path, nestUnderField, method, transformForOrderFieldName, addPositions, overrides,
+  }) => {
+    const standardCustomizationsByAction: DeployableRequestDefinitions = {
+      request: {
+        endpoint: {
+          path,
+          method: method ?? 'put',
+          client,
+        },
+        transformation: {
+          nestUnderField,
+          adjust: transformForOrderFieldName !== undefined
+            ? transformForOrder(transformForOrderFieldName, addPositions)
+            : undefined,
+        },
+      },
+    }
+
+    const standardConfig: InstanceDeployApiDefinitions = {
+      requestsByAction: {
+        customizations: {
+          modify: [standardCustomizationsByAction],
+        },
+      },
+    }
+    return _.merge(standardConfig, { requestsByAction: overrides ?? {} })
+  }))
+)
+
+// TODON move to guide utils?
+export const createStandardTranslationDeployConfigs = (typeArgs: Record<string, {
+  parentPlural: string
+  additionalResolvers?: definitions.deploy.ValueReferenceResolver[]
+}>): Record<string, InstanceDeployApiDefinitions> => (
+  _.mapValues(typeArgs, (({ parentPlural, additionalResolvers }) => ({
+    requestsByAction: {
+      default: {
+        request: {
+          nestUnderField: 'translation',
+          context: {
+            parent_id: '_parent.0.id',
+            locale: 'locale',
+          },
+          omit: ['brand'],
+        },
+        additionalResolvers,
+      },
+      customizations: {
+        add: [{
+          request: {
+            endpoint: {
+              path: `/api/v2/help_center/${parentPlural}/{parent_id}/translations`,
+              method: 'post' as definitions.HTTPMethod,
+              client: 'by_brand' as ClientOptions,
+            },
+          },
+        }],
+        modify: [{
+          request: {
+            endpoint: {
+              path: `/api/v2/help_center/${parentPlural}/{parent_id}/translations/{locale}`,
+              method: 'put' as definitions.HTTPMethod,
+              client: 'by_brand' as ClientOptions,
+            },
+          },
+        }],
+        remove: [{
+          request: {
+            endpoint: {
+              path: '/api/v2/help_center/translations/{id}',
+              method: 'delete' as definitions.HTTPMethod,
+              client: 'by_brand' as ClientOptions,
+            },
+          },
+        }],
+      },
+    },
+  })))
+)
+
+// TODON move helper functions somewhere else? filter-like? with fetch and deploy
