@@ -183,11 +183,23 @@ export class AdapterImpl<
   /**
    * Deploy configuration elements to the given account.
    */
-  @logDuration('deploying account configuration')
   // eslint-disable-next-line class-methods-use-this
   async deploy(): Promise<DeployResult> {
     // TODON make this smarter based on the existence of some deploy config?
     throw new Error('Not implemented.')
     // TODON add default behavior
   }
+
+  // public get deployModifiers(): DeployModifiers {
+  //   if (this.definitions.deploy?.instances !== undefined) {
+  //     return {
+  //       changeValidator,
+  //       getChangeGroupIds: deployment.grouping.getChangeGroupIdsFuncWithConfig(this.definitions.deploy.instances),
+  //       // TODON dependencyChanger
+  //     }
+  //   }
+  //   return {
+  //     changeValidator,
+  //   }
+  // }
 }
