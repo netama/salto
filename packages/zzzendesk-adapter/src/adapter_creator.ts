@@ -22,6 +22,7 @@ import { createConnection } from './client/connection'
 import { ADAPTER_NAME } from './constants'
 import { ClientOptions, PaginationOptions, createClientDefinitions, createDeployDefinitions, createFetchDefinitions } from './definitions'
 import { PAGINATION } from './definitions/requests/pagination'
+import { REFERENCES } from './definitions/references'
 import { Action } from './definitions/types'
 
 const { validateCredentials } = clientUtils
@@ -54,6 +55,7 @@ export const adapter = createAdapter<
     pagination: PAGINATION,
     fetch: createFetchDefinitions(userConfig.fetch),
     deploy: createDeployDefinitions(),
+    references: REFERENCES,
   }),
   operationsCustomizations: {
     connectionCreatorFromConfig: () => createConnection,
