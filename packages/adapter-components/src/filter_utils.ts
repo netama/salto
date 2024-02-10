@@ -48,6 +48,18 @@ export type AdapterFilterCreator<
   Action extends string = ActionName,
 > = filter.FilterCreator<TResult, FilterOptions<TContext, TAdditional, ClientOptions, PaginationOptions, Action>>
 
+export type UserConfigAdapterFilterCreator<
+  TContext,
+  TResult extends void | filter.FilterResult = void,
+> = filter.FilterCreator<
+  TResult,
+  {
+    config: TContext
+    getElemIdFunc?: ElemIdGetter
+    fetchQuery: ElementQuery
+  }
+>
+
 export type FilterResult = {
   errors?: SaltoError[]
 }

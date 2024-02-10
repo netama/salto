@@ -14,7 +14,13 @@
  * limitations under the License.
  */
 import { Element } from '@salto-io/adapter-api'
-import { definitions, filterUtils, references as referenceUtils } from '@salto-io/adapter-components'
+import {
+  definitions as definitionUtils,
+  filters,
+  filterUtils,
+  references as referenceUtils,
+} from '@salto-io/adapter-components'
+import { ApiDefinitions } from '@salto-io/adapter-components/src/definitions'
 import { collections } from '@salto-io/lowerdash'
 
 const { makeArray } = collections.array
@@ -24,19 +30,21 @@ const { makeArray } = collections.array
  */
 // TODON upgrade!
 export const createCommonFilters = <
-  Co extends definitions.UserConfig,
+  Co extends definitionUtils.UserConfig,
   ClientOptions extends string,
   PaginationOptions extends string | 'none',
   Action extends string,
 >({
+  definitions,
   referenceRules,
 }: {
-  config: Co
   referenceRules?: referenceUtils.FieldReferenceDefinition<never>[]
+  config: Co
+  definitions: ApiDefinitions<ClientOptions, PaginationOptions, Action>
 }): Record<
   string,
   filterUtils.AdapterFilterCreator<
-    definitions.UserConfig,
+    definitionUtils.UserConfig,
     filterUtils.FilterResult,
     {},
     ClientOptions,
@@ -45,7 +53,7 @@ export const createCommonFilters = <
   >
 > => ({
   // TODON upgrade filters to new def structure
-  // hideTypes: filters.hideTypesFilterCreator(),
+  hideTypes: filters.hideTypesFilterCreator(),
   // fieldReferencesFilter should run after all elements were created
   fieldReferencesFilter: () => ({
     name: 'fieldReferencesFilter',
@@ -53,10 +61,10 @@ export const createCommonFilters = <
       // TODON get rules from arg (not necessarily from config) + allow overriding from config
       await referenceUtils.addReferences({
         elements,
-        defs: makeArray(referenceRules).concat(makeArray([])), // config.references?.rules)),
+        defs: makeArray(referenceRules).concat(makeArray(definitions.references?.rules)),
       })
     },
   }),
-  // referencedInstanceNames: filters.referencedInstanceNamesFilterCreator(), // TODON adjust to multiple components
-  // query: filters.queryFilterCreator({}),
+  // referencedInstanceNames: filters.referencedInstanceNamesFilterCreator(), // TODON upgrade
+  query: filters.queryFilterCreator({}),
 })
