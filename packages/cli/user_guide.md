@@ -80,6 +80,7 @@ Supported login parameters per service type:
 [zendesk](/packages/zendesk-adapter/specific-cli-options.md#non-interactive-login-parameters),
 [zuora billing](/packages/zuora-billing-adapter/specific-cli-options.md#non-interactive-login-parameters)
 [okta](/packages/okta-adapter/specific-cli-options.md#non-interactive-login-parameters),
+[confluence](/packages/confluence-adapter/specific-cli-options.md#non-interactive-login-parameters),
 
 ### **salto env \<command>**
 
