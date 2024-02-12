@@ -30,10 +30,11 @@ const log = logger(module)
 
 export type ElementGenerator = {
   /*
-   * process a single entry that will become an instance of the specified type
-   * (if the type's definition contains standalone fields, then more than one instance)
+   * send the element generator entries that will become an instance of the specified type
+   * (if the type's definition contains standalone fields, then more than one instance).
+   * the generator runs basic validations and adds the entries to the queue.
    */
-  processEntries: (args: {
+  pushEntries: (args: {
     typeName: string
     entries: unknown[]
   }) => void
@@ -56,7 +57,7 @@ export const getElementGenerator = ({
   // TODON implement
   const valuesByType: Record<string, Values[]> = {}
 
-  const processEntries: ElementGenerator['processEntries'] = ({ typeName, entries }) => {
+  const pushEntries: ElementGenerator['pushEntries'] = ({ typeName, entries }) => {
     const { element: elementDef } = defQuery.query(typeName) ?? {}
     const valueGuard = elementDef?.topLevel?.valueGuard ?? lowerdashValues.isPlainObject
     const [validEntries, invalidEntries] = _.partition(entries, valueGuard)
@@ -122,7 +123,7 @@ export const getElementGenerator = ({
     // const filteredInstances = instances.filter(instance => args.fetchQuery.isInstanceMatch(instance))
   }
   return {
-    processEntries,
+    pushEntries,
     generate,
   }
 }

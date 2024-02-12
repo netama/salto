@@ -18,7 +18,7 @@ import { logger } from '@salto-io/logging'
 import { collections, values as lowerdashValues } from '@salto-io/lowerdash'
 import { ResponseValue } from '../../client'
 import { ContextParams, GeneratedItem } from '../../definitions/system/shared'
-import { ApiDefinitions, DefQuery, queryWithDefault } from '../../definitions'
+import { ApiDefinitions, DefQuery, HTTPEndpointIdentifier, RequestArgs, queryWithDefault } from '../../definitions'
 import { ResourceIdentifier, ValueGeneratedItem } from '../types'
 import { findAllUnresolvedArgs } from './utils'
 import { createValueTransformer } from '../utils'
@@ -87,11 +87,9 @@ export const getRequester = <
     })
   )
 
-  const request: Requester<ClientOptions>['request'] = async ({ contexts, requestDef, typeName }) => {
-    // TODON optimization - cache only the "unconsumed" extracted items by request hash,
-    // and keep them available until consumed
-    // TODON another optimization - add promises for in-flight requests, to avoid making the same request
-    // multiple times in parallel
+  const getMergedEndpointDefinition = (
+    requestDef: FetchRequestDefinition<ClientOptions>,
+  ): FetchRequestDefinition<ClientOptions> => {
     const { endpoint: requestEndpoint } = requestDef
     const clientName = requestEndpoint.client ?? clients.default
     const clientDef = clientDefs[clientName]
@@ -99,7 +97,29 @@ export const getRequester = <
     if (!endpointDef?.readonly) {
       throw new Error(`Endpoint ${clientName}.${requestEndpoint.path}:${requestEndpoint.method} is not marked as readonly, cannot use in fetch`)
     }
-    // TODON check if there are any remaining args that have not been replaced!!!
+    return {
+      ...requestDef,
+      endpoint: _.merge({}, endpointDef, requestDef.endpoint),
+    }
+  }
+
+  const request: Requester<ClientOptions>['request'] = async ({ contexts, requestDef, typeName }) => {
+    // TODO optimizations for requests made from multiple "flows":
+    // * cache only the "unconsumed" extracted items by request hash, and keep them available until consumed
+    // * add promises for in-flight requests, to avoid making the same request multiple times in parallel
+    const { endpoint: requestEndpoint } = requestDef
+    const clientName = requestEndpoint.client ?? clients.default
+    const clientDef = clientDefs[clientName]
+    const endpointDef = clientDef.endpoints.query(requestEndpoint.path)?.[requestEndpoint.method ?? 'get']
+    if (!endpointDef?.readonly) {
+      throw new Error(`Endpoint ${clientName}.${requestEndpoint.path}:${requestEndpoint.method} is not marked as readonly, cannot use in fetch`)
+    }
+
+    const allArgs = findAllUnresolvedArgs(getMergedEndpointDefinition(requestDef))
+    if (allArgs.length > 0) {
+      throw new Error(`Cannot request endpoint ${requestDef.endpoint.path} with unresolved args: ${allArgs}`)
+    }
+
     const paginationOption = endpointDef?.pagination
     const paginationDef = paginationOption !== undefined
       ? pagination[paginationOption]
@@ -141,8 +161,7 @@ export const getRequester = <
     callerIdentifier, contextPossibleArgs,
   }) => (
     (await Promise.all((requestDefQuery.query(callerIdentifier.typeName) ?? []).map(requestDef => {
-      // TODON get and replace args in all parts of the definition!
-      const allArgs = findAllUnresolvedArgs(requestDef.endpoint.path)
+      const allArgs = findAllUnresolvedArgs(getMergedEndpointDefinition(requestDef))
       const relevantArgRoots = _.uniq(allArgs.map(arg => arg.split('.')[0]).filter(arg => arg.length > 0))
       const contexts = computeArgCombinations(contextPossibleArgs, relevantArgRoots)
       return request({

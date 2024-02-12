@@ -78,14 +78,9 @@ export const getElements = async <
     requestDefQuery: queryWithDefault(getNestedWithDefault(fetch.instances, 'requests')),
   })
 
-  // TODON make sure the "omit" part of the field adjustments happens *only* when creating the final intsance,
-  // so that it can be used up to that point
   const elementGenerator = getElementGenerator({
     adapterName,
-    // TODON ensure some values are there? e.g. elemID, by requiring them in the default
     defQuery: queryWithDefault(fetch.instances),
-    // TODON decide if want openAPI to have generated object types, or only populated the config
-    // TODON when extending to primitives as well, will need to adjust
     predefinedTypes: _.pickBy(predefinedTypes, isObjectType),
     fetchQuery,
     getElemIdFunc,

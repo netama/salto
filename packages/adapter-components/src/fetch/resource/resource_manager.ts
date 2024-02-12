@@ -111,7 +111,7 @@ export const createResourceManager = <ClientOptions extends string>({
             return
           }
           // TODON pass errers to the generator so that it produces them at the end?
-          elementGenerator.processEntries({
+          elementGenerator.pushEntries({
             typeName: String(typeName), // TDOON avoid conversion?
             entries: resourceFetcher.getItems()?.map(item => item.value) ?? [],
           })

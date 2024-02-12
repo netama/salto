@@ -38,13 +38,7 @@ export type RequestArgs = {
 export type HTTPEndpointDetails<PaginationOptions extends string | 'none'> = RequestArgs & {
   omitBody?: boolean
 
-  // override default expected HTTP codes
-  checkSuccess?: ArgsWithCustomizer< // TODON use
-    boolean,
-    // TODON decide on name
-    { httpSuccessCodes: number[] },
-    Response<ResponseValue | ResponseValue[]>
-  >
+  // TODO add option to override default expected HTTP codes
 
   // the strategy to use to get all response pages
   pagination?: PaginationOptions
