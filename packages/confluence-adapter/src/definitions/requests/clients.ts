@@ -16,7 +16,9 @@
 import { ENDPOINTS } from './endpoints'
 import { ClientOptions, ClientsDefinition, RESTApiClientDefinition } from '../types'
 
-export const createClientDefinitions = (clients: Record<ClientOptions, RESTApiClientDefinition['httpClient']>): ClientsDefinition => ({
+export const createClientDefinitions = (
+  clients: Record<ClientOptions, RESTApiClientDefinition['httpClient']>,
+): ClientsDefinition => ({
   default: 'main',
   options: {
     main: {

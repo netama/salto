@@ -22,10 +22,10 @@ const FIRST_ITERATION: referenceUtils.FieldReferenceDefinition<never>[] = [
     target: { type: 'space' },
   },
   {
-    src: { field: 'parentId', parentTypes: ['page']},
+    src: { field: 'parentId', parentTypes: ['page'] },
     serializationStrategy: 'id',
     target: { type: 'page' },
-  }
+  },
   // {
   //   src: {
   //     field: 'field',

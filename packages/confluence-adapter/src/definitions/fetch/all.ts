@@ -202,22 +202,16 @@ export const FETCH_DEFINITIONS: Record<string, InstanceFetchApiDefinitions> = {
           path: '/wiki/spaces/{spaceId.key}/pages/{id}',
         },
         elemID: {
-          parts: [
-            { fieldName: 'title' },
-            { fieldName: 'parentId', isReference: true },
-          ],
+          parts: [{ fieldName: 'title' }, { fieldName: 'parentId', isReference: true }],
         },
         path: {
           pathParts: [
             {
-              parts: [ 
-                { fieldName: 'title' },
-              ],
+              parts: [{ fieldName: 'title' }],
             },
           ],
-        }
+        },
       },
-
     },
   },
 }

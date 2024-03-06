@@ -20,7 +20,13 @@ import { Credentials, tokenCredentialsType } from './auth'
 import { DEFAULT_CONFIG, UserConfig } from './config'
 import { createConnection } from './client/connection'
 import { ADAPTER_NAME } from './constants'
-import { ClientOptions, PaginationOptions, createClientDefinitions, createDeployDefinitions, createFetchDefinitions } from './definitions'
+import {
+  ClientOptions,
+  PaginationOptions,
+  createClientDefinitions,
+  createDeployDefinitions,
+  createFetchDefinitions,
+} from './definitions'
 import { PAGINATION } from './definitions/requests/pagination'
 import { Action } from './definitions/types'
 import { REFERENCES } from './definitions/references'
@@ -30,25 +36,17 @@ const { validateCredentials } = clientUtils
 // TODO adjust if needed. if the config is the same as the credentials, just use it
 const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials => config.value as Credentials
 
-export const adapter = createAdapter<
-  Credentials,
-  UserConfig,
-  ClientOptions,
-  PaginationOptions,
-  Action
->({
+export const adapter = createAdapter<Credentials, UserConfig, ClientOptions, PaginationOptions, Action>({
   adapterName: ADAPTER_NAME,
   authenticationMethods: {
     basic: {
       credentialsType: tokenCredentialsType,
     },
   },
-  validateCredentials: async config => validateCredentials(
-    credentialsFromConfig(config),
-    {
+  validateCredentials: async config =>
+    validateCredentials(credentialsFromConfig(config), {
       createConnection,
-    },
-  ),
+    }),
   defaultConfig: DEFAULT_CONFIG,
   // TODON should leave placeholder for client that will be filled by the wrapper
   definitionsCreator: ({ clients, userConfig }) => ({
