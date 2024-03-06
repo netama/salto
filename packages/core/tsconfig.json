@@ -28,7 +28,7 @@
     { "path": "../zendesk-adapter" },
     { "path": "../zuora-billing-adapter" },
     { "path": "../PLACEHOLDER-adapter" },
-        { "path": "../confluence-adapter" },
+    { "path": "../confluence-adapter" },
     { "path": "../parser" }
   ]
 }
