@@ -1,5 +1,5 @@
-# PLACEHOLDER adapter
+# zzzendesk adapter
 
-PLACEHOLDER adapter for salto.io
+zzzendesk adapter for salto.io
 
 TODO add details about the adapter

@@ -1,4 +1,4 @@
-# PLACEHOLDER CLI options
+# zzzendesk CLI options
 
 ## Non interactive Login Parameters
 
@@ -14,5 +14,5 @@ TODO adjust according to auth
 ### Example
 
 ```
-salto account add PLACEHOLDER --login-parameters token=token
+salto account add zzzendesk --login-parameters token=token
 ```
