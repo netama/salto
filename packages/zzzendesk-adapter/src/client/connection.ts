@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash'
 import { AccountInfo } from '@salto-io/adapter-api'
 import { client as clientUtils } from '@salto-io/adapter-components'
 import { logger } from '@salto-io/logging'
@@ -28,8 +29,13 @@ export const validateCredentials = async ({
   connection: clientUtils.APIConnection
 }): Promise<AccountInfo> => {
   try {
-    await connection.get('/api/v2/account') // TODO replace with some valid endpoint, validate response if needed
-    return { accountId: credentials.subdomain }
+    const res = await connection.get('/api/v2/account') // TODO replace with some valid endpoint, validate response if needed
+    const accountId = `https://${credentials.subdomain}/zendesk.com`
+    const isSandbox = _.get(res.data, 'account.sandbox')
+    if (isSandbox !== undefined) {
+      return { accountId, isProduction: !isSandbox }
+    }
+    return { accountId }
   } catch (e) {
     log.error('Failed to validate credentials: %s', e)
     throw new clientUtils.UnauthorizedError(e)
@@ -39,14 +45,10 @@ export const validateCredentials = async ({
 export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions =>
   clientUtils.axiosConnection({
     retryOptions,
-    baseURLFunc: async () => 'https://localhost:80', // TODO replace with base URL, creds can be used
-    authParamsFunc: async ({ token, username, password }: Credentials) => ({
+    baseURLFunc: async ({ subdomain }) => `https://${subdomain}.zendesk.com`, // TODO replace with base URL, creds can be used
+    authParamsFunc: async ({ username, password }: Credentials) => ({
       // TODO adjust / remove (usually only one of the following is needed)
       auth: { username, password },
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'x-custom-header': `${token}`,
-      },
     }),
     credValidateFunc: validateCredentials,
   })

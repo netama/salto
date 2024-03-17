@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createAdapter, credentials } from '@salto-io/adapter-components'
+import { createAdapter, credentials, client as clientUtils } from '@salto-io/adapter-components'
 import { Credentials, tokenCredentialsType } from './auth'
 import { DEFAULT_CONFIG, UserConfig } from './config'
 import { createConnection } from './client/connection'
@@ -55,13 +55,13 @@ export const adapter = createAdapter<Credentials, UserConfig, ClientOptions, Pag
     main: undefined,
   },
   // TODO adjust according to service rate limits, or remove to set as unlimited
-  // clientDefaults: {
-  //   rateLimit: {
-  //     total: 100,
-  //     get: 100,
-  //     deploy: 100,
-  //   },
-  //   maxRequestsPerMinute: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
-  //   retry: DEFAULT_RETRY_OPTS,
-  // },
+  clientDefaults: {
+    rateLimit: {
+      total: 100,
+      get: 100,
+      deploy: 100,
+    },
+    maxRequestsPerMinute: clientUtils.RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+    retry: clientUtils.DEFAULT_RETRY_OPTS,
+  },
 })

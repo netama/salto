@@ -20,9 +20,6 @@ import * as constants from './constants'
 // TODO adjust based on the needed auth
 export type TokenCredentials = {
   subdomain: string
-  // for public API
-  token: string
-  // for private API
   username: string
   password: string
 }
@@ -32,10 +29,6 @@ export const tokenCredentialsType = createMatchingObjectType<TokenCredentials>({
   fields: {
     // TODO adjust according to above (fields should match)
     subdomain: {
-      refType: BuiltinTypes.STRING,
-      annotations: { _required: true },
-    },
-    token: {
       refType: BuiltinTypes.STRING,
       annotations: { _required: true },
     },
