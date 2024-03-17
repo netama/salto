@@ -17,6 +17,7 @@ import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 import { UserFetchConfig } from '../../config'
 import { ClientOptions } from '../types'
+import * as transforms from './transforms'
 
 // TODO example - adjust and remove:
 // * irrelevant definitions and comments
@@ -79,6 +80,83 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
         serviceUrl: {
           path: '/admin/people/team/groups',
         },
+      },
+      fieldCustomizations: {
+        id: {
+          fieldType: 'number',
+          hide: true,
+        },
+      },
+    },
+  },
+  business_hours_schedule: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/v2/business_hours/schedules',
+        },
+        transformation: {
+          root: 'schedules',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+      // after we get the business_hour_schedule response, we make a follow-up request to get
+      // the holiday and nest the response under the 'holidays' field
+      recurseInto: {
+        holidays: {
+          typeName: 'business_hours_schedule_holiday',
+          context: {
+            args: {
+              parent_id: {
+                fromField: 'id',
+              },
+            },
+          },
+        },
+      },
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        serviceUrl: {
+          path: '/admin/objects-rules/rules/schedules',
+        },
+      },
+      fieldCustomizations: {
+        id: {
+          fieldType: 'number',
+          hide: true,
+        },
+        holidays: {
+          // extract each item in the holidays field to its own instance
+          standalone: {
+            typeName: 'business_hours_schedule_holiday',
+            addParentAnnotation: true,
+            referenceFromParent: false,
+            nestPathUnderParent: true,
+          },
+        },
+      },
+    },
+  },
+  business_hours_schedule_holiday: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/v2/business_hours/schedules/{parent_id}/holidays',
+        },
+        transformation: {
+          root: 'holidays',
+          adjust: transforms.transformHoliday,
+        },
+      },
+    ],
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        elemID: { extendsParent: true },
       },
       fieldCustomizations: {
         id: {

@@ -21,6 +21,42 @@ type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefiniti
 
 // TODO example - adjust and remove irrelevant definitions. check @adapter-components/deployment for helper functions
 
+// business hour schedule holiday deployment:
+// first, the "usual" call to create/modify/delete
+// for create or modify, a separate call is then made to deploy intervals
+const getBusinessHoursScheduleDefinition = (): InstanceDeployApiDefinitions => {
+  const basicDef = deployment.helpers.createStandardItemDeployDefinition<AdditionalAction, ClientOptions>({
+    bulkPath: '/api/v2/business_hours/schedules',
+    nestUnderField: 'schedule',
+  })
+  const intervalRequest: definitions.deploy.DeployableRequestDefinition<ClientOptions> = {
+    // compare the intervals field values -
+    // if this is a modification and the values are identical, the request will be skipped
+    condition: {
+      // skipIfIdentical is true by default
+      transformForCheck: {
+        pick: ['intervals'],
+      },
+    },
+    request: {
+      endpoint: {
+        path: '/api/v2/business_hours/schedules/{id}/workweek',
+        method: 'put',
+      },
+      // "rename" the intervals field to workweek for the deploy
+      transformation: {
+        pick: ['intervals'],
+        nestUnderField: 'workweek',
+      },
+    },
+  }
+  _.assign(basicDef.requestsByAction.customizations.add?.[0], 'request.transformation.omit', ['schedule.intervals'])
+  basicDef.requestsByAction.customizations.add?.push(intervalRequest)
+  basicDef.requestsByAction.customizations.modify?.push(intervalRequest)
+
+  return basicDef
+}
+
 const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> => {
   const standardRequestDefinitions = deployment.helpers.createStandardDeployDefinitions<
     AdditionalAction,
@@ -30,8 +66,13 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
       bulkPath: '/api/v2/groups',
       nestUnderField: 'group',
     },
+    business_hours_schedule_holiday: {
+      bulkPath: '/api/v2/business_hours/schedules/{parent_id}/holidays',
+      nestUnderField: 'holiday',
+    },
   })
   const customDefinitions: Record<string, Partial<InstanceDeployApiDefinitions>> = {
+    business_hours_schedule: getBusinessHoursScheduleDefinition(),
   }
   return _.merge(standardRequestDefinitions, customDefinitions)
 }
