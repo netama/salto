@@ -42,6 +42,9 @@ const DEFAULT_FIELDS_TO_OMIT: Record<string, definitions.fetch.ElementFieldCusto
   _links: {
     omit: true,
   },
+  url: {
+    omit: true,
+  },
 }
 
 const NAME_ID_FIELD: definitions.fetch.FieldIDPart = { fieldName: 'name' }
@@ -54,6 +57,37 @@ const DEFAULT_FIELD_CUSTOMIZATIONS: Record<string, definitions.fetch.ElementFiel
 )
 
 const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchApiDefinitions<ClientOptions>> => ({
+  group: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/v2/groups',
+        },
+        transformation: {
+          root: 'groups',
+        },
+      },
+    ],
+    resource: {
+      // this type can be included/excluded based on the user's fetch query
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        // isTopLevel should be set when the workspace can have instances of this type
+        isTopLevel: true,
+        serviceUrl: {
+          path: '/admin/people/team/groups',
+        },
+      },
+      fieldCustomizations: {
+        id: {
+          fieldType: 'number',
+          hide: true,
+        },
+      },
+    },
+  },
 })
 
 export const createFetchDefinitions = (

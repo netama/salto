@@ -17,6 +17,18 @@ import { definitions, references as referenceUtils } from '@salto-io/adapter-com
 
 const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<never>[] = [
   // TODO adjust and remove unneeded examples and documentation
+
+  // all fields called group_id or group_ids are assumed to reference group instances by their id field
+  {
+    src: { field: 'group_id' },
+    serializationStrategy: 'id',
+    target: { type: 'group' },
+  },
+  {
+    src: { field: 'group_ids' },
+    serializationStrategy: 'id',
+    target: { type: 'group' },
+  },
 ]
 
 export const REFERENCES: definitions.ApiDefinitions['references'] = {

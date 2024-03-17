@@ -26,6 +26,10 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
     AdditionalAction,
     ClientOptions
   >({
+    group: {
+      bulkPath: '/api/v2/groups',
+      nestUnderField: 'group',
+    },
   })
   const customDefinitions: Record<string, Partial<InstanceDeployApiDefinitions>> = {
   }
