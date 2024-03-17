@@ -18,7 +18,7 @@ import { ActionName } from '@salto-io/adapter-api'
 import { InstanceDeployApiDefinitions } from '../definitions/system/deploy'
 
 export const DEFAULT_CONTEXT = {
-  parent_id: '{_parent.0.id}',
+  parent_id: '{_parent.0.resValue.value.id}', // TODON
 }
 
 type StandardDeployArgs<AdditionalAction extends string, ClientOptions extends string> = {
@@ -80,7 +80,12 @@ export const createStandardItemDeployDefinition = <AdditionalAction extends stri
         request: {
           transformation: {
             nestUnderField,
+            single: true,
           },
+        },
+        copyFromResponse: {
+          root: nestUnderField,
+          single: true,
         },
       },
       customizations: _.omit(standardCustomizationsByAction, withoutActions ?? []),
