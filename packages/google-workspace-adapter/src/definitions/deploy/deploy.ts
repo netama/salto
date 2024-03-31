@@ -15,6 +15,7 @@
  */
 import _ from 'lodash'
 import { definitions, deployment } from '@salto-io/adapter-components'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { v4 as uuidv4 } from 'uuid'
 import { AdditionalAction, ClientOptions } from '../types'
 
@@ -157,7 +158,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                   method: 'put',
                 },
                 transformation: {
-                  omit: ['adminCreated', 'nonEditableAliases'],
+                  omit: ['adminCreated', 'nonEditableAliases', 'groupSettings'],
                 },
               },
             },
@@ -250,6 +251,20 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                   path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/schemas',
                   method: 'post',
                 },
+                transformation: {
+                  adjust: item => {
+                    const { value } = item
+                    if (!(lowerdashValues.isPlainRecord(value) && lowerdashValues.isPlainRecord(value.fields))) {
+                      throw new Error('Expected schema to be an object')
+                    }
+                    return {
+                      value: {
+                        ...value,
+                        fields: Object.values(value.fields),
+                      },
+                    }
+                  },
+                },
               },
             },
           ],
@@ -270,12 +285,35 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                   path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/schemas/{schemaId}',
                   method: 'put',
                 },
+                transformation: {
+                  adjust: item => {
+                    const { value } = item
+                    if (!(lowerdashValues.isPlainRecord(value) && lowerdashValues.isPlainRecord(value.fields))) {
+                      throw new Error('Expected schema to be an object')
+                    }
+                    return {
+                      value: {
+                        ...value,
+                        fields: Object.values(value.fields),
+                      },
+                    }
+                  },
+                },
               },
             },
           ],
         },
       },
     },
+    // schema_field:{
+    //   requestsByAction: {
+    //     customizations: {
+    //       add: [],
+    //       remove: [],
+    //       modify: [],
+    //     },
+    //   },
+    // },
     building: {
       requestsByAction: {
         customizations: {
@@ -285,6 +323,20 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                 endpoint: {
                   path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/buildings',
                   method: 'post',
+                },
+                transformation: {
+                  adjust: item => {
+                    const { value } = item
+                    if (!lowerdashValues.isPlainRecord(value)) {
+                      throw new Error('Can not deploy when the value is not an object')
+                    }
+                    return {
+                      value: {
+                        ...value,
+                        buildingId: uuidv4(),
+                      },
+                    }
+                  },
                 },
               },
             },
@@ -323,18 +375,23 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                   method: 'post',
                 },
                 transformation: {
+                  omit: ['resourceEmail'],
                   adjust: item => {
-                    if (!_.isObject(item.value)) {
+                    const { value } = item
+                    if (!lowerdashValues.isPlainRecord(value)) {
                       throw new Error('Can not deploy when the value is not an object')
                     }
                     return {
                       value: {
-                        ...item.value,
+                        ...value,
                         resourceId: uuidv4(),
                       },
                     }
                   },
                 },
+              },
+              copyFromResponse: {
+                pick: ['resourceEmail'],
               },
             },
           ],
@@ -342,7 +399,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
             {
               request: {
                 endpoint: {
-                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/calenders/{resourceId}',
+                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/calendars/{resourceId}',
                   method: 'delete',
                 },
               },
@@ -352,7 +409,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
             {
               request: {
                 endpoint: {
-                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/calenders/{resourceId}',
+                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/calendars/{resourceId}',
                   method: 'put',
                 },
               },
@@ -368,7 +425,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
             {
               request: {
                 endpoint: {
-                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/features',
+                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/features',
                   method: 'post',
                 },
               },
@@ -378,7 +435,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
             {
               request: {
                 endpoint: {
-                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/features/{name}',
+                  path: 'https://admin.googleapis.com/admin/directory/v1/customer/my_customer/resources/features/{name}',
                   method: 'delete',
                 },
               },

@@ -22,7 +22,7 @@ const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<never>[] = [
     target: { type: 'role' },
   },
   {
-    src: { field: 'assignTo', parentTypes: ['roleAssignment'] },
+    src: { field: 'assignedTo', parentTypes: ['roleAssignment'] },
     serializationStrategy: 'id',
     target: { type: 'group' },
   },

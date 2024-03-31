@@ -15,6 +15,7 @@
  */
 import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
+import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { UserFetchConfig } from '../../config'
 import { Options } from '../types'
 
@@ -337,6 +338,18 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
         },
         transformation: {
           root: 'schemas',
+          adjust: item => {
+            const { value } = item
+            if (!(lowerdashValues.isPlainRecord(value) && Array.isArray(value.fields))) {
+              throw new Error('Expected schema to be an object')
+            }
+            return {
+              value: {
+                ...value,
+                fields: _.keyBy(value.fields, 'fieldName'),
+              },
+            }
+          },
         },
       },
     ],
@@ -354,12 +367,7 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
           hide: true,
         },
         fields: {
-          standalone: {
-            typeName: 'schema__fields',
-            addParentAnnotation: true,
-            referenceFromParent: true,
-            nestPathUnderParent: true,
-          },
+          isMapWithDynamicType: true,
         },
       },
     },
@@ -367,13 +375,8 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
   schema__fields: {
     resource: {
       directFetch: false,
-      serviceIDFields: ['fieldId'],
     },
     element: {
-      topLevel: {
-        isTopLevel: true,
-        elemID: { parts: [{ fieldName: 'fieldName' }], extendsParent: true },
-      },
       fieldCustomizations: {
         fieldId: {
           hide: true,
@@ -400,6 +403,11 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
       topLevel: {
         isTopLevel: true,
         elemID: { parts: [{ fieldName: 'buildingName' }] },
+      },
+      fieldCustomizations: {
+        buildingId: {
+          hide: true,
+        },
       },
     },
   },
