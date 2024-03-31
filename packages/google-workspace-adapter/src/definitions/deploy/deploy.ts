@@ -15,6 +15,7 @@
  */
 import _ from 'lodash'
 import { definitions, deployment } from '@salto-io/adapter-components'
+import { v4 as uuidv4 } from 'uuid'
 import { AdditionalAction, ClientOptions } from '../types'
 
 type InstanceDeployApiDefinitions = definitions.deploy.InstanceDeployApiDefinitions<AdditionalAction, ClientOptions>
@@ -329,7 +330,7 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                     return {
                       value: {
                         ...item.value,
-                        resourceId: '123',
+                        resourceId: uuidv4(),
                       },
                     }
                   },
