@@ -56,9 +56,10 @@ export const OktaMissingReferenceStrategyLookup: Record<
 }
 
 type OktaReferenceSerializationStrategyName = 'key' | 'mappingRuleId'
+type OktaReferenceIndexName = OktaReferenceSerializationStrategyName
 const OktaReferenceSerializationStrategyLookup: Record<
   OktaReferenceSerializationStrategyName | referenceUtils.ReferenceSerializationStrategyName,
-  referenceUtils.ReferenceSerializationStrategy
+  referenceUtils.ReferenceSerializationStrategy<OktaReferenceIndexName>
 > = {
   ...referenceUtils.ReferenceSerializationStrategyLookup,
   key: {
@@ -101,21 +102,21 @@ export const contextStrategyLookup: Record<ReferenceContextStrategyName, referen
   }),
 }
 
-type OktaFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName> & {
+type OktaFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName, OktaReferenceSerializationStrategyName> & {
   oktaSerializationStrategy?: OktaReferenceSerializationStrategyName
   oktaMissingRefStrategy?: referenceUtils.MissingReferenceStrategyName
 }
 
-export class OktaFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName> {
+export class OktaFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, OktaReferenceSerializationStrategyName, OktaReferenceIndexName> {
   constructor(def: OktaFieldReferenceDefinition) {
-    super({ ...def, sourceTransformation: def.sourceTransformation ?? 'asString' })
-    this.serializationStrategy =
-      OktaReferenceSerializationStrategyLookup[
-        def.oktaSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
-      ]
-    this.missingRefStrategy = def.oktaMissingRefStrategy
-      ? OktaMissingReferenceStrategyLookup[def.oktaMissingRefStrategy]
-      : undefined
+    super({ ...def, sourceTransformation: def.sourceTransformation ?? 'asString' }, OktaReferenceSerializationStrategyLookup)
+    // this.serializationStrategy =
+    //   OktaReferenceSerializationStrategyLookup[
+    //     def.oktaSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
+    //   ]
+    // this.missingRefStrategy = def.oktaMissingRefStrategy
+    //   ? OktaMissingReferenceStrategyLookup[def.oktaMissingRefStrategy]
+    //   : undefined
   }
 }
 

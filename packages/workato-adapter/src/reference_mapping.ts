@@ -40,7 +40,7 @@ const WorkatoReferenceSerializationStrategyLookup: Record<
       return isInstanceElement(inner.value) ? inner.value.value : inner.value
     },
     lookup: referenceUtils.basicLookUp,
-    lookupIndexName: 'serializeInner',
+    // lookupIndexName: 'serializeInner', // TODO was not working
   },
   folderPath: {
     serialize: async ({ ref }) => ({
@@ -48,7 +48,7 @@ const WorkatoReferenceSerializationStrategyLookup: Record<
       rootId: getRootFolderID(ref.value),
     }),
     lookup: referenceUtils.basicLookUp,
-    lookupIndexName: 'folderPath',
+    // lookupIndexName: 'folderPath', // TODO was not working
   },
 }
 

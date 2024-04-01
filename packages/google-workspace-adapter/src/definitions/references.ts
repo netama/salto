@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 import { definitions, references as referenceUtils } from '@salto-io/adapter-components'
+import { CustomReferenceSerializationStrategyName, Options } from './types'
 
-const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<never>[] = [
+const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<never, CustomReferenceSerializationStrategyName>[] = [
   {
     src: { field: 'roleId', parentTypes: ['roleAssignment'] },
     serializationStrategy: 'roleId',
@@ -43,6 +44,24 @@ const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<never>[] = [
   },
 ]
 
-export const REFERENCES: definitions.ApiDefinitions['references'] = {
+export const REFERENCES: definitions.ApiDefinitions<Options>['references'] = {
   rules: REFERENCE_RULES,
+  serializationStrategies: {
+    roleId: {
+      serialize: ({ ref }) => ref.value.value.roleId,
+      lookup: referenceUtils.basicLookUp,
+      lookupIndexName: 'roleId',
+    },
+    buildingId: {
+      serialize: ({ ref }) => ref.value.value.buildingId,
+      lookup: referenceUtils.basicLookUp,
+      lookupIndexName: 'buildingId',
+    },
+    orgUnitId: {
+      serialize: ({ ref }) => ref.value.value.orgUnitId,
+      lookup: referenceUtils.basicLookUp,
+      lookupIndexName: 'orgUnitId',
+    },
+  },
+  fieldsToGroupBy: ['id', 'name', 'roleId', 'buildingId', 'orgUnitId'],
 }

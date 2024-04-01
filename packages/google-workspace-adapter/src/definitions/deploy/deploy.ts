@@ -80,7 +80,9 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                 },
               },
               copyFromResponse: {
-                pick: ['verified', 'isPrimary'],
+                additional: {
+                  pick: ['verified', 'isPrimary'],
+                },
               },
             },
           ],
@@ -125,7 +127,9 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                 },
               },
               copyFromResponse: {
-                pick: ['adminCreated', 'nonEditableAliases'],
+                additional: {
+                  pick: ['adminCreated', 'nonEditableAliases'],
+                },
               },
             },
             {
@@ -391,7 +395,9 @@ const createCustomizations = (): Record<string, InstanceDeployApiDefinitions> =>
                 },
               },
               copyFromResponse: {
-                pick: ['resourceEmail'],
+                additional: {
+                  pick: ['resourceEmail'],
+                },
               },
             },
           ],

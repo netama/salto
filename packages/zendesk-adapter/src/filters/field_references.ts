@@ -164,12 +164,28 @@ const neighborReferenceUserAndOrgFieldLookupFunc: GetLookupNameFunc = async ({ r
 const neighborReferenceUserAndOrgFieldLookupType: referenceUtils.ContextValueMapperFunc = val =>
   [USER_FIELD_OPTION_TYPE_NAME, ORG_FIELD_OPTION_TYPE_NAME].includes(val) ? val : undefined
 
+type ZendeskReferenceIndexField = 'key' | 'value' | 'locale'
+type ZendeskReferenceSerializationStrategyName =
+  | 'ticketField'
+  | 'value'
+  | 'localeId'
+  | 'orgField'
+  | 'userField'
+  | 'userFieldAlternative'
+  | 'ticketFieldAlternative'
+  | 'ticketFieldOption'
+  | 'userFieldOption'
+  | 'locale'
+  | 'idString'
+  | 'customObjectKey'
+  | 'customStatusField'
+
 const getSerializationStrategyOfCustomFieldByContainingType = (
   prefix: string,
-  lookupIndexName = 'id',
+  lookupIndexName: (referenceUtils.ReferenceIndexField | ZendeskReferenceIndexField)  = 'id',
   ticketFieldPrefix = TICKET_FIELD_PREFIX,
   userFieldPrefix = USER_FIELD_PREFIX,
-): referenceUtils.ReferenceSerializationStrategy => {
+): referenceUtils.ReferenceSerializationStrategy<ZendeskReferenceIndexField> => {
   const serialize: GetLookupNameFunc = ({ ref }) => {
     if (isInstanceElement(ref.value)) {
       // eslint-disable-next-line default-case
@@ -192,23 +208,9 @@ const getSerializationStrategyOfCustomFieldByContainingType = (
   return { serialize, lookup, lookupIndexName }
 }
 
-type ZendeskReferenceSerializationStrategyName =
-  | 'ticketField'
-  | 'value'
-  | 'localeId'
-  | 'orgField'
-  | 'userField'
-  | 'userFieldAlternative'
-  | 'ticketFieldAlternative'
-  | 'ticketFieldOption'
-  | 'userFieldOption'
-  | 'locale'
-  | 'idString'
-  | 'customObjectKey'
-  | 'customStatusField'
 const ZendeskReferenceSerializationStrategyLookup: Record<
   ZendeskReferenceSerializationStrategyName | referenceUtils.ReferenceSerializationStrategyName,
-  referenceUtils.ReferenceSerializationStrategy
+  referenceUtils.ReferenceSerializationStrategy<ZendeskReferenceIndexField>
 > = {
   ...referenceUtils.ReferenceSerializationStrategyLookup,
   ticketField: getSerializationStrategyOfCustomFieldByContainingType(TICKET_FIELD_PREFIX),
@@ -235,7 +237,7 @@ const ZendeskReferenceSerializationStrategyLookup: Record<
       // locale_id may be missing reference
       isInstanceElement(ref.value) ? ref.value.value.locale_id?.value.value?.id : ref.value,
     lookup: val => val,
-    lookupIndexName: 'localeId',
+    lookupIndexName: 'locale', // TODON was localeId which is not under fieldsToGroupBy, should be locale? used only once
   },
   ticketFieldOption: {
     serialize: customFieldOptionSerialization,
@@ -341,13 +343,10 @@ type ZendeskFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<R
   zendeskMissingRefStrategy?: ZendeskMissingReferenceStrategyName
 }
 
-export class ZendeskFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName> {
+export class ZendeskFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, ZendeskReferenceSerializationStrategyName, ZendeskReferenceIndexField> {
   constructor(def: ZendeskFieldReferenceDefinition) {
-    super({ src: def.src })
-    this.serializationStrategy =
-      ZendeskReferenceSerializationStrategyLookup[
-        def.zendeskSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
-      ]
+    super({ src: def.src }, ZendeskReferenceSerializationStrategyLookup)
+    // TODON continue, remove zendeskSerializationStrategy and similar ones elsewhere
     this.missingRefStrategy = def.zendeskMissingRefStrategy
       ? ZendeskMissingReferenceStrategyLookup[def.zendeskMissingRefStrategy]
       : undefined

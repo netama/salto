@@ -180,9 +180,10 @@ type JiraReferenceSerializationStrategyName =
   | 'groupId'
   | 'key'
   | 'dashboradGadgetsValues'
+type JiraRfererenceIndexName = 'originalName' | 'groupId' | 'key'
 const JiraReferenceSerializationStrategyLookup: Record<
   JiraReferenceSerializationStrategyName | referenceUtils.ReferenceSerializationStrategyName,
-  referenceUtils.ReferenceSerializationStrategy
+  referenceUtils.ReferenceSerializationStrategy<JiraRfererenceIndexName>
 > = {
   ...referenceUtils.ReferenceSerializationStrategyLookup,
   groupStrategyById: {
@@ -217,9 +218,10 @@ type JiraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<Refe
   jiraSerializationStrategy?: JiraReferenceSerializationStrategyName
   jiraMissingRefStrategy?: jiraMissingReferenceStrategyName
 }
-export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName> {
+export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, JiraReferenceSerializationStrategyName, JiraRfererenceIndexName> {
   constructor(def: JiraFieldReferenceDefinition) {
-    super({ src: def.src, sourceTransformation: def.sourceTransformation ?? 'asString' })
+    super({ src: def.src, sourceTransformation: def.sourceTransformation ?? 'asString' }, JiraReferenceSerializationStrategyLookup)
+    // TODON remove these as well
     this.serializationStrategy =
       JiraReferenceSerializationStrategyLookup[
         def.jiraSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'

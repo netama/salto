@@ -19,9 +19,10 @@ import { WORKFLOW_DETAILED_TYPE, TASK_TYPE, SETTINGS_TYPE_PREFIX } from '../cons
 import { FilterCreator } from '../filter'
 
 type ZuoraReferenceSerializationStrategyName = 'currencyCode' | 'segmentName'
+type ZuoraReferenceIndexName = ZuoraReferenceSerializationStrategyName
 const ZuoraReferenceSerializationStrategyLookup: Record<
   ZuoraReferenceSerializationStrategyName | referenceUtils.ReferenceSerializationStrategyName,
-  referenceUtils.ReferenceSerializationStrategy
+  referenceUtils.ReferenceSerializationStrategy<ZuoraReferenceIndexName>
 > = {
   ...referenceUtils.ReferenceSerializationStrategyLookup,
   currencyCode: {
@@ -36,18 +37,19 @@ const ZuoraReferenceSerializationStrategyLookup: Record<
   },
 }
 
-type ZuoraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<never> & {
+type ZuoraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<never, ZuoraReferenceSerializationStrategyName> & {
   zuoraSerializationStrategy?: ZuoraReferenceSerializationStrategyName
 }
 
-class ZuoraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<never> {
+class ZuoraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<never, ZuoraReferenceSerializationStrategyName, ZuoraReferenceIndexName> {
   constructor(def: ZuoraFieldReferenceDefinition) {
-    super({ src: def.src })
-    this.serializationStrategy =
-      ZuoraReferenceSerializationStrategyLookup[
-        def.zuoraSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
-      ]
-    this.target = def.target ? { ...def.target, lookup: this.serializationStrategy.lookup } : undefined
+    super({ src: def.src }, ZuoraReferenceSerializationStrategyLookup)
+    // TODON continue
+    // this.serializationStrategy =
+    //   ZuoraReferenceSerializationStrategyLookup[
+    //     def.zuoraSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
+    //   ]
+    // this.target = def.target ? { ...def.target, lookup: this.serializationStrategy.lookup } : undefined
   }
 }
 
