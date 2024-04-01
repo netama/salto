@@ -239,7 +239,6 @@ export const replaceReferenceValues = async <TContext extends string, CustomInde
 export const addReferences = async <
   ContextStrategy extends string,
   CustomSerializationStrategy extends string,
-  // TODON swap order?
   CustomIndexField extends string, // TODON CustomIndexField vs CustomIndexName - align
   GenericFieldReferenceDefinition extends FieldReferenceDefinition<ContextStrategy, CustomSerializationStrategy>
 >({

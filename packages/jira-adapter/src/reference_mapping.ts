@@ -214,8 +214,7 @@ const JiraReferenceSerializationStrategyLookup: Record<
   },
 }
 
-type JiraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName> & {
-  jiraSerializationStrategy?: JiraReferenceSerializationStrategyName
+type JiraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName, JiraReferenceSerializationStrategyName> & {
   jiraMissingRefStrategy?: jiraMissingReferenceStrategyName
 }
 export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, JiraReferenceSerializationStrategyName, JiraRfererenceIndexName> {
@@ -224,7 +223,7 @@ export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceRes
     // TODON remove these as well
     this.serializationStrategy =
       JiraReferenceSerializationStrategyLookup[
-        def.jiraSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
+        def.serializationStrategy ?? def.serializationStrategy ?? 'fullValue'
       ]
     this.target = def.target ? { ...def.target, lookup: this.serializationStrategy.lookup } : undefined
     this.missingRefStrategy = def.jiraMissingRefStrategy
@@ -381,7 +380,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'groupIds', parentTypes: ['WorkflowRuleConfiguration_parameters'] },
-    jiraSerializationStrategy: 'groupId',
+    serializationStrategy: 'groupId',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -441,7 +440,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'groupsExemptFromValidation', parentTypes: ['WorkflowRuleConfiguration_parameters'] },
-    jiraSerializationStrategy: 'groupId',
+    serializationStrategy: 'groupId',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -759,13 +758,13 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'groups', parentTypes: ['ConditionConfiguration'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'group', parentTypes: ['ConditionConfiguration', MAIL_LIST_TYPE_NAME] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -783,31 +782,31 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'groups', parentTypes: ['ApplicationRole'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'defaultGroups', parentTypes: ['ApplicationRole'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'parameter', parentTypes: ['PermissionHolder'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     // No missing references strategy - field can be a string
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'name', parentTypes: ['GroupName'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'groupName', parentTypes: [SCRIPT_RUNNER_TYPE] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -849,7 +848,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'groups', parentTypes: [AUTOMATION_COMPONENT_VALUE_TYPE] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     target: { type: GROUP_TYPE_NAME },
   },
   // Overlapping rules, serialization strategies guarantee no conflict
@@ -876,7 +875,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'value', parentTypes: [AUTOMATION_EMAIL_RECIPENT, AUTOMATION_CONDITION_CRITERIA, AUTOMATION_GROUP] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     target: { type: GROUP_TYPE_NAME },
   },
   {
@@ -939,34 +938,34 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowProperty'] },
-    jiraSerializationStrategy: 'groupStrategyById',
+    serializationStrategy: 'groupStrategyById',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowProperty'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowReferenceStatus_properties'] },
-    jiraSerializationStrategy: 'groupStrategyById',
+    serializationStrategy: 'groupStrategyById',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowReferenceStatus_properties'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowTransitions_properties'] },
-    jiraSerializationStrategy: 'groupStrategyById',
+    serializationStrategy: 'groupStrategyById',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
   {
     src: { field: 'value', parentTypes: ['WorkflowTransitions_properties'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { typeContext: 'workflowStatusPropertiesContext' },
   },
@@ -984,12 +983,12 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'value', parentTypes: ['DashboardGadgetProperty'] },
-    jiraSerializationStrategy: 'dashboradGadgetsValues',
+    serializationStrategy: 'dashboradGadgetsValues',
     target: { typeContext: 'gadgetPropertyValue' },
   },
   {
     src: { field: 'groups', parentTypes: ['UserFilter'] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -1014,13 +1013,13 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   {
     // for cloud
     src: { field: 'groupIds', parentTypes: ['CustomFieldContextDefaultValue'] },
-    jiraSerializationStrategy: 'groupId',
+    serializationStrategy: 'groupId',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     // for cloud
     src: { field: 'groupId', parentTypes: ['CustomFieldContextDefaultValue'] },
-    jiraSerializationStrategy: 'groupId',
+    serializationStrategy: 'groupId',
     target: { type: GROUP_TYPE_NAME },
   },
   {
@@ -1075,7 +1074,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'FIELD_TARGET_PROJECT', parentTypes: [POST_FUNCTION_CONFIGURATION] },
-    jiraSerializationStrategy: 'key',
+    serializationStrategy: 'key',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: PROJECT_TYPE },
   },
@@ -1117,7 +1116,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'FIELD_GROUP_NAMES', parentTypes: [CONDITION_CONFIGURATION] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
@@ -1184,13 +1183,13 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   // ScriptRunner
   {
     src: { field: 'projects', parentTypes: [SCRIPT_RUNNER_LISTENER_TYPE] },
-    jiraSerializationStrategy: 'key',
+    serializationStrategy: 'key',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: PROJECT_TYPE },
   },
   {
     src: { field: 'projectKeys', parentTypes: [SCRIPTED_FIELD_TYPE] },
-    jiraSerializationStrategy: 'key',
+    serializationStrategy: 'key',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: PROJECT_TYPE },
   },
@@ -1238,19 +1237,19 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
   },
   {
     src: { field: 'notifications_group@b', parentTypes: [SCRIPT_RUNNER_SETTINGS_TYPE] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'excluded_notifications_groups@b', parentTypes: [SCRIPT_RUNNER_SETTINGS_TYPE] },
-    jiraSerializationStrategy: 'groupStrategyByOriginalName',
+    serializationStrategy: 'groupStrategyByOriginalName',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: GROUP_TYPE_NAME },
   },
   {
     src: { field: 'entities', parentTypes: [SCRIPT_FRAGMENT_TYPE] },
-    jiraSerializationStrategy: 'key',
+    serializationStrategy: 'key',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: PROJECT_TYPE },
   },
@@ -1269,7 +1268,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
         ISSUE_VIEW_TYPE,
       ],
     },
-    jiraSerializationStrategy: 'key',
+    serializationStrategy: 'key',
     jiraMissingRefStrategy: 'typeAndValue',
     target: { type: PROJECT_TYPE },
   },
@@ -1358,7 +1357,7 @@ export const referencesRules: JiraFieldReferenceDefinition[] = [
 
 const lookupNameFuncs: GetLookupNameFunc[] = [
   getFieldsLookUpName,
-  // The second param is needed to resolve references by jiraSerializationStrategy
+  // The second param is needed to resolve references by serializationStrategy
   referenceUtils.generateLookupFunc(referencesRules, defs => new JiraFieldReferenceResolver(defs)),
 ]
 

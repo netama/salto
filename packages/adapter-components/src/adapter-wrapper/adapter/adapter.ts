@@ -142,8 +142,6 @@ export class AdapterImpl<
     this.dependencyChangers = dependencyChangers ?? []
 
     if (this.definitions.references?.serializationStrategies !== undefined) {
-      // TODO SALTO-5406 allow passing in a custom fieldReferenceResolverCreator
-      // TODON move to constructor to avoid creating separately for each deploy!
       const serializationStrategies: Record<ReferenceSerializationStrategyName | ResolveReferenceSerializationStrategies<Options>, ReferenceSerializationStrategy<ResolveReferenceIndexNames<Options>>>  = _.merge(
         {},
         this.definitions.references?.serializationStrategies,
@@ -255,7 +253,6 @@ export class AdapterImpl<
       }
     }
 
-    // TODO SALTO-5406 allow passing in a custom fieldReferenceResolverCreator // TODON remove
     const lookupFunc = this.definitions.references === undefined
       ? generateLookupFunc([])
       : generateLookupFunc(

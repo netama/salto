@@ -54,7 +54,6 @@ export const adapter = createAdapter<Credentials, Options, UserConfig>({
       createConnection,
     }),
   defaultConfig: DEFAULT_CONFIG,
-  // TODON should leave placeholder for client that will be filled by the wrapper
   definitionsCreator: ({ clients, userConfig }) => ({
     clients: createClientDefinitions(clients),
     pagination: PAGINATION,
