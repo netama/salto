@@ -47,10 +47,11 @@ export type ResolveReferenceContextStrategiesType<
   Options extends Pick<APIDefinitionsOptions, 'referenceContextStrategies'>,
 > = Options['referenceContextStrategies'] extends string ? Options['referenceContextStrategies'] : never
 
-export type ResolveReferenceSerializationStrategies<Options extends Pick<APIDefinitionsOptions, 'referenceSerializationStrategies'>> = 
-  Options['referenceSerializationStrategies'] extends string ? Options['referenceSerializationStrategies'] : never
+export type ResolveReferenceSerializationStrategies<
+  Options extends Pick<APIDefinitionsOptions, 'referenceSerializationStrategies'>,
+> = Options['referenceSerializationStrategies'] extends string ? Options['referenceSerializationStrategies'] : never
 
-export type ResolveReferenceIndexNames<Options extends Pick<APIDefinitionsOptions, 'referenceIndexNames'>> = 
+export type ResolveReferenceIndexNames<Options extends Pick<APIDefinitionsOptions, 'referenceIndexNames'>> =
   Options['referenceIndexNames'] extends string ? Options['referenceIndexNames'] : never
 
 export type ApiDefinitions<Options extends APIDefinitionsOptions = {}> = {
@@ -74,7 +75,11 @@ export type ApiDefinitions<Options extends APIDefinitionsOptions = {}> = {
   pagination: Record<ResolvePaginationOptionsType<Options>, PaginationDefinitions<ResolveClientOptionsType<Options>>>
 
   // rules for reference extraction (during fetch) and serialization (during deploy)
-  references?: ReferenceDefinitions<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>, ResolveReferenceIndexNames<Options>>
+  references?: ReferenceDefinitions<
+    ResolveReferenceContextStrategiesType<Options>,
+    ResolveReferenceSerializationStrategies<Options>,
+    ResolveReferenceIndexNames<Options>
+  >
 
   fetch?: FetchApiDefinitions<Options>
   deploy?: DeployApiDefinitions<ResolveAdditionalActionType<Options>, ResolveClientOptionsType<Options>>

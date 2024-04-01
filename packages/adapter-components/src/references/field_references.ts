@@ -240,7 +240,7 @@ export const addReferences = async <
   ContextStrategy extends string,
   CustomSerializationStrategy extends string,
   CustomIndexField extends string, // TODON CustomIndexField vs CustomIndexName - align
-  GenericFieldReferenceDefinition extends FieldReferenceDefinition<ContextStrategy, CustomSerializationStrategy>
+  GenericFieldReferenceDefinition extends FieldReferenceDefinition<ContextStrategy, CustomSerializationStrategy>,
 >({
   elements,
   contextElements = elements,
@@ -254,12 +254,16 @@ export const addReferences = async <
   defs: GenericFieldReferenceDefinition[]
   fieldsToGroupBy?: (ReferenceIndexField | CustomIndexField)[]
   contextStrategyLookup?: Record<ContextStrategy, ContextFunc>
-  fieldReferenceResolverCreator?: (def: GenericFieldReferenceDefinition) => FieldReferenceResolver<ContextStrategy, CustomSerializationStrategy, CustomIndexField>
+  fieldReferenceResolverCreator?: (
+    def: GenericFieldReferenceDefinition,
+  ) => FieldReferenceResolver<ContextStrategy, CustomSerializationStrategy, CustomIndexField>
 }): Promise<void> => {
-  const resolverFinder = generateReferenceResolverFinder<ContextStrategy, CustomSerializationStrategy, CustomIndexField, GenericFieldReferenceDefinition>(
-    defs,
-    fieldReferenceResolverCreator,
-  )
+  const resolverFinder = generateReferenceResolverFinder<
+    ContextStrategy,
+    CustomSerializationStrategy,
+    CustomIndexField,
+    GenericFieldReferenceDefinition
+  >(defs, fieldReferenceResolverCreator)
   const instances = elements.filter(isInstanceElement)
 
   // copied from Salesforce - both should be handled similarly:
@@ -300,9 +304,16 @@ export const generateLookupFunc = <
   GenericFieldReferenceDefinition extends FieldReferenceDefinition<TContext, CustomSerializationStrategy>,
 >(
   defs: GenericFieldReferenceDefinition[],
-  fieldReferenceResolverCreator?: (def: GenericFieldReferenceDefinition) => FieldReferenceResolver<TContext, CustomSerializationStrategy, CustomIndexName>,
+  fieldReferenceResolverCreator?: (
+    def: GenericFieldReferenceDefinition,
+  ) => FieldReferenceResolver<TContext, CustomSerializationStrategy, CustomIndexName>,
 ): GetLookupNameFunc => {
-  const resolverFinder = generateReferenceResolverFinder<TContext, CustomSerializationStrategy, CustomIndexName, GenericFieldReferenceDefinition>(defs, fieldReferenceResolverCreator)
+  const resolverFinder = generateReferenceResolverFinder<
+    TContext,
+    CustomSerializationStrategy,
+    CustomIndexName,
+    GenericFieldReferenceDefinition
+  >(defs, fieldReferenceResolverCreator)
 
   const determineLookupStrategy = async (
     args: GetLookupNameFuncArgs,

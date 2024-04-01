@@ -21,7 +21,10 @@ import { hideTypesFilterCreator } from './hide_types'
 import { defaultDeployFilterCreator } from './default_deploy'
 import { fieldReferencesFilterCreator } from './field_references'
 import { queryFilterCreator } from './query'
-import { ResolveReferenceSerializationStrategies, ResolveReferenceContextStrategiesType } from '../definitions/system/api'
+import {
+  ResolveReferenceSerializationStrategies,
+  ResolveReferenceContextStrategiesType,
+} from '../definitions/system/api'
 
 /**
  * Filter creators of all the common filters
@@ -30,12 +33,21 @@ export const createCommonFilters = <
   Options extends APIDefinitionsOptions,
   Co extends UserConfig<ResolveCustomNameMappingOptionsType<Options>>,
 >({
-  referenceRules, fieldReferenceResolverCreator,
+  referenceRules,
+  fieldReferenceResolverCreator,
 }: {
-  referenceRules?: FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>[]
+  referenceRules?: FieldReferenceDefinition<
+    ResolveReferenceContextStrategiesType<Options>,
+    ResolveReferenceSerializationStrategies<Options>
+  >[]
   config: Co
   definitions: ApiDefinitions<Options>
-  fieldReferenceResolverCreator?: (def: FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>) => FieldReferenceResolver<ResolveReferenceContextStrategiesType<Options>>
+  fieldReferenceResolverCreator?: (
+    def: FieldReferenceDefinition<
+      ResolveReferenceContextStrategiesType<Options>,
+      ResolveReferenceSerializationStrategies<Options>
+    >,
+  ) => FieldReferenceResolver<ResolveReferenceContextStrategiesType<Options>>
 }): Record<string, AdapterFilterCreator<Co, FilterResult, {}, Options>> => ({
   // TODO SALTO-5421 finish upgrading filters to new def structure and add remaining shared filters
   hideTypes: hideTypesFilterCreator(),

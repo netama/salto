@@ -102,14 +102,24 @@ export const contextStrategyLookup: Record<ReferenceContextStrategyName, referen
   }),
 }
 
-type OktaFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName, OktaReferenceSerializationStrategyName> & {
+type OktaFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<
+  ReferenceContextStrategyName,
+  OktaReferenceSerializationStrategyName
+> & {
   oktaSerializationStrategy?: OktaReferenceSerializationStrategyName
   oktaMissingRefStrategy?: referenceUtils.MissingReferenceStrategyName
 }
 
-export class OktaFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, OktaReferenceSerializationStrategyName, OktaReferenceIndexName> {
+export class OktaFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<
+  ReferenceContextStrategyName,
+  OktaReferenceSerializationStrategyName,
+  OktaReferenceIndexName
+> {
   constructor(def: OktaFieldReferenceDefinition) {
-    super({ ...def, sourceTransformation: def.sourceTransformation ?? 'asString' }, OktaReferenceSerializationStrategyLookup)
+    super(
+      { ...def, sourceTransformation: def.sourceTransformation ?? 'asString' },
+      OktaReferenceSerializationStrategyLookup,
+    )
     // this.serializationStrategy =
     //   OktaReferenceSerializationStrategyLookup[
     //     def.oktaSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'

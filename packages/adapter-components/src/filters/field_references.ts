@@ -28,8 +28,16 @@ const { makeArray } = collections.array
  */
 export const fieldReferencesFilterCreator =
   <TResult extends void | filter.FilterResult, Options extends APIDefinitionsOptions = {}>(
-    referenceRules?: FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>[],
-    fieldReferenceResolverCreator?: (def: FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>) => FieldReferenceResolver<ResolveReferenceContextStrategiesType<Options>>
+    referenceRules?: FieldReferenceDefinition<
+      ResolveReferenceContextStrategiesType<Options>,
+      ResolveReferenceSerializationStrategies<Options>
+    >[],
+    fieldReferenceResolverCreator?: (
+      def: FieldReferenceDefinition<
+        ResolveReferenceContextStrategiesType<Options>,
+        ResolveReferenceSerializationStrategies<Options>
+      >,
+    ) => FieldReferenceResolver<ResolveReferenceContextStrategiesType<Options>>,
   ): AdapterFilterCreator<{}, TResult, {}, Options> =>
   ({ definitions }) => ({
     name: 'fieldReferencesFilter',
@@ -38,7 +46,10 @@ export const fieldReferencesFilterCreator =
         ResolveReferenceContextStrategiesType<Options>,
         ResolveReferenceSerializationStrategies<Options>,
         ResolveReferenceIndexNames<Options>,
-        FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>
+        FieldReferenceDefinition<
+          ResolveReferenceContextStrategiesType<Options>,
+          ResolveReferenceSerializationStrategies<Options>
+        >
       >({
         elements,
         defs: makeArray(referenceRules).concat(makeArray(definitions.references?.rules)),

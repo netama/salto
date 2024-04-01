@@ -64,8 +64,18 @@ import { overrideInstanceTypeForDeploy, restoreInstanceTypeFromChange } from '..
 import { createChangeElementResolver } from '../../resolve_utils'
 import { getChangeGroupIdsFuncWithDefinitions } from '../../deployment/grouping'
 import { combineDependencyChangers } from '../../deployment/dependency'
-import { FieldReferenceResolver, FieldReferenceDefinition, ReferenceSerializationStrategy, ReferenceSerializationStrategyLookup, ReferenceSerializationStrategyName } from '../../references/reference_mapping'
-import { ResolveReferenceContextStrategiesType, ResolveReferenceIndexNames, ResolveReferenceSerializationStrategies } from '../../definitions/system/api'
+import {
+  FieldReferenceResolver,
+  FieldReferenceDefinition,
+  ReferenceSerializationStrategy,
+  ReferenceSerializationStrategyLookup,
+  ReferenceSerializationStrategyName,
+} from '../../references/reference_mapping'
+import {
+  ResolveReferenceContextStrategiesType,
+  ResolveReferenceIndexNames,
+  ResolveReferenceSerializationStrategies,
+} from '../../definitions/system/api'
 
 const log = logger(module)
 const { awu } = collections.asynciterable
@@ -89,7 +99,10 @@ export class AdapterImpl<
   protected dependencyChangers: DependencyChanger[]
   protected definitions: RequiredDefinitions<Options>
   protected referenceResolver: (
-    def: FieldReferenceDefinition<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>>,
+    def: FieldReferenceDefinition<
+      ResolveReferenceContextStrategiesType<Options>,
+      ResolveReferenceSerializationStrategies<Options>
+    >,
   ) => FieldReferenceResolver<
     ResolveReferenceContextStrategiesType<Options>,
     ResolveReferenceSerializationStrategies<Options>,
@@ -142,18 +155,23 @@ export class AdapterImpl<
     this.dependencyChangers = dependencyChangers ?? []
 
     if (this.definitions.references?.serializationStrategies !== undefined) {
-      const serializationStrategies: Record<ReferenceSerializationStrategyName | ResolveReferenceSerializationStrategies<Options>, ReferenceSerializationStrategy<ResolveReferenceIndexNames<Options>>>  = _.merge(
-        {},
-        this.definitions.references?.serializationStrategies,
-        ReferenceSerializationStrategyLookup,
-      )
-      this.referenceResolver = def => FieldReferenceResolver.create<
-        ResolveReferenceContextStrategiesType<Options>,
-        ResolveReferenceSerializationStrategies<Options>,
-        ResolveReferenceIndexNames<Options>
-      >(def, serializationStrategies)
+      const serializationStrategies: Record<
+        ReferenceSerializationStrategyName | ResolveReferenceSerializationStrategies<Options>,
+        ReferenceSerializationStrategy<ResolveReferenceIndexNames<Options>>
+      > = _.merge({}, this.definitions.references?.serializationStrategies, ReferenceSerializationStrategyLookup)
+      this.referenceResolver = def =>
+        FieldReferenceResolver.create<
+          ResolveReferenceContextStrategiesType<Options>,
+          ResolveReferenceSerializationStrategies<Options>,
+          ResolveReferenceIndexNames<Options>
+        >(def, serializationStrategies)
     } else {
-      this.referenceResolver = def => FieldReferenceResolver.create<ResolveReferenceContextStrategiesType<Options>, ResolveReferenceSerializationStrategies<Options>, ResolveReferenceIndexNames<Options>>(def)
+      this.referenceResolver = def =>
+        FieldReferenceResolver.create<
+          ResolveReferenceContextStrategiesType<Options>,
+          ResolveReferenceSerializationStrategies<Options>,
+          ResolveReferenceIndexNames<Options>
+        >(def)
     }
   }
 
@@ -253,12 +271,10 @@ export class AdapterImpl<
       }
     }
 
-    const lookupFunc = this.definitions.references === undefined
-      ? generateLookupFunc([])
-      : generateLookupFunc(
-      this.definitions.references?.rules ?? [],
-      def => this.referenceResolver(def),
-    )
+    const lookupFunc =
+      this.definitions.references === undefined
+        ? generateLookupFunc([])
+        : generateLookupFunc(this.definitions.references?.rules ?? [], def => this.referenceResolver(def))
 
     const changesToDeploy = instanceChanges.map(change => ({
       action: change.action,

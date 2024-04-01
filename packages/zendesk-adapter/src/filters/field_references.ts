@@ -182,7 +182,7 @@ type ZendeskReferenceSerializationStrategyName =
 
 const getSerializationStrategyOfCustomFieldByContainingType = (
   prefix: string,
-  lookupIndexName: (referenceUtils.ReferenceIndexField | ZendeskReferenceIndexField)  = 'id',
+  lookupIndexName: referenceUtils.ReferenceIndexField | ZendeskReferenceIndexField = 'id',
   ticketFieldPrefix = TICKET_FIELD_PREFIX,
   userFieldPrefix = USER_FIELD_PREFIX,
 ): referenceUtils.ReferenceSerializationStrategy<ZendeskReferenceIndexField> => {
@@ -337,12 +337,19 @@ export const contextStrategyLookup: Record<ReferenceContextStrategyName, referen
   parentValue: neighborContextFunc({ contextFieldName: 'value', levelsUp: 2, contextValueMapper: getValueLookupType }),
 }
 
-type ZendeskFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName, ZendeskReferenceSerializationStrategyName> & {
+type ZendeskFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<
+  ReferenceContextStrategyName,
+  ZendeskReferenceSerializationStrategyName
+> & {
   // Strategy for non-list values. For list values please check listValuesMissingRefereces filter
   zendeskMissingRefStrategy?: ZendeskMissingReferenceStrategyName
 }
 
-export class ZendeskFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, ZendeskReferenceSerializationStrategyName, ZendeskReferenceIndexField> {
+export class ZendeskFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<
+  ReferenceContextStrategyName,
+  ZendeskReferenceSerializationStrategyName,
+  ZendeskReferenceIndexField
+> {
   constructor(def: ZendeskFieldReferenceDefinition) {
     super({ src: def.src }, ZendeskReferenceSerializationStrategyLookup)
     this.missingRefStrategy = def.zendeskMissingRefStrategy

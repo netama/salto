@@ -214,17 +214,25 @@ const JiraReferenceSerializationStrategyLookup: Record<
   },
 }
 
-type JiraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<ReferenceContextStrategyName, JiraReferenceSerializationStrategyName> & {
+type JiraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<
+  ReferenceContextStrategyName,
+  JiraReferenceSerializationStrategyName
+> & {
   jiraMissingRefStrategy?: jiraMissingReferenceStrategyName
 }
-export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<ReferenceContextStrategyName, JiraReferenceSerializationStrategyName, JiraRfererenceIndexName> {
+export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<
+  ReferenceContextStrategyName,
+  JiraReferenceSerializationStrategyName,
+  JiraRfererenceIndexName
+> {
   constructor(def: JiraFieldReferenceDefinition) {
-    super({ src: def.src, sourceTransformation: def.sourceTransformation ?? 'asString' }, JiraReferenceSerializationStrategyLookup)
+    super(
+      { src: def.src, sourceTransformation: def.sourceTransformation ?? 'asString' },
+      JiraReferenceSerializationStrategyLookup,
+    )
     // TODON remove these as well
     this.serializationStrategy =
-      JiraReferenceSerializationStrategyLookup[
-        def.serializationStrategy ?? def.serializationStrategy ?? 'fullValue'
-      ]
+      JiraReferenceSerializationStrategyLookup[def.serializationStrategy ?? def.serializationStrategy ?? 'fullValue']
     this.target = def.target ? { ...def.target, lookup: this.serializationStrategy.lookup } : undefined
     this.missingRefStrategy = def.jiraMissingRefStrategy
       ? JiraMissingReferenceStrategyLookup[def.jiraMissingRefStrategy]

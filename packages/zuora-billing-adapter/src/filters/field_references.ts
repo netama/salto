@@ -37,9 +37,16 @@ const ZuoraReferenceSerializationStrategyLookup: Record<
   },
 }
 
-type ZuoraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<never, ZuoraReferenceSerializationStrategyName>
+type ZuoraFieldReferenceDefinition = referenceUtils.FieldReferenceDefinition<
+  never,
+  ZuoraReferenceSerializationStrategyName
+>
 
-class ZuoraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<never, ZuoraReferenceSerializationStrategyName, ZuoraReferenceIndexName> {
+class ZuoraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<
+  never,
+  ZuoraReferenceSerializationStrategyName,
+  ZuoraReferenceIndexName
+> {
   constructor(def: ZuoraFieldReferenceDefinition) {
     super({ src: def.src }, ZuoraReferenceSerializationStrategyLookup)
   }
