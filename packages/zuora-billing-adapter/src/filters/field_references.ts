@@ -48,7 +48,7 @@ class ZuoraFieldReferenceResolver extends referenceUtils.FieldReferenceResolver<
   ZuoraReferenceIndexName
 > {
   constructor(def: ZuoraFieldReferenceDefinition) {
-    super({ src: def.src }, ZuoraReferenceSerializationStrategyLookup)
+    super(def, ZuoraReferenceSerializationStrategyLookup)
   }
 }
 

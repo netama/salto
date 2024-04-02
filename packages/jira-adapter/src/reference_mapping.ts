@@ -227,7 +227,7 @@ export class JiraFieldReferenceResolver extends referenceUtils.FieldReferenceRes
 > {
   constructor(def: JiraFieldReferenceDefinition) {
     super(
-      { src: def.src, sourceTransformation: def.sourceTransformation ?? 'asString' },
+      { ...def, sourceTransformation: def.sourceTransformation ?? 'asString' },
       JiraReferenceSerializationStrategyLookup,
     )
     // TODON remove these as well

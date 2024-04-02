@@ -351,7 +351,7 @@ export class ZendeskFieldReferenceResolver extends referenceUtils.FieldReference
   ZendeskReferenceIndexField
 > {
   constructor(def: ZendeskFieldReferenceDefinition) {
-    super({ src: def.src }, ZendeskReferenceSerializationStrategyLookup)
+    super(def, ZendeskReferenceSerializationStrategyLookup)
     this.missingRefStrategy = def.zendeskMissingRefStrategy
       ? ZendeskMissingReferenceStrategyLookup[def.zendeskMissingRefStrategy]
       : undefined

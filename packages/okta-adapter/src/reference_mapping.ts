@@ -120,13 +120,10 @@ export class OktaFieldReferenceResolver extends referenceUtils.FieldReferenceRes
       { ...def, sourceTransformation: def.sourceTransformation ?? 'asString' },
       OktaReferenceSerializationStrategyLookup,
     )
-    // this.serializationStrategy =
-    //   OktaReferenceSerializationStrategyLookup[
-    //     def.oktaSerializationStrategy ?? def.serializationStrategy ?? 'fullValue'
-    //   ]
-    // this.missingRefStrategy = def.oktaMissingRefStrategy
-    //   ? OktaMissingReferenceStrategyLookup[def.oktaMissingRefStrategy]
-    //   : undefined
+    // TODON upgrade as well
+    this.missingRefStrategy = def.oktaMissingRefStrategy
+      ? OktaMissingReferenceStrategyLookup[def.oktaMissingRefStrategy]
+      : undefined
   }
 }
 
