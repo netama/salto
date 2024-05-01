@@ -17,11 +17,7 @@ import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 import { UserFetchConfig } from '../../config'
 import { Options } from '../types'
-import * as transforms from './transforms'
-
-// TODO example - adjust and remove:
-// * irrelevant definitions and comments
-// * unneeded function args
+// import * as transforms from './transforms'
 
 // Note: hiding fields inside arrays is not supported, and can result in a corrupted workspace.
 // when in doubt, it's best to hide fields only for relevant types, or to omit them.
@@ -55,28 +51,40 @@ const DEFAULT_FIELD_CUSTOMIZATIONS: Record<string, definitions.fetch.ElementFiel
 )
 
 const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchApiDefinitions<Options>> => ({
-  group: {
+  owner: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/groups',
-        },
-        transformation: {
-          root: 'groups',
+          path: '/owners/v2/owners',
         },
       },
     ],
     resource: {
-      // this type can be included/excluded based on the user's fetch query
       directFetch: true,
     },
     element: {
       topLevel: {
-        // isTopLevel should be set when the workspace can have instances of this type
         isTopLevel: true,
-        serviceUrl: {
-          path: '/some/path/to/group/with/potential/placeholder/{id}',
+      },
+    },
+  },
+  template: {
+    requests: [
+      {
+        endpoint: {
+          path: '/content/api/v2/templates',
         },
+        transformation: {
+          root: 'objects',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
       },
       fieldCustomizations: {
         id: {
@@ -86,93 +94,100 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
       },
     },
   },
-
-  business_hours_schedule: {
+  workflow: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/business_hours/schedules',
+          path: '/automation/v3/workflows',
         },
         transformation: {
-          root: 'schedules',
+          root: 'workflows',
         },
       },
     ],
     resource: {
       directFetch: true,
-      // after we get the business_hour_schedule response, we make a follow-up request to get
-      // the holiday and nest the response under the 'holidays' field
-      recurseInto: {
-        holidays: {
-          typeName: 'business_hours_schedule_holiday',
-          context: {
-            args: {
-              parent_id: {
-                root: 'id',
-              },
-            },
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  marketing_email: {
+    requests: [
+      {
+        endpoint: {
+          path: '/marketing-emails/v1/emails',
+          queryArgs: {
+            limit: '50',
+          },
+        },
+        transformation: {
+          root: 'objects',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  // product: {
+  //   requests: [
+  //     {
+  //       endpoint: {
+  //         path: '/crm-objects/v1/objects/products/paged',
+  //         queryArgs: {
+  //           limit: '50',
+  //         },
+  //       },
+  //       transformation: {
+  //         root: 'objects',
+  //       },
+  //     },
+  //   ],
+  //   resource: {
+  //     directFetch: true,
+  //   },
+  //   element: {
+  //     topLevel: {
+  //       isTopLevel: true,
+  //     },
+  //   },
+  // },
+  ticket_property: {
+    requests: [
+      {
+        endpoint: {
+          path: '/properties/v2/tickets/properties',
+          queryArgs: {
+            limit: '50',
           },
         },
       },
-    },
-    element: {
-      topLevel: {
-        isTopLevel: true,
-        serviceUrl: {
-          path: '/admin/objects-rules/rules/schedules',
-        },
-      },
-      fieldCustomizations: {
-        id: {
-          fieldType: 'number',
-          hide: true,
-        },
-        holidays: {
-          // extract each item in the holidays field to its own instance
-          standalone: {
-            typeName: 'business_hours_schedule_holiday',
-            addParentAnnotation: true,
-            referenceFromParent: false,
-            nestPathUnderParent: true,
-          },
-        },
-      },
-    },
-  },
-  business_hours_schedule_holiday: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/business_hours/schedules/{parent_id}/holidays',
-        },
-        transformation: {
-          root: 'holidays',
-          adjust: transforms.transformHoliday,
-        },
-      },
     ],
+    resource: {
+      directFetch: true,
+    },
     element: {
       topLevel: {
         isTopLevel: true,
-        elemID: { extendsParent: true },
-      },
-      fieldCustomizations: {
-        id: {
-          fieldType: 'number',
-          hide: true,
-        },
       },
     },
   },
-
-  made_up_type_a: {
+  product_property: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/made_up_type_a',
-        },
-        transformation: {
-          root: 'made_up_type_a',
+          path: '/properties/v2/products/properties',
+          queryArgs: {
+            limit: '50',
+          },
         },
       },
     ],
@@ -185,14 +200,14 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
       },
     },
   },
-  made_up_type_b: {
+  line_item_property: {
     requests: [
       {
         endpoint: {
-          path: '/api/v2/made_up_type_b',
-        },
-        transformation: {
-          root: 'made_up_type_b',
+          path: '/properties/v2/line_items/properties',
+          queryArgs: {
+            limit: '50',
+          },
         },
       },
     ],
@@ -218,10 +233,10 @@ export const createFetchDefinitions = (
       element: {
         topLevel: {
           elemID: { parts: DEFAULT_ID_PARTS },
-          serviceUrl: {
-            // TODO put default base url for serviceUrl filter (can override for specific types in customizations)
-            baseUrl: 'https://api.example.com',
-          },
+          // serviceUrl: {
+          //   // TODO put default base url for serviceUrl filter (can override for specific types in customizations)
+          //   baseUrl: 'https://api.example.com',
+          // },
         },
         fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
       },

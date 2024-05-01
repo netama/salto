@@ -80,12 +80,12 @@ describe('pagination functions', () => {
 
   describe('offsetAndLimitPagination', () => {
     it('should calculate next pages', async () => {
-      const paginate = offsetAndLimitPagination({ paginationField: 'startAt' })
+      const paginate = offsetAndLimitPagination({ offsetArgName: 'startAt' })
       expect(
         paginate({
           endpointIdentifier: { path: '/ep' },
           currentParams: {},
-          responseData: { isLast: false, startAt: 0, values: [1, 2] },
+          responseData: { isLast: false, startAt: 0, values: [1, 2] }, // TODON
         }),
       ).toEqual([{ queryParams: { startAt: '2' } }])
       expect(

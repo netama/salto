@@ -16,7 +16,6 @@
 import _ from 'lodash'
 import * as parse from 'parse-link-header'
 import { logger } from '@salto-io/logging'
-import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { collections } from '@salto-io/lowerdash'
 import { PaginationFunction } from '../../../definitions/system/requests/pagination'
 import { DATA_FIELD_ENTIRE_OBJECT } from '../../../definitions'
@@ -134,32 +133,44 @@ export const pageOffsetAndLastPagination = ({
   return nextPageFullPages
 }
 
-export const offsetAndLimitPagination = ({ paginationField }: { paginationField: string }): PaginationFunction => {
-  // TODO allow customizing the field values (`isLastValues`)
-  type PageResponse = {
-    isLast: boolean
-    values: unknown[]
-    [k: string]: unknown
-  }
-  const isPageResponse = (responseData: ResponseValue | ResponseValue[]): responseData is PageResponse =>
-    _.isObject(responseData) &&
-    _.isBoolean(_.get(responseData, 'isLast')) &&
-    Array.isArray(_.get(responseData, 'values')) &&
-    _.isNumber(_.get(responseData, paginationField))
+// TODON continue, get items field from custom logic
+// export const offsetAndLastPagination = ({
+//   paginationField,
+//   stopField,
+//   stopValue,
+// }: {
+//   paginationField: string
+//   stopField: string
+//   stopValue: boolean
+// }): PaginationFunction => {
+//   const nextPageFullPages: PaginationFunction = ({ currentParams, responseData }) => {
+//     if (_.get(responseData, stopField) === stopValue) {
+//       return []
+//     }
+//     return [
+//       _.merge({}, currentParams, {
+//         queryParams: {
+//           [paginationField]: (Number(currentParams.queryParams?.[paginationField] ?? firstPage) + 1).toString(),
+//         },
+//       }),
+//     ]
+//   }
+//   return nextPageFullPages
+// }
 
+export const offsetAndLimitPagination = ({ offsetArgName = 'offset', limitArgName = 'limit', totalFieldName = 'total' }: { offsetArgName?: string; limitArgName?: string; totalFieldName?: string }): PaginationFunction => {
   const getNextPage: PaginationFunction = ({ responseData, currentParams }) => {
-    if (!isPageResponse(responseData)) {
-      throw new Error(`Expected page with pagination field ${paginationField}, got ${safeJsonStringify(responseData)}`)
-    }
-    if (responseData.isLast) {
+    const offset = _.get(responseData, offsetArgName) ?? currentParams.queryParams?.[offsetArgName] ?? 0
+    const limit = _.get(responseData, limitArgName) ?? currentParams.queryParams?.[limitArgName] ?? 10
+    const nextOffset = Number(offset) + Number(limit)
+    const total = Number(_.get(responseData, totalFieldName))
+    if (nextOffset >= total || _.isNaN(total)) {
       return []
     }
-    const currentPageStart = Number(_.get(responseData, paginationField))
-    const nextPageStart = currentPageStart + responseData.values.length
     return [
       _.merge({}, currentParams, {
         queryParams: {
-          [paginationField]: nextPageStart.toString(),
+          [offsetArgName]: nextOffset.toString(),
         },
       }),
     ]

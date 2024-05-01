@@ -28,7 +28,7 @@ export const createClientDefinitions = (
       endpoints: {
         default: {
           get: {
-            pagination: 'cursor',
+            pagination: 'offsetLimit',
             // only readonly endpoint calls are allowed during fetch. we assume by default that GET endpoints are safe
             readonly: true,
           },
@@ -37,6 +37,13 @@ export const createClientDefinitions = (
           },
         },
         customizations: {
+          '/automation/v3/workflows': {
+            get: {
+              queryArgs: {
+                limit: '50',
+              },
+            },
+          },
           // '/api/v2/groups': {
           //   get: {
           //     pagination: 'offset',

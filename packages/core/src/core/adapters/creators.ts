@@ -28,6 +28,7 @@ import { adapter as intercomAdapter } from '@salto-io/intercom-adapter'
 import { adapter as serviceplaceholderAdapter } from '@salto-io/serviceplaceholder-adapter'
 import { adapter as googleWorkspaceAdapter } from '@salto-io/google-workspace-adapter'
 import { adapter as confluenceAdapter } from '@salto-io/confluence-adapter'
+import { adapter as hubspotAdapter } from '@salto-io/hubspot-adapter'
 
 const adapterCreators: Record<string, Adapter> = {
   salesforce: salesforceAdapter,
@@ -46,6 +47,7 @@ const adapterCreators: Record<string, Adapter> = {
   google_workspace: googleWorkspaceAdapter,
   confluence: confluenceAdapter,
   intercom: intercomAdapter,
+  hubspot: hubspotAdapter,
 }
 
 export default adapterCreators
