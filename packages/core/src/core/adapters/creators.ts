@@ -25,6 +25,7 @@ import { adapter as stripeAdapter } from '@salto-io/stripe-adapter'
 import { adapter as oktaAdapter } from '@salto-io/okta-adapter'
 import { adapter as sapAdapter } from '@salto-io/sap-adapter'
 import { adapter as intercomAdapter } from '@salto-io/intercom-adapter'
+import { adapter as adyenAdapter } from '@salto-io/adyen-adapter'
 import { adapter as serviceplaceholderAdapter } from '@salto-io/serviceplaceholder-adapter'
 import { adapter as googleWorkspaceAdapter } from '@salto-io/google-workspace-adapter'
 import { adapter as confluenceAdapter } from '@salto-io/confluence-adapter'
@@ -42,6 +43,7 @@ const adapterCreators: Record<string, Adapter> = {
   jira: jiraAdapter,
   okta: oktaAdapter,
   dummy: dummyAdapter,
+  adyen: adyenAdapter,
   serviceplaceholder: serviceplaceholderAdapter,
   google_workspace: googleWorkspaceAdapter,
   confluence: confluenceAdapter,
