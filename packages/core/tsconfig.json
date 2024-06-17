@@ -26,6 +26,7 @@
     { "path": "../salesforce-adapter" },
     { "path": "../sap-adapter" },
     { "path": "../serviceplaceholder-adapter" },
+    { "path": "../celigo-adapter" },
     { "path": "../adyen-adapter" },
     { "path": "../stripe-adapter" },
     { "path": "../test-utils" },

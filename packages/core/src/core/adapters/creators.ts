@@ -27,6 +27,7 @@ import { adapter as sapAdapter } from '@salto-io/sap-adapter'
 import { adapter as intercomAdapter } from '@salto-io/intercom-adapter'
 import { adapter as adyenAdapter } from '@salto-io/adyen-adapter'
 import { adapter as serviceplaceholderAdapter } from '@salto-io/serviceplaceholder-adapter'
+import { adapter as celigoAdapter } from '@salto-io/celigo-adapter'
 import { adapter as googleWorkspaceAdapter } from '@salto-io/google-workspace-adapter'
 import { adapter as confluenceAdapter } from '@salto-io/confluence-adapter'
 import { adapter as microsoftEntra } from '@salto-io/microsoft-entra-adapter'
@@ -45,6 +46,7 @@ const adapterCreators: Record<string, Adapter> = {
   dummy: dummyAdapter,
   adyen: adyenAdapter,
   serviceplaceholder: serviceplaceholderAdapter,
+  celigo: celigoAdapter,
   google_workspace: googleWorkspaceAdapter,
   confluence: confluenceAdapter,
   intercom: intercomAdapter,

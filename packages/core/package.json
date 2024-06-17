@@ -55,6 +55,7 @@
     "@salto-io/salesforce-adapter": "0.3.58",
     "@salto-io/sap-adapter": "0.3.58",
     "@salto-io/serviceplaceholder-adapter": "0.3.58",
+    "@salto-io/celigo-adapter": "0.3.58",
     "@salto-io/adyen-adapter": "0.3.58",
     "@salto-io/stripe-adapter": "0.3.58",
     "@salto-io/pagerduty-adapter": "0.3.58",
