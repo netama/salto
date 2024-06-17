@@ -153,6 +153,7 @@ export const getApprovedChanges = async (changes: ReadonlyArray<FetchChange>): P
 const isPasswordInputType = (fieldName: string): boolean =>
   [
     'token',
+    'apiKey',
     'password',
     'tokenId',
     'tokenSecret',
