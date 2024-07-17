@@ -26,6 +26,7 @@ import { adapter as oktaAdapter } from '@salto-io/okta-adapter'
 import { adapter as sapAdapter } from '@salto-io/sap-adapter'
 import { adapter as intercomAdapter } from '@salto-io/intercom-adapter'
 import { adapter as serviceplaceholderAdapter } from '@salto-io/serviceplaceholder-adapter'
+import { adapter as auth0Adapter } from '@salto-io/auth0-adapter'
 import { adapter as googleWorkspaceAdapter } from '@salto-io/google-workspace-adapter'
 import { adapter as confluenceAdapter } from '@salto-io/confluence-adapter'
 import { adapter as microsoftEntra } from '@salto-io/microsoft-entra-adapter'
@@ -44,6 +45,7 @@ const adapterCreators: Record<string, Adapter> = {
   okta: oktaAdapter,
   dummy: dummyAdapter,
   serviceplaceholder: serviceplaceholderAdapter,
+  auth0: auth0Adapter,
   google_workspace: googleWorkspaceAdapter,
   confluence: confluenceAdapter,
   intercom: intercomAdapter,

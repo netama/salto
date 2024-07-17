@@ -27,6 +27,7 @@
     { "path": "../salesforce-adapter" },
     { "path": "../sap-adapter" },
     { "path": "../serviceplaceholder-adapter" },
+    { "path": "../auth0-adapter" },
     { "path": "../stripe-adapter" },
     { "path": "../test-utils" },
     { "path": "../workato-adapter" },

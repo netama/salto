@@ -34,6 +34,7 @@
     "@salto-io/adapter-api": "0.3.61",
     "@salto-io/adapter-components": "0.3.61",
     "@salto-io/adapter-utils": "0.3.61",
+    "@salto-io/auth0-adapter": "0.3.61",
     "@salto-io/aws-utils": "0.3.61",
     "@salto-io/confluence-adapter": "0.3.61",
     "@salto-io/dag": "0.3.61",
