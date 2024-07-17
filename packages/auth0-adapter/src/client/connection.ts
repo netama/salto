@@ -13,47 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import _ from 'lodash'
 import { AccountInfo } from '@salto-io/adapter-api'
-import { client as clientUtils } from '@salto-io/adapter-components'
+import { auth as authUtils, client as clientUtils } from '@salto-io/adapter-components'
+import { safeJsonStringify } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
 import { Credentials } from '../auth'
 
 const log = logger(module)
 
+const { oauthClientCredentialsBearerToken } = authUtils
+
 export const validateCredentials = async ({
   connection,
-  credentials,
 }: {
-  credentials: Credentials
   connection: clientUtils.APIConnection
 }): Promise<AccountInfo> => {
   try {
-    // TODO replace with some valid endpoint, identify production accounts
-    const res = await connection.get('/api/v2/account')
-    const accountId = credentials.subdomain
-    const isSandbox = _.get(res.data, 'account.sandbox')
-    if (isSandbox !== undefined) {
-      return { accountId, isProduction: !isSandbox }
+    const res = await connection.get('/api/v2/clients', {}) // TODON find better endpoint?
+    if (res.status !== 200) {
+      log.info('!! failed %s', safeJsonStringify(res))
+      throw new clientUtils.UnauthorizedError('Authentication failed')
     }
-    return { accountId }
   } catch (e) {
     log.error('Failed to validate credentials: %s', e)
     throw new clientUtils.UnauthorizedError(e)
   }
+
+  // default to empty to avoid preventing users from refreshing their credentials in the SaaS.
+  return { accountId: '' }
 }
 
-export const createConnection: clientUtils.ConnectionCreator<Credentials> = retryOptions =>
+export const createConnection: clientUtils.ConnectionCreator<Credentials> = (retryOptions, timeout) =>
   clientUtils.axiosConnection({
     retryOptions,
-    baseURLFunc: async () => 'https://localhost:80', // TODO replace with base URL, creds can be used
-    authParamsFunc: async ({ username, password }: Credentials) => ({
-      // TODO adjust / remove (usually only one of the following is needed)
-      auth: { username, password },
-      // headers: {
-      //   Authorization: `Bearer ${token}`,
-      //   'x-custom-header': `${token}`,
-      // },
-    }),
+    authParamsFunc: async (creds: Credentials) =>
+      oauthClientCredentialsBearerToken({
+        ...creds,
+        retryOptions,
+        // TODON add audience
+        additionalData: {
+          audience: `${creds.baseURL}/api/v2/`,
+        },
+      }),
+    baseURLFunc: async ({ baseURL }) => baseURL,
     credValidateFunc: validateCredentials,
+    timeout,
   })

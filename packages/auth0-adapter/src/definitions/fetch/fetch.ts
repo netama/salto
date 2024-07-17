@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash'
 import { definitions } from '@salto-io/adapter-components'
 import { UserFetchConfig } from '../../config'
 import { Options } from '../types'
-import * as transforms from './transforms'
 
 // TODO example - adjust and remove:
 // * irrelevant definitions and comments
@@ -49,147 +49,37 @@ const DEFAULT_FIELD_CUSTOMIZATIONS: Record<string, definitions.fetch.ElementFiel
 }
 
 const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchApiDefinitions<Options>> => ({
-  group: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/groups',
-        },
-        transformation: {
-          root: 'groups',
-        },
-      },
-    ],
-    resource: {
-      // this type can be included/excluded based on the user's fetch query
-      directFetch: true,
-    },
-    element: {
-      topLevel: {
-        // isTopLevel should be set when the workspace can have instances of this type
-        isTopLevel: true,
-        serviceUrl: {
-          path: '/some/path/to/group/with/potential/placeholder/{id}',
-        },
-      },
-      fieldCustomizations: {
-        id: {
-          fieldType: 'number',
-          hide: true,
-        },
-      },
-    },
-  },
-
-  business_hours_schedule: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/business_hours/schedules',
-        },
-        transformation: {
-          root: 'schedules',
-        },
-      },
-    ],
-    resource: {
-      directFetch: true,
-      // after we get the business_hour_schedule response, we make a follow-up request to get
-      // the holiday and nest the response under the 'holidays' field
-      recurseInto: {
-        holidays: {
-          typeName: 'business_hours_schedule_holiday',
-          context: {
-            args: {
-              parent_id: {
-                root: 'id',
-              },
-            },
+  ..._.assign({}, ...([
+  { typeName: 'client', path: 'clients' },
+    { typeName: 'connection', path: 'connections' },
+    { typeName: 'custom_domain', path: 'custom-domains' },
+  ].map(({ typeName, path }) => ({
+    [typeName]: {
+      requests: [
+        {
+          endpoint: {
+            path: `/api/v2/${path}`,
           },
         },
+      ],
+      resource: {
+        directFetch: true,
       },
-    },
-    element: {
-      topLevel: {
-        isTopLevel: true,
-        serviceUrl: {
-          path: '/admin/objects-rules/rules/schedules',
-        },
-      },
-      fieldCustomizations: {
-        id: {
-          fieldType: 'number',
-          hide: true,
-        },
-        holidays: {
-          // extract each item in the holidays field to its own instance
-          standalone: {
-            typeName: 'business_hours_schedule_holiday',
-            addParentAnnotation: true,
-            referenceFromParent: false,
-            nestPathUnderParent: true,
-          },
+      element: {
+        topLevel: {
+          isTopLevel: true,
         },
       },
     },
-  },
-  business_hours_schedule_holiday: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/business_hours/schedules/{parent_id}/holidays',
-        },
-        transformation: {
-          root: 'holidays',
-          adjust: transforms.transformHoliday,
-        },
+  })))),
+  email_template: {
+    // TODON parallelize, use dependsOn or context instead
+    // see https://auth0.com/docs/api/management/v2/email-templates/get-email-templates-by-template-name
+    requests: ['verify_email', 'verify_email_by_code', 'reset_email', 'welcome_email', 'blocked_account', 'stolen_credentials', 'enrollment_email', 'mfa_oob_code', 'user_invitation', 'change_password', 'password_reset'].map(templateName => ({
+      endpoint: {
+        path: `/api/v2/email-templates/${templateName}`,
       },
-    ],
-    element: {
-      topLevel: {
-        isTopLevel: true,
-        elemID: { extendsParent: true },
-      },
-      fieldCustomizations: {
-        id: {
-          fieldType: 'number',
-          hide: true,
-        },
-      },
-    },
-  },
-
-  made_up_type_a: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/made_up_type_a',
-        },
-        transformation: {
-          root: 'made_up_type_a',
-        },
-      },
-    ],
-    resource: {
-      directFetch: true,
-    },
-    element: {
-      topLevel: {
-        isTopLevel: true,
-      },
-    },
-  },
-  made_up_type_b: {
-    requests: [
-      {
-        endpoint: {
-          path: '/api/v2/made_up_type_b',
-        },
-        transformation: {
-          root: 'made_up_type_b',
-        },
-      },
-    ],
+    })),
     resource: {
       directFetch: true,
     },
@@ -207,15 +97,11 @@ export const createFetchDefinitions = (
   instances: {
     default: {
       resource: {
-        serviceIDFields: ['id'],
+        // serviceIDFields: ['id'],
       },
       element: {
         topLevel: {
           elemID: { parts: DEFAULT_ID_PARTS },
-          serviceUrl: {
-            // TODO put default base url for serviceUrl filter (can override for specific types in customizations)
-            baseUrl: 'https://api.example.com',
-          },
         },
         fieldCustomizations: DEFAULT_FIELD_CUSTOMIZATIONS,
       },

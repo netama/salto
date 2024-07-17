@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 import { ElemID, BuiltinTypes } from '@salto-io/adapter-api'
+import { auth as authUtils } from '@salto-io/adapter-components'
 import { createMatchingObjectType } from '@salto-io/adapter-utils'
 import * as constants from './constants'
 
-// TODO adjust based on the needed auth
-export type Credentials = {
-  subdomain: string
-  username: string
-  password: string
+export type Credentials = authUtils.OAuthClientCredentialsArgs & {
+  baseURL: string
 }
 
 export const credentialsType = createMatchingObjectType<Credentials>({
   elemID: new ElemID(constants.ADAPTER_NAME),
   fields: {
-    // TODO adjust according to above (fields should match)
-    subdomain: {
+    clientId: {
       refType: BuiltinTypes.STRING,
-      annotations: { _required: true },
+      annotations: { _required: true, message: 'OAuth client ID' },
     },
-    username: {
+    clientSecret: {
       refType: BuiltinTypes.STRING,
-      annotations: { _required: true },
+      annotations: { _required: true, message: 'OAuth client secret' },
     },
-    password: {
+    baseURL: {
       refType: BuiltinTypes.STRING,
-      annotations: { _required: true },
+      annotations: {
+        _required: true,
+        message:
+          'URL',
+      },
     },
   },
 })
