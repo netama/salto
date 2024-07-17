@@ -50,9 +50,18 @@ const DEFAULT_FIELD_CUSTOMIZATIONS: Record<string, definitions.fetch.ElementFiel
 
 const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchApiDefinitions<Options>> => ({
   ..._.assign({}, ...([
-  { typeName: 'client', path: 'clients' },
+    { typeName: 'prompt', path: 'prompts' },
+    { typeName: 'organization', path: 'organizations' },
+    { typeName: 'client', path: 'clients' },
     { typeName: 'connection', path: 'connections' },
     { typeName: 'custom_domain', path: 'custom-domains' },
+    { typeName: 'role', path: 'roles' },
+    { typeName: 'rule', path: 'rules' },
+    { typeName: 'rule_config', path: 'rules-configs' },
+    { typeName: 'resource_server', path: 'resource-servers' },
+    { typeName: 'tenant_settings', path: 'tenants/settings' },
+    { typeName: 'key_signing', path: 'keys/signing' },
+    { typeName: 'hook', path: 'hooks' },
   ].map(({ typeName, path }) => ({
     [typeName]: {
       requests: [
