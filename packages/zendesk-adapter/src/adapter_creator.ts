@@ -76,6 +76,7 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
   if (config.value.authType === 'oauth') {
     return {
       accessToken: config.value.accessToken,
+      shToken: config.value.shToken,
       subdomain: config.value.subdomain,
       domain,
     }
@@ -84,6 +85,7 @@ const credentialsFromConfig = (config: Readonly<InstanceElement>): Credentials =
     username: config.value.username,
     password: config.value.password,
     token: config.value.token,
+    shToken: config.value.shToken,
     subdomain: config.value.subdomain,
     domain,
   }

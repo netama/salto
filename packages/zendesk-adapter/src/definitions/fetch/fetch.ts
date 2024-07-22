@@ -1840,6 +1840,58 @@ const createCustomizations = (): Record<
       },
     },
   },
+
+  // sweethawk
+  sweethawk_task_export: {
+    // TODON check if need to keep base, discuss format
+    requests: [
+      {
+        endpoint: {
+          path: '/api/tasks/export',
+          client: 'sweethawk',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        singleton: true,
+      },
+      fieldCustomizations: {
+        task_list_definitions: {
+          standalone: {
+            typeName: 'sweethawk_task_definition',
+            addParentAnnotation: true,
+            referenceFromParent: true, // TODON
+          },
+        },
+        ticket_templates: {
+          standalone: {
+            typeName: 'sweethawk_ticket_template',
+            addParentAnnotation: true,
+            referenceFromParent: true, // TODON
+          },
+        },
+      },
+    },
+  },
+  sweethawk_task_definition: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  sweethawk_ticket_template: {
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
 })
 
 export const createFetchDefinitions = (

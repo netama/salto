@@ -25,6 +25,8 @@ export type ZendeskMissingReferenceStrategyName =
 export const VALUES_TO_SKIP_BY_TYPE: Record<string, string[]> = {
   group: ['current_groups', 'group_id'],
   webhook: ['(Value no longer exists. Choose another.)'],
+  // TODON generalize to expected id format, there can be other cases
+  ticket_form: ['{{parent_ticket.ticket_form_id}}'],
 }
 
 const VALUE_BY_TYPE: Record<string, string[]> = {

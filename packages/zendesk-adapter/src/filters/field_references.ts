@@ -999,6 +999,13 @@ const commonFieldNameToTypeMappingDefs: ZendeskFieldReferenceDefinition[] = [
     target: { typeContext: 'allowlistedNeighborSubject' },
     zendeskMissingRefStrategy: 'typeAndValue',
   },
+
+  // sweethawk
+  {
+    src: { field: 'roles', parentTypes: ['sweethawk_task_definition__permission'] },
+    serializationStrategy: 'id',
+    target: { type: 'custom_role' },
+  },
 ]
 
 const secondIterationFieldNameToTypeMappingDefs: ZendeskFieldReferenceDefinition[] = [

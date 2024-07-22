@@ -16,6 +16,19 @@ export const createClientDefinitions = (
 ): definitions.ApiDefinitions<Options>['clients'] => ({
   default: 'main',
   options: {
+    sweethawk: {
+      httpClient: clients.sweethawk,
+      endpoints: {
+        default: {
+          get: {
+            readonly: true,
+          },
+          delete: {
+            omitBody: true,
+          },
+        },
+      },
+    },
     main: {
       httpClient: clients.main,
       endpoints: {

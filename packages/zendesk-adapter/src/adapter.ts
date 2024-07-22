@@ -40,7 +40,7 @@ import {
 import { getElemIdFuncWrapper, inspectValue, logDuration } from '@salto-io/adapter-utils'
 import { collections, objects } from '@salto-io/lowerdash'
 import { logger } from '@salto-io/logging'
-import ZendeskClient from './client/client'
+import ZendeskClient, { SweethawkClient } from './client/client'
 import { BrandIdToClient, Filter, FilterCreator, FilterResult, filtersRunner } from './filter'
 import {
   API_DEFINITIONS_CONFIG,
@@ -469,6 +469,7 @@ export interface ZendeskAdapterParams {
 export default class ZendeskAdapter implements AdapterOperations {
   private client: ZendeskClient
   private guideClient: ZendeskGuideClient | undefined
+  private sweethawkClient: SweethawkClient
   private paginator: clientUtils.Paginator
   private userConfig: ZendeskConfig
   private getElemIdFunc?: ElemIdGetter
@@ -510,6 +511,10 @@ export default class ZendeskAdapter implements AdapterOperations {
     this.client = client
     this.elementsSource = elementsSource
     this.brandsList = undefined
+    this.sweethawkClient = new SweethawkClient({
+      credentials,
+      config: config[CLIENT_CONFIG],
+    })
     this.guideClient = undefined
     this.paginator = createPaginator({
       client: this.client,
@@ -535,7 +540,11 @@ export default class ZendeskAdapter implements AdapterOperations {
     this.adapterDefinitions = definitions.mergeDefinitionsWithOverrides(
       {
         // we can't add guide client at this point
-        clients: createClientDefinitions({ main: this.client, guide: this.client }),
+        clients: createClientDefinitions({
+          main: this.client,
+          guide: this.client,
+          sweethawk: this.sweethawkClient,
+        }),
         pagination: PAGINATION,
         fetch: definitions.mergeWithUserElemIDDefinitions({
           userElemID: _.omit(this.userConfig.fetch.elemID, typesToOmit) as ZendeskFetchConfig['elemID'],
@@ -701,7 +710,11 @@ export default class ZendeskAdapter implements AdapterOperations {
         'brand',
       ])
       this.guideClient = new ZendeskGuideClient(brandClients)
-      const client = createClientDefinitions({ main: this.client, guide: this.guideClient })
+      const client = createClientDefinitions({
+        main: this.client,
+        guide: this.guideClient,
+        sweethawk: this.sweethawkClient,
+      })
       const guideFetchDef = definitions.mergeWithUserElemIDDefinitions({
         userElemID: _.pick(this.userConfig.fetch.elemID, typesToPick) as ZendeskFetchConfig['elemID'],
         fetchConfig: createFetchDefinitions(this.userConfig, {

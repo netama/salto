@@ -124,6 +124,12 @@ const authParamsFunc = (creds: Credentials): clientUtils.AuthParams => {
   return usernamePasswordAuthParamsFunc(creds)
 }
 
+const sweethawkAuthParamsFunc = (creds: Credentials): clientUtils.AuthParams => ({
+  headers: {
+    Authorization: `Bearer ${creds.shToken}`, // TODON only if exists
+  },
+})
+
 export const createConnection: clientUtils.ConnectionCreator<Credentials> = (retryOptions, timeout) =>
   clientUtils.axiosConnection({
     retryOptions,
@@ -146,3 +152,17 @@ export const createResourceConnection: clientUtils.ConnectionCreator<Credentials
     login,
   }
 }
+
+export const createSweethawkConnection: clientUtils.ConnectionCreator<Credentials> = (retryOptions, timeout) =>
+  clientUtils.axiosConnection({
+    retryOptions,
+    authParamsFunc: async (creds: Credentials) => sweethawkAuthParamsFunc(creds),
+    baseURLFunc: async () => 'https://app.sweethawk.com',
+    credValidateFunc: async ({ credentials }) => {
+      if (credentials.shToken === undefined) {
+        throw new Error('no sweethawk token provided, cannot authenticate')
+      }
+      return { accountId: '' }
+    },
+    timeout,
+  })
