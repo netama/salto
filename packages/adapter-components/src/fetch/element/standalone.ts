@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash'
 import {
   ElemIdGetter,
   Field,
@@ -23,6 +24,7 @@ import {
   getDeepInnerTypeSync,
   isObjectType,
   isReferenceExpression,
+  ElemID,
 } from '@salto-io/adapter-api'
 import { logger } from '@salto-io/logging'
 import { TransformFuncSync, invertNaclCase, transformValuesSync } from '@salto-io/adapter-utils'
@@ -35,6 +37,68 @@ import { generateType } from './type_element'
 
 const { isDefined } = lowerdashValues
 const log = logger(module)
+
+const getStandaloneTypeMapping = <Options extends FetchApiDefinitionsOptions>({
+  adapterName,
+  defQuery,
+  definedTypes,
+}: {
+  adapterName: string
+  defQuery: ElementAndResourceDefFinder<Options>
+  definedTypes: Record<string, ObjectType>
+}): Record<string, Set<string>> | undefined => {
+  const typeToStandaloneFields = _.pickBy(
+    _.mapValues(definedTypes, (_type, typeName) =>
+      _.pickBy(
+        _.mapValues(defQuery.query(typeName)?.element?.fieldCustomizations, def => def.standalone?.typeName),
+        isDefined,
+      ),
+    ),
+    fields => !_.isEmpty(fields),
+  )
+  if (_.isEmpty(typeToStandaloneFields)) {
+    return undefined
+  }
+  const typeToFieldAndType = _.mapValues(definedTypes, typeDef =>
+    _.pickBy(
+      _.mapValues(typeDef.fields, f => {
+        const innerID = ElemID.getTypeOrContainerTypeID(f.refType.elemID)
+        return innerID.adapter === adapterName ? ElemID.getTypeOrContainerTypeID(f.refType.elemID).typeName : undefined
+      }),
+      isDefined,
+    ),
+  )
+  const typeToParents = _.groupBy(
+    Object.entries(typeToFieldAndType).flatMap(([typeName, fieldDefs]) =>
+      Object.entries(fieldDefs).map(([fieldName, fieldType]) => ({ typeName, fieldName, fieldType })),
+    ),
+    item => item.fieldType,
+  )
+
+  const standaloneMapping = _.mapValues(typeToStandaloneFields, fields => new Set(Object.keys(fields)))
+  const typesToCheck = Object.keys(typeToStandaloneFields)
+  // note: cannot mark the keys of typeToStandaloneFields as seen, as they might have additional fields that should be marked
+  const seen = new Set()
+  const dfs = (fieldType: string): void => {
+    const parents = typeToParents[fieldType] ?? []
+    parents.forEach(({ fieldName, typeName }) => {
+      const key = `${typeName}.${fieldName}`
+      if (seen.has(key)) {
+        return
+      }
+      seen.add(key)
+      standaloneMapping[typeName] = standaloneMapping[typeName] ?? new Set()
+      standaloneMapping[typeName].add(fieldName)
+      typesToCheck.push(typeName)
+    })
+  }
+  while (typesToCheck.length > 0) {
+    const fieldType = typesToCheck.pop() as string
+    dfs(fieldType)
+  }
+
+  return standaloneMapping
+}
 
 /*
  * get standalone field type, and create it if it doesn't exist
@@ -85,6 +149,7 @@ const extractStandaloneInstancesFromField =
     parent,
     customNameMappingFunctions,
     definedTypes,
+    typeToFieldsWithNestedStandalone,
   }: {
     adapterName: string
     defQuery: ElementAndResourceDefFinder<Options>
@@ -93,12 +158,18 @@ const extractStandaloneInstancesFromField =
     parent: InstanceElement
     customNameMappingFunctions?: NameMappingFunctionMap<ResolveCustomNameMappingOptionsType<Options>>
     definedTypes: Record<string, ObjectType>
+    typeToFieldsWithNestedStandalone: Record<string, Set<string>>
   }): TransformFuncSync =>
   ({ value, field }) => {
     if (field === undefined || isReferenceExpression(value)) {
       return value
     }
     const parentType = field.parent.elemID.name
+    if (!typeToFieldsWithNestedStandalone[parentType]?.has(field.name)) {
+      // no relevant standalone values nested under this field
+      // TODON check how behaves for arrays
+      return undefined
+    }
     const standaloneDef = defQuery.query(parentType)?.element?.fieldCustomizations?.[field.name]?.standalone
     if (standaloneDef?.typeName === undefined) {
       return value
@@ -171,6 +242,14 @@ export const extractStandaloneInstances = <Options extends FetchApiDefinitionsOp
   getElemIdFunc?: ElemIdGetter
   definedTypes: Record<string, ObjectType>
 }): InstanceElement[] => {
+  if (instances.length === 0) {
+    return []
+  }
+  const typeToFieldsWithNestedStandalone = getStandaloneTypeMapping({ adapterName, defQuery, definedTypes })
+  if (typeToFieldsWithNestedStandalone === undefined) {
+    return instances
+  }
+
   const instancesToProcess: InstanceElement[] = []
   instances.forEach(inst => instancesToProcess.push(inst))
   const outInstances: InstanceElement[] = []
@@ -182,7 +261,7 @@ export const extractStandaloneInstances = <Options extends FetchApiDefinitionsOp
       break
     }
     outInstances.push(inst)
-    const value = transformValuesSync({
+    const nestedOverrides = transformValuesSync({
       values: inst.value,
       type: inst.getTypeSync(),
       strict: false,
@@ -195,12 +274,13 @@ export const extractStandaloneInstances = <Options extends FetchApiDefinitionsOp
         parent: inst,
         customNameMappingFunctions,
         definedTypes,
+        typeToFieldsWithNestedStandalone,
       }),
       allowEmptyArrays: true,
       allowEmptyObjects: true,
     })
-    if (value !== undefined) {
-      inst.value = value
+    if (nestedOverrides !== undefined) {
+      inst.value = _.merge({}, inst.value, nestedOverrides)
     }
   }
   return outInstances

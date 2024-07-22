@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash'
 import { logger } from '@salto-io/logging'
 import { values as lowerdashValues } from '@salto-io/lowerdash'
 import { ElementsAndErrors } from '../../definitions/system/fetch/element'
@@ -93,6 +94,12 @@ export const generateInstancesWithInitialTypes = <Options extends FetchApiDefini
 
       // TODO filter instances by fetch query before extracting standalone fields (SALTO-5425)
 
+      const allTypes = _.assign(
+        {},
+        definedTypes,
+        { [type.elemID.name]: type },
+        _.keyBy(nestedTypes, t => t.elemID.name),
+      )
       const instancesWithStandalone = log.timeTrace(
         () =>
           extractStandaloneInstances({
@@ -101,7 +108,7 @@ export const generateInstancesWithInitialTypes = <Options extends FetchApiDefini
             defQuery,
             getElemIdFunc,
             customNameMappingFunctions,
-            definedTypes,
+            definedTypes: allTypes,
           }),
         'generateInstancesWithInitialTypes: extractStandaloneInstances for %s',
         typeName,
