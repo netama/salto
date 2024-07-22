@@ -20,7 +20,7 @@ import { logger } from '@salto-io/logging'
 import { values } from '@salto-io/lowerdash'
 import { Values } from '@salto-io/adapter-api'
 import Joi from 'joi'
-import { createConnection, createResourceConnection, instanceUrl } from './connection'
+import { createConnection, createResourceConnection, createSweethawkConnection, instanceUrl } from './connection'
 import { ZENDESK } from '../constants'
 import { Credentials } from '../auth'
 import { PAGE_SIZE, DEFAULT_TIMEOUT_OPTS } from '../config'
@@ -253,5 +253,19 @@ export default class ZendeskClient extends clientUtils.AdapterHTTPClient<
       })
     }
     return cloneResponseData
+  }
+}
+
+export class SweethawkClient extends clientUtils.AdapterHTTPClient<Credentials, definitions.ClientRateLimitConfig> {
+  constructor(clientOpts: clientUtils.ClientOpts<Credentials, definitions.ClientRateLimitConfig>) {
+    super(ZENDESK, clientOpts, createSweethawkConnection, {
+      pageSize: DEFAULT_PAGE_SIZE,
+      rateLimit: DEFAULT_MAX_CONCURRENT_API_REQUESTS,
+      maxRequestsPerMinute: RATE_LIMIT_UNLIMITED_MAX_CONCURRENT_REQUESTS,
+      delayPerRequestMS: RATE_LIMIT_DEFAULT_DELAY_PER_REQUEST_MS,
+      useBottleneck: RATE_LIMIT_USE_BOTTLENECK,
+      retry: DEFAULT_RETRY_OPTS,
+      timeout: DEFAULT_TIMEOUT_OPTS,
+    })
   }
 }

@@ -21,6 +21,19 @@ export const createClientDefinitions = (
 ): definitions.ApiDefinitions<{ clientOptions: ClientOptions; paginationOptions: PaginationOptions }>['clients'] => ({
   default: 'main',
   options: {
+    sweethawk: {
+      httpClient: clients.sweethawk,
+      endpoints: {
+        default: {
+          get: {
+            readonly: true,
+          },
+          delete: {
+            omitBody: true,
+          },
+        },
+      },
+    },
     main: {
       httpClient: clients.main,
       endpoints: {

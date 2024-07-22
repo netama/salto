@@ -27,6 +27,7 @@ type CommonBasicCredentials = {
   username: string
   subdomain: string
   domain?: string
+  shToken?: string
 }
 
 export type UsernamePasswordCredentials = CommonBasicCredentials & {
@@ -42,6 +43,7 @@ export type OauthAccessTokenCredentials = {
   accessToken: string
   subdomain: string
   domain?: string
+  shToken?: string
 }
 
 export type OauthRequestParameters = {
@@ -84,6 +86,9 @@ export const basicCredentialsType = createMatchingObjectType<
         message: DOMAIN_MESSAGE,
       },
     },
+    shToken: {
+      refType: BuiltinTypes.STRING,
+    },
   },
 })
 
@@ -107,6 +112,9 @@ export const oauthAccessTokenCredentialsType = createMatchingObjectType<OauthAcc
         _required: false,
         message: DOMAIN_MESSAGE,
       },
+    },
+    shToken: {
+      refType: BuiltinTypes.STRING,
     },
   },
 })
