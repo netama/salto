@@ -52,7 +52,6 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
   {},
   ...([
     { typeName: 'action', path: 'actions/actions', root: 'actions' },
-    { typeName: 'apns_push_notification_configuration', path: 'guardian/factors/push-notification/providers/apns' },
     { typeName: 'client', path: 'clients' }, // TODON check if want to use include_totals instead
     { typeName: 'connection', path: 'connections' }, // TODON recurse into /scim-configuration, scim-configuration/default-mapping
     { typeName: 'custom_domain', path: 'custom-domains' },
@@ -84,12 +83,13 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
     { typeName: 'organization', path: 'organizations' }, // TODON decide if default include or exclude, see if want to recurseInto organizations/{id}/enabled_connections
 
     // TODON singletons
-    { typeName: 'breached_password_detection_settings', path: 'attack-protection/breached-password-detection' },
-    { typeName: 'brute_force_protection_settings', path: 'attack-protection/brute-force-protection' },
-    { typeName: 'suspicious_ip_throttling_settings', path: 'attack-protection/suspicious-ip-throttling' },
-    { typeName: 'tenant_settings', path: 'tenants/settings' },
-    { typeName: 'branding_settings', path: 'branding' },
-  ].map(({ typeName, path, root }) => ({
+    { typeName: 'apns_push_notification_configuration', path: 'guardian/factors/push-notification/providers/apns', singleton: true },
+    { typeName: 'breached_password_detection_settings', path: 'attack-protection/breached-password-detection', singleton: true },
+    { typeName: 'brute_force_protection_settings', path: 'attack-protection/brute-force-protection', singleton: true },
+    { typeName: 'suspicious_ip_throttling_settings', path: 'attack-protection/suspicious-ip-throttling', singleton: true },
+    { typeName: 'tenant_settings', path: 'tenants/settings', singleton: true },
+    { typeName: 'branding_settings', path: 'branding', singleton: true },
+  ].map(({ typeName, path, root, singleton }) => ({
     [typeName]: {
       requests: [
         {
@@ -105,11 +105,19 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
       element: {
         topLevel: {
           isTopLevel: true,
+          singleton: singleton === true ? singleton : undefined,
         },
       },
     },
   }))),
   {
+    phone_template: {
+      element: {
+        topLevel: {
+          elemID: { parts: [{ fieldName: 'channel' }, { fieldName: 'type' }] },
+        },
+      },
+    },
     email_template: {
       // TODON parallelize, use dependsOn or context instead
       // see https://auth0.com/docs/api/management/v2/email-templates/get-email-templates-by-template-name
