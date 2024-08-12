@@ -155,18 +155,12 @@ describe('adapter', () => {
         const madeUp2Values = elements
           .filter(isInstanceElement)
           .find(e => e.elemID.getFullName() === 'auth0.made_up_type_a.instance.made_up_2@s')?.value
-        expect(madeUp2Values?.parent_id?.elemID?.fullName).toEqual(
-          'auth0.made_up_type_a.instance.made_up_1@s',
-        )
-        expect(madeUp2Values?.other_b?.elemID?.fullName).toEqual(
-          'auth0.made_up_type_b.instance.made_up_1@s',
-        )
+        expect(madeUp2Values?.parent_id?.elemID?.fullName).toEqual('auth0.made_up_type_a.instance.made_up_1@s')
+        expect(madeUp2Values?.other_b?.elemID?.fullName).toEqual('auth0.made_up_type_b.instance.made_up_1@s')
         const madeUp3Values = elements
           .filter(isInstanceElement)
           .find(e => e.elemID.getFullName() === 'auth0.made_up_type_a.instance.made_up_3@s')?.value
-        expect(madeUp3Values?.parent_id?.elemID?.fullName).toEqual(
-          'auth0.made_up_type_b.instance.made_up_1@s',
-        )
+        expect(madeUp3Values?.parent_id?.elemID?.fullName).toEqual('auth0.made_up_type_b.instance.made_up_1@s')
       })
     })
   })

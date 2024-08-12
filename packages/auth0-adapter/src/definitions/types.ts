@@ -22,7 +22,7 @@ export type ClientOptions = 'main'
 export type PaginationOptions = 'cursor'
 // TODO set these to never if not needed
 export type ReferenceContextStrategies = 'parentType'
-export type CustomReferenceSerializationStrategyName = 'otherFieldName'
+export type CustomReferenceSerializationStrategyName = 'client_id'
 export type CustomIndexField = CustomReferenceSerializationStrategyName
 
 export type Options = definitions.APIDefinitionsOptions & {

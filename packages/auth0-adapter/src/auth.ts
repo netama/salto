@@ -37,8 +37,7 @@ export const credentialsType = createMatchingObjectType<Credentials>({
       refType: BuiltinTypes.STRING,
       annotations: {
         _required: true,
-        message:
-          'URL',
+        message: 'URL',
       },
     },
   },
