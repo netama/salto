@@ -802,6 +802,39 @@ const createCustomizations = (): Record<string, definitions.fetch.InstanceFetchA
       },
     },
   },
+  user: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/v2/users',
+          queryArgs: {
+            fields: ['last_ip', 'last_login', 'logins_count', 'multifactor_last_modified', 'identities'].join(','),
+            include_fields: 'false',
+          },
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+      serviceIDFields: ['user_id'],
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+      fieldCustomizations: {
+        user_id: {
+          hide: true,
+        },
+        created_at: {
+          hide: true,
+        },
+        updated_at: {
+          hide: true,
+        },
+      },
+    },
+  },
   apns_push_notification_configuration: {
     requests: [
       {

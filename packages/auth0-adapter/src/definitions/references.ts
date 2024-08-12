@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import _ from 'lodash'
+import { Value } from '@salto-io/adapter-api'
 import { definitions, references as referenceUtils } from '@salto-io/adapter-components'
 import { ReferenceContextStrategies, Options, CustomReferenceSerializationStrategyName } from './types'
 
@@ -31,6 +32,11 @@ const REFERENCE_RULES: referenceUtils.FieldReferenceDefinition<
     serializationStrategy: 'client_id',
     target: { type: 'client' },
   },
+  {
+    src: { field: 'owners', parentTypes: ['client'] },
+    serializationStrategy: 'user_id_mr',
+    target: { type: 'user' },
+  },
 ]
 
 export const REFERENCES: definitions.ApiDefinitions<Options>['references'] = {
@@ -45,6 +51,17 @@ export const REFERENCES: definitions.ApiDefinitions<Options>['references'] = {
       lookup: referenceUtils.basicLookUp,
       lookupIndexName: 'client_id',
     },
+    user_id: {
+      serialize: ({ ref }) => ref.value.value.user_id,
+      lookup: referenceUtils.basicLookUp,
+      lookupIndexName: 'user_id',
+    },
+    user_id_mr: {
+      // TODON generalize by first arg (and maybe also second?)
+      serialize: async ({ ref }) => `mr|${ref.value.value.user_id}`,
+      lookup: (val: Value) => (_.isString(val) && val.startsWith('mr|') ? val.substring(3) : val),
+      lookupIndexName: 'user_id',
+    },
   },
-  fieldsToGroupBy: ['id', 'name', 'client_id'],
+  fieldsToGroupBy: ['id', 'name', 'client_id', 'user_id'],
 }
