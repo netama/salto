@@ -1842,6 +1842,99 @@ const createCustomizations = (): Record<
   },
 
   // sweethawk
+  // tasks and subtickets
+  sweethawk_task_list_definition: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/tasks/task_list_definition',
+          client: 'sweethawk',
+        },
+      }
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  sweethawk_ticket_templates_tasks: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/tasks/ticket_templates',
+          client: 'sweethawk',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  sweethawk_ticket_templates_recurring: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/recurring_tickets/ticket_templates',
+          client: 'sweethawk',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  sweethawk_ticket_templates_future: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/future_tickets/ticket_templates',
+          client: 'sweethawk',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+      },
+    },
+  },
+  sweethawk_tasks_and_subtickets_settings: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/tasks/settings',
+          client: 'sweethawk',
+        },
+      }
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        singleton: true,
+      },
+    },
+  },
+  // export
   sweethawk_task_export: {
     // TODON check if need to keep base, discuss format
     requests: [
