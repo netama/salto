@@ -160,6 +160,7 @@ import customObjectFieldFilter from './filters/custom_objects/custom_object_fiel
 import customObjectFieldsOrderFilter from './filters/custom_objects/custom_object_fields_order'
 import customObjectFieldOptionsFilter from './filters/custom_field_options/custom_object_field_options'
 import botBuilderArrangePaths from './filters/bot_builder_arrange_paths'
+import securitySettingsDeployFilter from './filters/security_settings_deploy'
 import { createFixElementFunctions } from './fix_elements'
 import guideThemeSettingFilter from './filters/guide_theme_settings'
 import { ZendeskFetchOptions } from './definitions/types'
@@ -222,6 +223,7 @@ export const DEFAULT_FILTERS = [
   macroAttachmentsFilter,
   ticketFormDeploy,
   customRoleDeployFilter,
+  securitySettingsDeployFilter,
   sideConversationsFilter,
   brandLogoFilter,
   // removeBrandLogoFilter should be after brandLogoFilter

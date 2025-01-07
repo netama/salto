@@ -2096,6 +2096,31 @@ const createCustomizations = (): Record<
     },
   },
 
+  security_settings: {
+    requests: [
+      {
+        endpoint: {
+          path: '/api/admin/private/accounts/current/security_settings',
+        },
+        transformation: {
+          root: 'security_settings',
+        },
+      },
+    ],
+    resource: {
+      directFetch: true,
+    },
+    element: {
+      topLevel: {
+        isTopLevel: true,
+        singleton: true,
+        serviceUrl: {
+          path: '/admin/account/security/end_users',
+        },
+      },
+    },
+  },
+
   [BOT_BUILDER_FLOW]: {
     requests: [
       {

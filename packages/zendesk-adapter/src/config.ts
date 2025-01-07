@@ -292,6 +292,15 @@ export const DEFAULT_TYPES: ZendeskApiConfig['types'] = {
       },
     },
   },
+  security_settings: {
+    deployRequests: {
+      modify: {
+        url: '/api/admin/private/accounts/current/security_settings',
+        method: 'put',
+        deployAsField: 'security_settings',
+      },
+    },
+  },
   trigger__conditions__all: {
     transformation: {
       fieldTypeOverrides: [{ fieldName: 'is_user_value', fieldType: 'boolean' }],
